@@ -1450,34 +1450,14 @@ function renderProfile(){
   });
 
   document.getElementById('foerder-content').innerHTML=renderFoerder();
-  // Draw charts using IntersectionObserver for reliable rendering
-  const cm3=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  const chartMap={'linearChart':drawLinear,'barChart':drawBar,'radarChart':drawRadar};
-  const drawn=new Set();
-
-  function drawChartById(id){
-    const fn=chartMap[id];
-    if(fn){ fn(cm3); drawn.add(id); }
-  }
-
-  // Observe each canvas - draw when it enters viewport
-  if(window.IntersectionObserver){
-    Object.keys(chartMap).forEach(id=>{
-      const obs=new IntersectionObserver(entries=>{
-        entries.forEach(e=>{
-          if(e.isIntersecting && e.intersectionRatio>0){
-            drawChartById(id);
-            obs.disconnect();
-          }
-        });
-      },{threshold:0.01});
-      const cv=document.getElementById(id);
-      if(cv) obs.observe(cv);
-    });
-  }
-
-  // Also: when user opens a chart section, draw it
-  window._chartCm=cm3;
+  // Store cm for chart drawing
+  window._chartCm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
+  // Charts are drawn on-demand when sections open (see toggleColl)
+  // Pre-draw bar chart as it's the first one users typically see
+  setTimeout(()=>{
+    const cb=document.getElementById('cb-bar');
+    if(cb&&cb.style.display!=='none') drawBar(window._chartCm);
+  },100);
 }
 
 function toggleColl(id){
@@ -1488,25 +1468,28 @@ function toggleColl(id){
   body.style.display=open?'none':'block';
   if(chev) chev.textContent=open?'▸':'▾';
   if(!open){
-    // Draw chart after the section is visible
+    // Section just opened - draw chart if applicable
     const cm2=window._chartCm||parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-    requestAnimationFrame(()=>{
-      setTimeout(()=>{
-        if(id==='bar'||id==='linear'||id==='radar'){
-          const fnMap={bar:drawBar,linear:drawLinear,radar:drawRadar};
-          if(fnMap[id]) fnMap[id](cm2);
-        }
-      },50);
-    });
+    const chartFns={bar:drawBar,linear:drawLinear,radar:drawRadar};
+    if(chartFns[id]){
+      // Use double requestAnimationFrame to ensure DOM is painted first
+      requestAnimationFrame(()=>{
+        requestAnimationFrame(()=>{
+          chartFns[id](cm2);
+        });
+      });
+    }
   }
 }
 
 
 function drawRadar(childMonths){
-  const canvas=document.getElementById('radarC');
+  const canvas=document.getElementById('radarChart');
   if(!canvas) return;
   const ctx=canvas.getContext('2d');
-  const W=canvas.offsetWidth||480;
+  let W=0; let el=canvas;
+  while(el&&W===0){W=el.offsetWidth;el=el.parentElement;}
+  W=Math.max(W,320);
   canvas.width=W; canvas.height=W;
   const cx=W/2,cy=W/2,r=W*0.36,labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+DATA[id].name.split(' ')[0]);
   const n=8,max=120;
