@@ -1858,73 +1858,6 @@ function showToast(msg){
 // ═══════════════════════════════════════
 // ELTERN-PDF
 // ═══════════════════════════════════════
-const ELTERN_TEXTS = {
-  de: {
-    title: `Information für Eltern und Personensorgeberechtigte`,
-    subtitle: `Kuno Bellers Entwicklungstabelle 0\u20139 Jahre`,
-    intro: `In unserer Einrichtung beobachten wir die Entwicklung Ihres Kindes systematisch und einfühlsam. Dafür nutzen wir Kuno Bellers Entwicklungstabelle \u2013 ein bewährtes pädagogisches Instrument, das die Stärken und den individuellen Entwicklungsweg jedes Kindes in den Mittelpunkt stellt.`,
-    sections: [
-      {h:`Was ist Kuno Bellers Entwicklungstabelle?`, t:`Die Entwicklungstabelle von Kuno Beller ist ein Beobachtungsbogen für Kinder von 0 bis 9 Jahren. Er beschreibt in 8 Entwicklungsbereichen und 18 Phasen, welche Fähigkeiten Kinder typischerweise in welchem Alter zeigen. Wir beobachten Ihr Kind im Alltag und halten fest, welche Kompetenzen es bereits zeigt.`},
-      {h:`Was bedeutet Entwicklungsalter?`, t:`Das Entwicklungsalter beschreibt, auf welchem Entwicklungsstand sich Ihr Kind in einem bestimmten Bereich befindet \u2013 unabhängig von seinem tatsächlichen Geburtsalter. Es ist kein Defizit, wenn das Entwicklungsalter in einem Bereich vom chronologischen Alter abweicht. Jedes Kind entwickelt sich in seinem eigenen Tempo.`},
-      {h:`Was bedeuten Basis und Decke?`, t:`Die Basis ist der Entwicklungsstand, den Ihr Kind in einem Bereich sicher erreicht hat \u2013 alle Fähigkeiten dieser Phase sind vorhanden. Die Decke zeigt, bis wohin Ihr Kind beobachtet wurde. Der Bereich zwischen Basis und Decke ist der aktuelle Entwicklungsraum Ihres Kindes.`},
-      {h:`Was ist das Ziel der Beobachtung?`, t:`Unser Ziel ist nicht, Defizite festzustellen. Wir möchten die individuellen Stärken Ihres Kindes erkennen, frühzeitig Förderbedarf identifizieren und gemeinsam mit Ihnen die bestmögliche Begleitung für Ihr Kind gestalten. Die Beobachtung ist immer stärkenorientiert.`},
-      {h:`Was passiert mit den Ergebnissen?`, t:`Die Ergebnisse werden vertraulich behandelt und nur mit Ihrem Einverständnis weitergegeben. Sie werden eingeladen, die Beobachtungen gemeinsam mit uns zu besprechen. Ihre Sichtweise als Elternteil ist dabei genauso wichtig wie unsere pädagogische Einschätzung.`},
-    ],
-    closing: `Bei Fragen sprechen Sie uns jederzeit an. Wir freuen uns auf den gemeinsamen Austausch!`
-  },
-  en: {
-    title: `Information for Parents and Legal Guardians`,
-    subtitle: `Kuno Beller Developmental Table 0\u20139 Years`,
-    intro: `In our facility, we observe your child\u2019s development systematically and sensitively. We use Kuno Beller\u2019s Developmental Table \u2013 a proven pedagogical tool that focuses on each child\u2019s strengths and individual developmental path.`,
-    sections: [
-      {h:`What is Kuno Beller\u2019s Developmental Table?`, t:`The Developmental Table by Kuno Beller is an observation tool for children aged 0 to 9 years. It describes in 8 developmental areas and 18 phases which abilities children typically show at which age. We observe your child in everyday situations and record which competencies they already demonstrate.`},
-      {h:`What does Developmental Age mean?`, t:`The developmental age describes the level of development your child has reached in a specific area \u2013 regardless of their actual chronological age. It is not a deficit if the developmental age in one area differs from the chronological age. Every child develops at their own pace.`},
-      {h:`What do Basis and Ceiling mean?`, t:`The basis is the developmental level your child has securely achieved in an area \u2013 all skills of this phase are present. The ceiling shows how far your child has been observed. The area between basis and ceiling is your child\u2019s current developmental space.`},
-      {h:`What is the goal of the observation?`, t:`Our goal is not to identify deficits. We want to recognize your child\u2019s individual strengths, identify support needs early, and design the best possible accompaniment for your child \u2013 together with you. The observation is always strengths-based.`},
-      {h:`What happens with the results?`, t:`The results are treated confidentially and only shared with your consent. You will be invited to discuss the observations with us. Your perspective as a parent is just as important as our pedagogical assessment.`},
-    ],
-    closing: `If you have any questions, please talk to us at any time. We look forward to the exchange!`
-  },
-  fr: {
-    title: `Information pour les parents et les représentants légaux`,
-    subtitle: `Table de développement de Kuno Beller 0\u20139 ans`,
-    intro: `Dans notre établissement, nous observons le développement de votre enfant de manière systématique et bienveillante. Nous utilisons la Table de développement de Kuno Beller \u2013 un outil pédagogique éprouvé qui place les forces et le chemin de développement individuel de chaque enfant au centre.`,
-    sections: [
-      {h:`Qu\u2019est-ce que la Table de développement de Kuno Beller?`, t:`La Table de développement de Kuno Beller est une grille d\u2019observation pour les enfants de 0 à 9 ans. Elle décrit dans 8 domaines de développement et 18 phases quelles capacités les enfants montrent typiquement à quel âge. Nous observons votre enfant au quotidien et notons les compétences qu\u2019il manifeste déjà.`},
-      {h:`Que signifie l\u2019âge de développement?`, t:`L\u2019âge de développement décrit le niveau de développement atteint par votre enfant dans un domaine spécifique \u2013 indépendamment de son âge chronologique réel. Ce n\u2019est pas un déficit si l\u2019âge de développement diffère de l\u2019âge chronologique. Chaque enfant se développe à son propre rythme.`},
-      {h:`Que signifient Base et Plafond?`, t:`La base est le niveau de développement que votre enfant a atteint de manière sûre dans un domaine. Le plafond indique jusqu\u2019où votre enfant a été observé. L\u2019espace entre la base et le plafond est l\u2019espace de développement actuel de votre enfant.`},
-      {h:`Quel est l\u2019objectif de l\u2019observation?`, t:`Notre but n\u2019est pas d\u2019identifier des déficits. Nous souhaitons reconnaître les forces individuelles de votre enfant, identifier tôt les besoins de soutien et concevoir ensemble le meilleur accompagnement possible. L\u2019observation est toujours orientée vers les ressources.`},
-      {h:`Que se passe-t-il avec les résultats?`, t:`Les résultats sont traités de manière confidentielle et ne sont transmis qu\u2019avec votre consentement. Vous serez invités à discuter des observations avec nous. Votre point de vue en tant que parent est tout aussi important que notre évaluation pédagogique.`},
-    ],
-    closing: `Si vous avez des questions, n\u2019hésitez pas à nous contacter à tout moment!`
-  },
-  es: {
-    title: `Información para padres y tutores legales`,
-    subtitle: `Tabla de Desarrollo de Kuno Beller 0\u20139 años`,
-    intro: `En nuestra institución observamos el desarrollo de su hijo/a de manera sistemática y sensible. Utilizamos la Tabla de Desarrollo de Kuno Beller \u2013 un instrumento pedagógico probado que coloca las fortalezas y el camino de desarrollo individual de cada niño/a en el centro.`,
-    sections: [
-      {h:`¿Qué es la Tabla de Desarrollo de Kuno Beller?`, t:`La Tabla de Desarrollo de Kuno Beller es una hoja de observación para niños de 0 a 9 años. Describe en 8 áreas de desarrollo y 18 fases qué habilidades muestran típicamente los niños a qué edad. Observamos a su hijo/a en la vida cotidiana y registramos qué competencias ya demuestra.`},
-      {h:`¿Qué significa Edad de Desarrollo?`, t:`La edad de desarrollo describe el nivel de desarrollo que su hijo/a ha alcanzado en un área específica, independientemente de su edad cronológica real. No es un déficit si la edad de desarrollo difiere de la edad cronológica. Cada niño/a se desarrolla a su propio ritmo.`},
-      {h:`¿Qué significan Base y Techo?`, t:`La base es el nivel de desarrollo que su hijo/a ha alcanzado de forma segura en un área. El techo muestra hasta dónde ha sido observado su hijo/a. El espacio entre la base y el techo es el espacio de desarrollo actual de su hijo/a.`},
-      {h:`¿Cuál es el objetivo de la observación?`, t:`Nuestro objetivo no es identificar déficits. Queremos reconocer las fortalezas individuales de su hijo/a, identificar tempranamente las necesidades de apoyo y diseñar juntos el mejor acompañamiento posible. La observación siempre está orientada hacia las fortalezas.`},
-      {h:`¿Qué ocurre con los resultados?`, t:`Los resultados se tratan de forma confidencial y solo se comparten con su consentimiento. Se les invitará a discutir las observaciones con nosotros. Su perspectiva como padre/madre es tan importante como nuestra evaluación pedagógica.`},
-    ],
-    closing: `Si tiene alguna pregunta, no dude en hablar con nosotros en cualquier momento.`
-  },
-  tr: {
-    title: `Ebeveynler ve Yasal Veliler için Bilgi`,
-    subtitle: `Kuno Beller Gelişim Tablosu 0\u20139 Yaş`,
-    intro: `Kurumumuzda çocuğunuzun gelişimini sistematik ve hassas bir şekilde gözlemliyoruz. Kuno Beller\u2019in Gelişim Tablosunu kullanıyoruz \u2013 her çocuğun güçlü yönlerini ve bireysel gelişim yolunu merkeze alan kanıtlanmış bir pedagojik araç.`,
-    sections: [
-      {h:`Kuno Beller Gelişim Tablosu nedir?`, t:`Kuno Beller\u2019in Gelişim Tablosu, 0-9 yaş arası çocuklar için bir gözlem formudur. 8 gelişim alanında ve 18 aşamada, çocukların hangi yaşta hangi becerileri tipik olarak gösterdiğini açıklar. Çocuğunuzu günlük hayatta gözlemler ve hangi yeterlilikleri zaten gösterdiğini kaydederiz.`},
-      {h:`Gelişim Yaşı ne anlama gelir?`, t:`Gelişim yaşı, çocuğunuzun belirli bir alanda ulaştığı gelişim düzeyini \u2013 gerçek yaşından bağımsız olarak \u2013 tanımlar. Bir alandaki gelişim yaşının kronolojik yaştan farklı olması bir eksiklik değildir. Her çocuk kendi hızında gelişir.`},
-      {h:`Taban ve Tavan ne anlama gelir?`, t:`Taban, çocuğunuzun bir alanda güvenli şekilde ulaştığı gelişim düzeyidir. Tavan, çocuğunuzun gözlemlendiği noktayı gösterir. Taban ile tavan arasındaki alan, çocuğunuzun mevcut gelişim alanıdır.`},
-      {h:`Gözlemin amacı nedir?`, t:`Amacımız eksiklikleri tespit etmek değildir. Çocuğunuzun bireysel güçlü yönlerini tanımak, destek ihtiyaçlarını erken fark etmek ve sizinle birlikte çocuğunuz için en iyi desteği tasarlamak istiyoruz. Gözlem her zaman güçlere yöneliktir.`},
-      {h:`Sonuçlarla ne yapılır?`, t:`Sonuçlar gizli tutulur ve yalnızca onayınızla paylaşılır. Gözlemleri bizimle birlikte tartışmaya davet edileceksiniz. Ebeveyn olarak sizin bakış açınız, pedagojik değerlendirmemiz kadar önemlidir.`},
-    ],
-    closing: `Sorularınız için lütfen istediğiniz zaman bizimle iletişime geçin!`
-  }
-};
 
 function downloadElternPDF(lang){
   const t=ELTERN_TEXTS[lang];
@@ -1961,76 +1894,6 @@ function downloadElternPDF(lang){
 // ═══════════════════════════════════════
 // FÖRDERMÖGLICHKEITEN DATA
 // ═══════════════════════════════════════
-const FOERDER = {"0":{"kup":{"home":"Ruhige Wickel- und Pflegesituationen gestalten, viel Blickkontakt halten und Körperteile benennen.","inst":"Verlässliche Pflegeroutinen mit Sprache, Wärme und feinfühligem Kontakt anbieten."},"ub":{"home":"Unterschiedliche Materialien, Geräusche, Gerüche und Lichtreize behutsam erfahrbar machen.","inst":"Sinnesangebote mit Tüchern, Spiegeln, Greiflingen und weichen Matten bereitstellen."},"se":{"home":"Viel Körpernähe geben und prompt auf Signale reagieren.","inst":"Mit festen Bezugspersonen arbeiten und Übergänge langsam gestalten."},"st":{"home":"Guck-guck-Spiele, Greifspiele und gemeinsames Lächeln fördern.","inst":"Kurze dialogische Spielsequenzen und Wiederholungsspiele anbieten."},"sl":{"home":"Viel sprechen, singen, summen und auf Laute reagieren.","inst":"Sprachbegleitung im Alltag, Lieder und erste Bilderbücher einsetzen."},"kog":{"home":"Ursache-Wirkung-Erfahrungen ermöglichen, z. B. rasseln oder Dinge fallen lassen.","inst":"Wiederholbare Sinnes- und Entdeckungsangebote anbieten."},"gm":{"home":"Bauchlage, Drehen und Strampeln fördern.","inst":"Bewegungsflächen zum Rollen, Robben und Krabbeln schaffen."},"fm":{"home":"Greiflinge und unterschiedliche Oberflächen anbieten.","inst":"Materialien zum Greifen, Festhalten und Loslassen bereitstellen."}},"1":{"kup":{"home":"Das Kind beim Essen, Trinken und Waschen beteiligen.","inst":"Selbstständigkeit bei Mahlzeiten und Pflege anbahnen."},"ub":{"home":"Dinge im Alltag benennen und gemeinsam erkunden.","inst":"Räume übersichtlich gestalten und Alltagsgegenstände erfahrbar machen."},"se":{"home":"Trennungen ankündigen und Wiederkehr verlässlich gestalten.","inst":"Bindungsorientierte Eingewöhnung und aktives Trösten anbieten."},"st":{"home":"Stapelbecher, Ein- und Ausräumspiele und Versteckspiele nutzen.","inst":"Materialkörbe und erste Funktionsspiele anbieten."},"sl":{"home":"Einfache Wörter wiederholen und Bilderbücher anschauen.","inst":"Sprachbegleitendes Handeln, Fingerspiele und Lieder einsetzen."},"kog":{"home":"Sortier- und Zuordnungserfahrungen ermöglichen.","inst":"Ursache-Wirkung-Spielzeug und Suchspiele anbieten."},"gm":{"home":"Krabbeln, Hochziehen und erste Schritte begleiten.","inst":"Freie Bewegungsräume und kleine Kletterelemente anbieten."},"fm":{"home":"Fingerfood, Bauklötze und große Steckspiele anbieten.","inst":"Greif-, Steck- und Schüttmaterialien bereitstellen."}},"2":{"kup":{"home":"Hände waschen und erste Toilettenwahrnehmung begleiten.","inst":"Pflegeroutinen partizipativ gestalten."},"ub":{"home":"Spaziergänge nutzen, Tiere und Fahrzeuge beobachten.","inst":"Natur- und Alltagserkundungen anbieten."},"se":{"home":"Gefühle benennen und spiegeln.","inst":"Konflikte begleiten und einfache Regeln visualisieren."},"st":{"home":"Puppen füttern, Kochen spielen und Fahrzeuge schieben.","inst":"Rollenspielmaterial und Parallelspiel ermöglichen."},"sl":{"home":"Zweiwortsätze aufgreifen und erweitern.","inst":"Dialogisches Bilderbuchlesen anbieten."},"kog":{"home":"Farben, Formen und Größen entdecken.","inst":"Puzzle und Sortierspiele einsetzen."},"gm":{"home":"Laufen, Treppensteigen und Ballspiele fördern.","inst":"Bewegungsparcours und Balanciermöglichkeiten anbieten."},"fm":{"home":"Große Perlen, Knete und Löffel benutzen lassen.","inst":"Malen mit dicken Stiften und Steckspiele anbieten."}},"3":{"kup":{"home":"An- und Ausziehen üben.","inst":"Selbstständigkeit in Garderobe und Hygiene fördern."},"ub":{"home":"Kleine Aufgaben wie Tischdecken übernehmen lassen.","inst":"Dienste und Orientierung im Raum fördern."},"se":{"home":"Wahlmöglichkeiten anbieten und Frust begleiten.","inst":"Kleingruppenspiele und Konfliktbegleitung anbieten."},"st":{"home":"Rollenspiele unterstützen.","inst":"Verkleidung und Symbolspiel ermöglichen."},"sl":{"home":"Erzählen lassen und offene Fragen stellen.","inst":"Erzählkreise und Bilderbücher einsetzen."},"kog":{"home":"Mengen und Farben im Alltag entdecken.","inst":"Muster legen und vergleichen."},"gm":{"home":"Hüpfen, Rennen und Balancieren fördern.","inst":"Bewegungsbaustellen und Tanzangebote anbieten."},"fm":{"home":"Kneten, Reißen und Kleben ermöglichen.","inst":"Kreativangebote und erste Scherenübungen anbieten."}},"4":{"kup":{"home":"Kleidung zunehmend selbstständig auswählen lassen.","inst":"Selbstorganisation fördern."},"ub":{"home":"Jahreszeiten und Verkehr besprechen.","inst":"Natur- und Umweltprojekte durchführen."},"se":{"home":"Regeln gemeinsam besprechen.","inst":"Kooperationsspiele und Kinderkonferenzen anbieten."},"st":{"home":"Konstruktions- und Rollenspiele fördern.","inst":"Thematische Spielbereiche anbieten."},"sl":{"home":"Geschichten nacherzählen und reimen.","inst":"Sprachspiele und Erzählwerkstätten durchführen."},"kog":{"home":"Reihenfolgen und Ursache-Wirkung erkennen.","inst":"Experimente und Klassifikationsspiele anbieten."},"gm":{"home":"Laufradfahren, Klettern und Springen fördern.","inst":"Bewegungsparcours und Ballspiele anbieten."},"fm":{"home":"Schneiden, Kleben und Bauen ermöglichen.","inst":"Vorschulnahe Feinmotorikangebote anbieten."}},"5":{"kup":{"home":"Verantwortung für eigene Sachen übernehmen lassen.","inst":"Selbstständige Routinen stärken."},"ub":{"home":"Naturphänomene und Verkehr besprechen.","inst":"Forschertage und Umweltprojekte durchführen."},"se":{"home":"Kompromisse und Absprachen üben.","inst":"Gruppenregeln reflektieren und Patenschaften fördern."},"st":{"home":"Regelspiele und Bauprojekte anbieten.","inst":"Projektspiel und Theater ermöglichen."},"sl":{"home":"Reime und Geschichten erfinden.","inst":"Literacy-Angebote und Erzähltheater nutzen."},"kog":{"home":"Mengen vergleichen und zählen.","inst":"Mathematische Vorläuferfähigkeiten fördern."},"gm":{"home":"Seilspringen und Balancieren üben.","inst":"Staffelspiele und Rhythmik anbieten."},"fm":{"home":"Ausschneiden, Falten und Perlen anbieten.","inst":"Werkstattarbeit und Kreativangebote durchführen."}},"6":{"kup":{"home":"Schulmaterialien und Hygiene selbst organisieren lassen.","inst":"Übergänge zur Schule begleiten."},"ub":{"home":"Schulweg und Tagesstruktur besprechen.","inst":"Orientierung im Schulgebäude fördern."},"se":{"home":"Über Sorgen und Erwartungen sprechen.","inst":"Klassengemeinschaft stärken."},"st":{"home":"Regelspiele und Bauprojekte fördern.","inst":"Lernspiele und Freispiel erhalten."},"sl":{"home":"Vorlesen und Buchstabeninteresse unterstützen.","inst":"Sprachbewusstheit und Erzählkompetenz fördern."},"kog":{"home":"Zahlen und Zeitbegriffe im Alltag nutzen.","inst":"Problemlösen und Forschen fördern."},"gm":{"home":"Fahrradfahren und Ballspiele fördern.","inst":"Koordinations- und Bewegungsangebote anbieten."},"fm":{"home":"Schleife binden und Basteln üben.","inst":"Schreibvorbereitung unterstützen."},"sl_quer":{"home":"Mehrsprachigkeit als Stärke wertschätzen – andere Sprachen im Alltag sichtbar machen.","inst":"Mehrsprachige Bücher und Lieder einsetzen; Herkunftssprachen aktiv einbeziehen."},"medien":{"home":"Erste Mediennutzung begleiten und gemeinsam reflektieren.","inst":"Medienführerschein-Angebote einsetzen."}},"7":{"kup":{"home":"Verantwortung für Kleidung und Ernährung stärken.","inst":"Gesundheitsbildung fördern."},"ub":{"home":"Verantwortung im Haushalt übernehmen lassen.","inst":"Umweltprojekte und Klassenämter anbieten."},"se":{"home":"Konflikte reflektieren.","inst":"Klassenrat und soziale Lernprogramme einsetzen."},"st":{"home":"Gesellschaftsspiele und kreative Projekte anbieten.","inst":"Theater und Lernspiele durchführen."},"sl":{"home":"Lesen und Erzählen fördern.","inst":"Schreibanlässe und Leseförderung anbieten."},"kog":{"home":"Rechnen und Logikspiele in den Alltag integrieren.","inst":"Mathematik handelnd vermitteln."},"gm":{"home":"Sport und Naturbewegung fördern.","inst":"Teamspiele und Koordinationsübungen anbieten."},"fm":{"home":"Schreiben, Basteln und Werken fördern.","inst":"Kunst- und Werkangebote anbieten."},"sl_quer":{"home":"Mehrsprachige Bücher lesen und Sprachenvielfalt im Alltag thematisieren.","inst":"Mehrsprachige Projekte und Sprachenpässe einsetzen."},"medien":{"home":"Bildschirmzeit gemeinsam regeln; Inhalte besprechen und hinterfragen.","inst":"Medienprojekte durchführen; sicheres Surfen und Datenschutz thematisieren."}},"8":{"kup":{"home":"Selbstständige Routinen stärken.","inst":"Gesundheitsbewusstsein fördern."},"ub":{"home":"Natur- und Sozialräume erkunden.","inst":"Projekte zu Umwelt und Medien durchführen."},"se":{"home":"Perspektivwechsel fördern.","inst":"Gruppenarbeiten und Verantwortung ermöglichen."},"st":{"home":"Strategiespiele und kreative Hobbys fördern.","inst":"Projektarbeit und Forscheraufgaben anbieten."},"sl":{"home":"Bücher auswählen und Tagebuch schreiben lassen.","inst":"Textverständnis und freies Schreiben fördern."},"kog":{"home":"Planen und Begründen fördern.","inst":"Denkaufgaben und Experimente anbieten."},"gm":{"home":"Schwimmen und Ausdauer fördern.","inst":"Sportspiele und Beweglichkeit fördern."},"fm":{"home":"Zeichnen, Werken und Musizieren fördern.","inst":"Handschriftpflege und Kunsttechniken anbieten."},"sl_quer":{"home":"Unterschiedliche Sprachen in Büchern, Filmen und Gesprächen bewusst einsetzen.","inst":"Sprachvergleiche und mehrsprachige Textarbeit einführen."},"medien":{"home":"Digitale Werkzeuge für Hobbys und Lernen nutzen; Quellenkritik üben.","inst":"Medienprojekte, Coding-Angebote und digitale Recherche fördern."}},"9":{"kup":{"home":"Eigenverantwortung für Tagesstruktur fördern.","inst":"Gesundheit und Selbstmanagement thematisieren."},"ub":{"home":"Verantwortung im Haushalt übernehmen lassen.","inst":"Demokratie- und Umweltbildung fördern."},"se":{"home":"Gespräche über Freundschaft und Fairness führen.","inst":"Konfliktmoderation und Mitbestimmung ermöglichen."},"st":{"home":"Komplexe Spiele und kreative Projekte anbieten.","inst":"Projektlernen und Theaterarbeit fördern."},"sl":{"home":"Argumentieren und längere Texte lesen fördern.","inst":"Präsentieren und Schreibkonferenzen durchführen."},"kog":{"home":"Hypothesen bilden und planen fördern.","inst":"Forschendes Lernen und Problemlöseaufgaben anbieten."},"gm":{"home":"Teamsport und Naturerfahrungen fördern.","inst":"Fairplay und Konditionstraining unterstützen."},"fm":{"home":"Präzises Zeichnen und Werken fördern.","inst":"Geometrie, Kunst und Materialführung unterstützen."},"sl_quer":{"home":"Mehrsprachige Kommunikation als Stärke und Ressource begreifen.","inst":"Mehrsprachige Präsentationen und Schreibprojekte ermöglichen."},"medien":{"home":"Kritischen Umgang mit Medien und KI-Inhalten begleiten.","inst":"Medienmündigkeit, Fake-News-Erkennung und digitale Verantwortung thematisieren."}}}
-;
-
-const GRUNDPRINZIPIEN = [
-  {n:'Beziehung vor Förderung', t:'Kinder lernen nur dann nachhaltig, wenn sie sich emotional sicher fühlen.'},
-  {n:'Entwicklung ist individuell', t:'Jedes Kind entwickelt sich in seinem eigenen Tempo.'},
-  {n:'Spiel ist Lernen', t:'Freies Spiel ist eine zentrale Bildungsform der Kindheit.'},
-  {n:'Alltag ist Bildung', t:'Lernen findet nicht nur in Angeboten, sondern in alltäglichen Situationen statt.'},
-  {n:'Ressourcenorientierung', t:'Der Blick richtet sich auf Fähigkeiten und Stärken – nicht zuerst auf Defizite.'},
-  {n:'Partizipation', t:'Kinder sollen beteiligt werden und Selbstwirksamkeit erleben.'},
-  {n:'Bewegung ist Entwicklung', t:'Motorische Entwicklung unterstützt Sprache, Denken und Selbstvertrauen.'},
-  {n:'Sprache begleitet alles', t:'Kinder brauchen sprachliche Begleitung im gesamten Alltag.'},
-  {n:'Wiederholung gibt Sicherheit', t:'Kinder lernen durch Wiederholung und verlässliche Strukturen.'},
-  {n:'Entwicklung braucht Zeit', t:'Kinder dürfen ausprobieren, Fehler machen und Erfahrungen sammeln.'}
-];
-
-function renderFoerder(){
-  const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  const year=Math.min(9,Math.floor(cm/12));
-  const fd=FOERDER[String(year)];
-  if(!fd) return '<p style="color:var(--muted);font-size:.85rem">Bitte zuerst das Alter des Kindes eingeben.</p>';
-
-  const areaNames={kup:'Körperbewusstsein & Pflege',ub:'Umgebungsbewusstsein',se:'Sozial-emotionale Entwicklung',st:'Spieltätigkeit',sl:'Sprache & Literacy',kog:'Kognition',gm:'Grobmotorik',fm:'Feinmotorik'};
-  const areaEmoji={kup:'🧼',ub:'🏘️',se:'❤️',st:'🧸',sl:'🗣️',kog:'🧠',gm:'🔨',fm:'🪶'};
-
-  let html=`<div style="background:var(--accent-light);border:1px solid #b8d4c8;border-radius:10px;padding:1rem 1.3rem;margin-bottom:1.2rem;font-size:.83rem;color:var(--accent)">
-    <strong>Fördermöglichkeiten für das ${year}. Lebensjahr</strong> (chronologisches Alter: ${cm?Math.round(cm)+' Monate / '+(cm/12).toFixed(1)+' Jahre':'nicht angegeben'})<br>
-    <span style="font-size:.75rem;opacity:.8">Die Angebote sind entwicklungsbegleitend – nicht defizitorientiert.</span>
-  </div>`;
-
-  AREA_ORDER.forEach(aid=>{
-    const f=fd[aid];
-    if(!f) return;
-    html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;margin-bottom:.8rem">
-      <div style="font-weight:500;margin-bottom:.6rem;font-size:.9rem">${areaEmoji[aid]} ${areaNames[aid]}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
-        <div>
-          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.3rem">🏠 Zuhause</div>
-          <div style="font-size:.82rem;line-height:1.6;color:var(--text)">${f.home}</div>
-        </div>
-        <div>
-          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.3rem">🏫 Einrichtung</div>
-          <div style="font-size:.82rem;line-height:1.6;color:var(--text)">${f.inst}</div>
-        </div>
-      </div>
-    </div>`;
-  });
-
-  // Querschnittsthemen
-  const quer=['sl_quer','medien'];
-  const querNames={sl_quer:'🌍 Mehrsprachigkeit (Querschnittsthema)',medien:'💻 Medien & Digitales'};
-  const querExists=quer.some(k=>fd[k]);
-  if(querExists){
-    html+=`<div style="font-size:.8rem;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:.8rem 0 .4rem">Querschnittsthemen</div>`;
-    quer.forEach(k=>{
-      if(!fd[k]) return;
-      html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.2rem;margin-bottom:.8rem">
-        <div style="font-weight:500;margin-bottom:.6rem;font-size:.9rem">${querNames[k]}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
-          <div><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.3rem">🏠 Zuhause</div>
-          <div style="font-size:.82rem;line-height:1.6">${fd[k].home}</div></div>
-          <div><div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.3rem">🏫 Einrichtung</div>
-          <div style="font-size:.82rem;line-height:1.6">${fd[k].inst}</div></div>
-        </div>
-      </div>`;
-    });
-  }
-
-  return html;
-}
 
 const GRUNDPRINZIPIEN=[
   {n:'Beziehung vor Förderung',t:'Kinder lernen nur dann nachhaltig, wenn sie sich emotional sicher fühlen.'},
@@ -2071,7 +1934,7 @@ function drawLinear(childMonths){
   const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
   const n=AREA_ORDER.length;
   const maxPhase=18;
-  const PHASE_MONTHS_MAP={1:1,2:4,3:7,4:10,5:14,6:20,7:26,8:32,9:38,10:44,11:50,12:56,13:62,14:68,15:78,16:90,17:102,18:114};
+  
 
   // Grid
   [0,3,6,9,12,15,18].forEach(ph=>{
