@@ -937,8 +937,15 @@ function selectAge(range,el){
   ageRange=range;
   document.querySelectorAll('.age-card').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
-  document.getElementById('start-btn').disabled=false;
+  const btn=document.getElementById('start-btn');
+  const hasData=Object.keys(answers).length>0;
+  btn.disabled=false;
+  btn.textContent=hasData?'Erhebung aktualisieren →':'Erhebung starten →';
   document.getElementById('start-hint').textContent='';
+  // Reset nav indicators since range changed
+  AREA_ORDER.forEach(aid=>{
+    updateNavScore(aid);
+  });
   saveChild();
 }
 
@@ -1106,16 +1113,21 @@ function checkAutoCollapse(key){
   // Never auto-collapse prefilled (basis) or locked (above range) phases
   if(rp.prefilled.includes(ph)||rp.locked.includes(ph)) return;
   const items=DATA[aid].phases[String(ph)]||[];
-  // Only collapse when ALL items have a definitive answer (yes/partial/no)
-  // 'unknown' keeps the phase open so user sees unresolved items
-  const allDefinitive=items.every((_,i)=>{
+  const total=items.length;
+  if(total===0) return;
+  // Count how many items have definitive answers (yes/partial/no)
+  let definitive=0, unknownCount=0;
+  items.forEach((_,i)=>{
     const v=answers[`${aid}-${ph}-${i}`];
-    return v==='yes'||v==='partial'||v==='no';
+    if(v==='yes'||v==='partial'||v==='no') definitive++;
+    if(v==='unknown') unknownCount++;
   });
-  if(allDefinitive){
+  // Only collapse if ALL items answered definitively AND no unknowns
+  // AND at least 2 items were answered (avoids collapsing on first click)
+  if(definitive===total && unknownCount===0 && definitive>=2){
     const block=document.getElementById(`pb-${aid}-${ph}`);
     if(block&&block.classList.contains('open')){
-      setTimeout(()=>{ block.classList.remove('open'); },400);
+      setTimeout(()=>{ block.classList.remove('open'); },500);
     }
   }
 }
@@ -1423,22 +1435,28 @@ function renderProfile(){
   });
 
   document.getElementById('foerder-content').innerHTML=renderFoerder();
-  // Draw charts with proper sizing
-  function doDrawCharts(){
-    const cm2=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-    // Only draw if canvas is visible and has width
-    ['linearChart','barChart','radarChart'].forEach(id=>{
-      const cv=document.getElementById(id);
-      if(cv&&cv.offsetWidth>0){
-        if(id==='linearChart') drawLinear(cm2);
-        else if(id==='barChart') drawBar(cm2);
-        else if(id==='radarChart') drawRadar(cm2);
-      }
-    });
+  // Draw charts robustly - handle hidden containers
+  const cm3=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
+  function tryDraw(id,fn){
+    const cv=document.getElementById(id);
+    if(!cv) return;
+    // Force a reflow to get correct dimensions
+    if(cv.parentElement) cv.parentElement.style.display='block';
+    const w=cv.offsetWidth||cv.parentElement&&cv.parentElement.offsetWidth||600;
+    fn(cm3);
   }
-  setTimeout(doDrawCharts,100);
-  // Also draw when collapsible opens
-  setTimeout(doDrawCharts,500);
+  // Draw all after short delay (DOM settled)
+  setTimeout(()=>{
+    tryDraw('linearChart',drawLinear);
+    tryDraw('barChart',drawBar);
+    tryDraw('radarChart',drawRadar);
+  },150);
+  // Redraw again after longer delay as fallback
+  setTimeout(()=>{
+    tryDraw('linearChart',drawLinear);
+    tryDraw('barChart',drawBar);
+    tryDraw('radarChart',drawRadar);
+  },600);
 }
 
 function toggleColl(id){
@@ -1454,6 +1472,10 @@ function toggleColl(id){
       if(id==='bar') drawBar(cm2);
       else if(id==='radar') drawRadar(cm2);
       else if(id==='linear') drawLinear(cm2);
+      else if(id==='detail'){
+        // When detail opens, also trigger chart redraws
+        setTimeout(()=>{drawBar(cm2);drawLinear(cm2);drawRadar(cm2);},100);
+      }
     },80);
   }
 }
@@ -1910,6 +1932,9 @@ function loadSession(){
       document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('disabled'));
       document.getElementById('prog-wrap').style.display='';
       document.getElementById('iv-btn').style.display='';
+      // Update button text
+      const btn=document.getElementById('start-btn');
+      if(btn&&Object.keys(answers).length>0) btn.textContent='Erhebung aktualisieren →';
       document.getElementById('hdr-sub').textContent=`${childInfo.name||'Kind'} · ${rangeLabel(ageRange)}`;
       updateProgress();
     }
@@ -2079,7 +2104,7 @@ function closeAlterInfo(){
 function drawLinear(childMonths){
   const canvas=document.getElementById('linearChart');
   if(!canvas) return;
-  const W=canvas.offsetWidth||600;
+  const W=Math.max(canvas.offsetWidth,canvas.parentElement&&canvas.parentElement.offsetWidth||0,320);
   const H=320;
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
