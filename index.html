@@ -32,10 +32,10 @@ header h1{font-family:'DM Sans',sans-serif;font-weight:300;font-size:clamp(.95re
 .hbtn.hb-interview{background:rgba(122,107,61,.6);border-color:rgba(220,200,140,.5)}
 
 /* LAYOUT */
-.app{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - 62px)}
+.app{display:grid;grid-template-columns:330px 1fr;min-height:calc(100vh - 62px)}
 
 /* SIDEBAR */
-nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem 0;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto}
+nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem 0;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto;min-width:330px}
 .nav-sec{padding:.5rem 1rem .25rem;font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .nav-item{display:flex;align-items:center;gap:.45rem;padding:.5rem .9rem;cursor:pointer;border-left:3px solid transparent;transition:all .15s;font-size:.8rem}
 .nav-item:hover{background:var(--accent-light)}
@@ -1103,10 +1103,16 @@ function checkAutoCollapse(key){
   const parts=key.split('-');
   const aid=parts[0], ph=+parts[1];
   const rp=RANGE_PHASES[ageRange];
+  // Never auto-collapse prefilled (basis) or locked (above range) phases
   if(rp.prefilled.includes(ph)||rp.locked.includes(ph)) return;
   const items=DATA[aid].phases[String(ph)]||[];
-  const allAnswered=items.every((_,i)=>answers[`${aid}-${ph}-${i}`]);
-  if(allAnswered){
+  // Only collapse when ALL items have a definitive answer (yes/partial/no)
+  // 'unknown' keeps the phase open so user sees unresolved items
+  const allDefinitive=items.every((_,i)=>{
+    const v=answers[`${aid}-${ph}-${i}`];
+    return v==='yes'||v==='partial'||v==='no';
+  });
+  if(allDefinitive){
     const block=document.getElementById(`pb-${aid}-${ph}`);
     if(block&&block.classList.contains('open')){
       setTimeout(()=>{ block.classList.remove('open'); },400);
@@ -1364,17 +1370,17 @@ function renderProfile(){
     `<table class="res-tbl"><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Kompetenz</th><th>Basis</th><th>Decke</th></tr></thead><tbody id="res-tbody"></tbody></table>`,true);
 
   // 2. Lineardiagramm (Beller-Profil)
-  html+=collCard('linear','📈','Entwicklungsprofil – Liniendiagramm (nach Beller)',
+  html+=collCard('linear','📈','Liniendiagramm: Entwicklungsprofil nach Beller',
     `<div style="position:relative"><canvas id="linearChart" class="mychart" height="320"></canvas></div>
      <div class="chart-actions"><button class="btn btn-outline btn-sm" onclick="exportCanvasPDF('linearChart','Liniendiagramm')">⬇ PDF</button></div>`,true);
 
   // 3. Balkendiagramm
-  html+=collCard('bar','📊','Balkendiagramm – Entwicklungsalter je Bereich',
+  html+=collCard('bar','📊','Balkendiagramm: Entwicklungsalter je Bereich',
     `<canvas id="barChart" class="mychart" height="280"></canvas>
      <div class="chart-actions"><button class="btn btn-outline btn-sm" onclick="exportCanvasPDF('barChart','Balkendiagramm')">⬇ PDF</button></div>`,true);
 
   // 4. Radialdiagramm
-  html+=collCard('radar','🎯','Radialdiagramm – Entwicklungsprofil',
+  html+=collCard('radar','🎯','Radialdiagramm: Entwicklungsprofil',
     `<div style="max-width:480px;margin:0 auto"><canvas id="radarChart" class="mychart" height="480"></canvas></div>
      <div class="chart-actions"><button class="btn btn-outline btn-sm" onclick="exportCanvasPDF('radarChart','Radialdiagramm')">⬇ PDF</button></div>`,true);
 
