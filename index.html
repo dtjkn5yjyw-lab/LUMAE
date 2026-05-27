@@ -824,13 +824,20 @@ canvas.mychart{width:100%!important}
         <!-- ELTERNINFORMATION -->
         <div class="help-section" id="hs-eltern">
           <h3>👨‍👩‍👧 Elterninformation</h3>
-          <p>Erklärung für Personensorgeberechtigte – stärkenorientiert, ohne Fachsprache, in 5 Sprachen.</p>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.5rem;margin-top:.8rem">
-            <button class="btn btn-outline" onclick="downloadElternPDF('de')">🇩🇪 Deutsch</button>
-            <button class="btn btn-outline" onclick="downloadElternPDF('en')">🇬🇧 English</button>
-            <button class="btn btn-outline" onclick="downloadElternPDF('fr')">🇫🇷 Français</button>
-            <button class="btn btn-outline" onclick="downloadElternPDF('es')">🇪🇸 Español</button>
-            <button class="btn btn-outline" onclick="downloadElternPDF('tr')">🇹🇷 Türkçe</button>
+          <p>Erklärung für Personensorgeberechtigte – stärkenorientiert, ohne Fachsprache. Verfügbar in 12 Sprachen.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.8rem">
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('de')">🇩🇪 Deutsch</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('en')">🇬🇧 English</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('fr')">🇫🇷 Français</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('es')">🇪🇸 Español</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('it')">🇮🇹 Italiano</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('pl')">🇵🇱 Polski</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('nl')">🇳🇱 Nederlands</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('pt')">🇵🇹 Português</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('ro')">🇷🇴 Română</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('tr')">🇹🇷 Türkçe</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('ru')">🇷🇺 Русский</button>
+            <button class="btn btn-outline btn-sm" onclick="downloadElternPDF('ar')">🇸🇦 العربية</button>
           </div>
           <div class="help-tip" style="margin-top:1rem">💡 Das Dokument öffnet sich als Druckansicht. Über <strong>„Als PDF speichern"</strong> können Sie es weitergeben oder ausdrucken.</div>
         </div>
@@ -1435,28 +1442,24 @@ function renderProfile(){
   });
 
   document.getElementById('foerder-content').innerHTML=renderFoerder();
-  // Draw charts robustly - handle hidden containers
+  // Draw charts: force-open collapsible bodies temporarily to get real dimensions
   const cm3=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  function tryDraw(id,fn){
-    const cv=document.getElementById(id);
-    if(!cv) return;
-    // Force a reflow to get correct dimensions
-    if(cv.parentElement) cv.parentElement.style.display='block';
-    const w=cv.offsetWidth||cv.parentElement&&cv.parentElement.offsetWidth||600;
-    fn(cm3);
+  function forceDrawAll(){
+    // Temporarily show all coll-bodies to get correct canvas sizes
+    const chartIds=['linear','bar','radar'];
+    const bodies=chartIds.map(id=>document.getElementById('cb-'+id)).filter(Boolean);
+    const wasHidden=bodies.map(b=>b.style.display==='none');
+    // Briefly show all
+    bodies.forEach(b=>b.style.display='block');
+    // Draw
+    drawLinear(cm3);
+    drawBar(cm3);
+    drawRadar(cm3);
+    // Restore hidden state
+    bodies.forEach((b,i)=>{ if(wasHidden[i]) b.style.display='none'; });
   }
-  // Draw all after short delay (DOM settled)
-  setTimeout(()=>{
-    tryDraw('linearChart',drawLinear);
-    tryDraw('barChart',drawBar);
-    tryDraw('radarChart',drawRadar);
-  },150);
-  // Redraw again after longer delay as fallback
-  setTimeout(()=>{
-    tryDraw('linearChart',drawLinear);
-    tryDraw('barChart',drawBar);
-    tryDraw('radarChart',drawRadar);
-  },600);
+  setTimeout(forceDrawAll,80);
+  setTimeout(forceDrawAll,400);
 }
 
 function toggleColl(id){
@@ -1905,10 +1908,10 @@ function importKBD(evt){
         document.getElementById('iv-btn').style.display='';
         document.getElementById('hdr-sub').textContent=`${childInfo.name||'Kind'} · ${rangeLabel(ageRange)}`;
         updateProgress();
-        showView(AREA_ORDER[0]);
+        showView('setup'); // → Stammdaten first so user can check/change age range
       }
       saveSession();
-      showToast(`Datei geladen: „${file.name}" ✓`);
+      showToast(`Datei geladen: „${file.name}“ ✓`);
     }catch(err){ showToast('Fehler: '+err.message); }
   };
   reader.readAsText(file);
@@ -1990,12 +1993,13 @@ function showToast(msg){
 function downloadElternPDF(lang){
   const t=ELTERN_TEXTS[lang];
   if(!t) return;
+  const isRTL=lang==='ar';
   const w=window.open('','_blank');
   let sectHTML='';
   t.sections.forEach(s=>{
     sectHTML+=`<h3>${s.h}</h3><p>${s.t}</p>`;
   });
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${t.title}</title>
+  w.document.write(`<!DOCTYPE html><html dir="${isRTL?'rtl':'ltr'}"><head><meta charset="UTF-8"><title>${t.title}</title>
   <style>
     body{margin:2cm;font-family:'Helvetica Neue',Arial,sans-serif;color:#2a2520;max-width:17cm}
     h1{font-size:18pt;font-weight:300;color:#3d6b52;margin-bottom:4pt}
@@ -2376,10 +2380,10 @@ const ELTERN_TEXTS = {
     intro: `In unserer Einrichtung beobachten wir die Entwicklung Ihres Kindes systematisch und einfühlsam. Dafür nutzen wir Kuno Bellers Entwicklungstabelle \u2013 ein bewährtes pädagogisches Instrument, das die Stärken und den individuellen Entwicklungsweg jedes Kindes in den Mittelpunkt stellt.`,
     sections: [
       {h:`Was ist Kuno Bellers Entwicklungstabelle?`, t:`Die Entwicklungstabelle von Kuno Beller ist ein Beobachtungsbogen für Kinder von 0 bis 9 Jahren. Er beschreibt in 8 Entwicklungsbereichen und 18 Phasen, welche Fähigkeiten Kinder typischerweise in welchem Alter zeigen. Wir beobachten Ihr Kind im Alltag und halten fest, welche Kompetenzen es bereits zeigt.`},
-      {h:`Was bedeutet Entwicklungsalter?`, t:`Das Entwicklungsalter beschreibt, auf welchem Entwicklungsstand sich Ihr Kind in einem bestimmten Bereich befindet \u2013 unabhängig von seinem tatsächlichen Geburtsalter. Es ist kein Defizit, wenn das Entwicklungsalter in einem Bereich vom chronologischen Alter abweicht. Jedes Kind entwickelt sich in seinem eigenen Tempo.`},
-      {h:`Was bedeuten Basis und Decke?`, t:`Die Basis ist der Entwicklungsstand, den Ihr Kind in einem Bereich sicher erreicht hat \u2013 alle Fähigkeiten dieser Phase sind vorhanden. Die Decke zeigt, bis wohin Ihr Kind beobachtet wurde. Der Bereich zwischen Basis und Decke ist der aktuelle Entwicklungsraum Ihres Kindes.`},
-      {h:`Was ist das Ziel der Beobachtung?`, t:`Unser Ziel ist nicht, Defizite festzustellen. Wir möchten die individuellen Stärken Ihres Kindes erkennen, frühzeitig Förderbedarf identifizieren und gemeinsam mit Ihnen die bestmögliche Begleitung für Ihr Kind gestalten. Die Beobachtung ist immer stärkenorientiert.`},
-      {h:`Was passiert mit den Ergebnissen?`, t:`Die Ergebnisse werden vertraulich behandelt und nur mit Ihrem Einverständnis weitergegeben. Sie werden eingeladen, die Beobachtungen gemeinsam mit uns zu besprechen. Ihre Sichtweise als Elternteil ist dabei genauso wichtig wie unsere pädagogische Einschätzung.`},
+      {h:`Was bedeutet Entwicklungsalter?`, t:`Das Entwicklungsalter beschreibt, auf welchem Entwicklungsstand sich Ihr Kind in einem bestimmten Bereich befindet \u2013 unabhängig von seinem tatsächlichen Geburtsalter. Jedes Kind entwickelt sich in seinem eigenen Tempo \u2013 das ist völlig normal.`},
+      {h:`Was bedeuten Basis und Decke?`, t:`Die Basis ist der Entwicklungsstand, den Ihr Kind sicher erreicht hat. Die Decke zeigt, bis wohin Ihr Kind beobachtet wurde. Der Bereich dazwischen ist der aktuelle Entwicklungsraum Ihres Kindes.`},
+      {h:`Was ist das Ziel der Beobachtung?`, t:`Unser Ziel ist nicht, Defizite festzustellen, sondern die individuellen Stärken Ihres Kindes zu erkennen und frühzeitig gezielte Förderung anzubieten. Die Beobachtung ist immer stärkenorientiert.`},
+      {h:`Was passiert mit den Ergebnissen?`, t:`Die Ergebnisse werden vertraulich behandelt und nur mit Ihrem Einverständnis weitergegeben. Ihre Sichtweise als Elternteil ist genauso wichtig wie unsere pädagogische Einschätzung.`},
     ],
     closing: `Bei Fragen sprechen Sie uns jederzeit an. Wir freuen uns auf den gemeinsamen Austausch!`
   },
@@ -2388,65 +2392,156 @@ const ELTERN_TEXTS = {
     subtitle: `Kuno Beller Developmental Table 0\u20139 Years`,
     intro: `In our facility, we observe your child\u2019s development systematically and sensitively. We use Kuno Beller\u2019s Developmental Table \u2013 a proven pedagogical tool that focuses on each child\u2019s strengths and individual developmental path.`,
     sections: [
-      {h:`What is Kuno Beller\u2019s Developmental Table?`, t:`The Developmental Table by Kuno Beller is an observation tool for children aged 0 to 9 years. It describes in 8 developmental areas and 18 phases which abilities children typically show at which age. We observe your child in everyday situations and record which competencies they already demonstrate.`},
-      {h:`What does Developmental Age mean?`, t:`The developmental age describes the level of development your child has reached in a specific area \u2013 regardless of their actual chronological age. It is not a deficit if the developmental age in one area differs from the chronological age. Every child develops at their own pace.`},
-      {h:`What do Basis and Ceiling mean?`, t:`The basis is the developmental level your child has securely achieved in an area \u2013 all skills of this phase are present. The ceiling shows how far your child has been observed. The area between basis and ceiling is your child\u2019s current developmental space.`},
-      {h:`What is the goal of the observation?`, t:`Our goal is not to identify deficits. We want to recognize your child\u2019s individual strengths, identify support needs early, and design the best possible accompaniment for your child \u2013 together with you. The observation is always strengths-based.`},
-      {h:`What happens with the results?`, t:`The results are treated confidentially and only shared with your consent. You will be invited to discuss the observations with us. Your perspective as a parent is just as important as our pedagogical assessment.`},
+      {h:`What is Kuno Beller\u2019s Developmental Table?`, t:`An observation tool for children aged 0\u20139, describing in 8 developmental areas and 18 phases which abilities children typically show at which age.`},
+      {h:`What does Developmental Age mean?`, t:`The developmental age describes your child\u2019s level in a specific area \u2013 regardless of chronological age. Every child develops at their own pace \u2013 this is completely normal.`},
+      {h:`What do Basis and Ceiling mean?`, t:`The basis is the developmental level your child has securely achieved. The ceiling shows how far your child has been observed. The space between is your child\u2019s current developmental zone.`},
+      {h:`What is the goal of the observation?`, t:`Our goal is not to identify deficits, but to recognize your child\u2019s individual strengths and offer targeted support early. The observation is always strengths-based.`},
+      {h:`What happens with the results?`, t:`Results are treated confidentially and only shared with your consent. Your perspective as a parent is just as important as our pedagogical assessment.`},
     ],
-    closing: `If you have any questions, please talk to us at any time. We look forward to the exchange!`
+    closing: `If you have any questions, please talk to us at any time!`
   },
   fr: {
     title: `Information pour les parents et les représentants légaux`,
     subtitle: `Table de développement de Kuno Beller 0\u20139 ans`,
-    intro: `Dans notre établissement, nous observons le développement de votre enfant de manière systématique et bienveillante. Nous utilisons la Table de développement de Kuno Beller \u2013 un outil pédagogique éprouvé qui place les forces et le chemin de développement individuel de chaque enfant au centre.`,
+    intro: `Dans notre établissement, nous observons le développement de votre enfant de manière systématique et bienveillante. Nous utilisons la Table de développement de Kuno Beller \u2013 un outil pédagogique éprouvé centré sur les forces de chaque enfant.`,
     sections: [
-      {h:`Qu\u2019est-ce que la Table de développement de Kuno Beller?`, t:`La Table de développement de Kuno Beller est une grille d\u2019observation pour les enfants de 0 à 9 ans. Elle décrit dans 8 domaines de développement et 18 phases quelles capacités les enfants montrent typiquement à quel âge. Nous observons votre enfant au quotidien et notons les compétences qu\u2019il manifeste déjà.`},
-      {h:`Que signifie l\u2019âge de développement?`, t:`L\u2019âge de développement décrit le niveau de développement atteint par votre enfant dans un domaine spécifique \u2013 indépendamment de son âge chronologique réel. Ce n\u2019est pas un déficit si l\u2019âge de développement diffère de l\u2019âge chronologique. Chaque enfant se développe à son propre rythme.`},
-      {h:`Que signifient Base et Plafond?`, t:`La base est le niveau de développement que votre enfant a atteint de manière sûre dans un domaine. Le plafond indique jusqu\u2019où votre enfant a été observé. L\u2019espace entre la base et le plafond est l\u2019espace de développement actuel de votre enfant.`},
-      {h:`Quel est l\u2019objectif de l\u2019observation?`, t:`Notre but n\u2019est pas d\u2019identifier des déficits. Nous souhaitons reconnaître les forces individuelles de votre enfant, identifier tôt les besoins de soutien et concevoir ensemble le meilleur accompagnement possible. L\u2019observation est toujours orientée vers les ressources.`},
-      {h:`Que se passe-t-il avec les résultats?`, t:`Les résultats sont traités de manière confidentielle et ne sont transmis qu\u2019avec votre consentement. Vous serez invités à discuter des observations avec nous. Votre point de vue en tant que parent est tout aussi important que notre évaluation pédagogique.`},
+      {h:`Qu\u2019est-ce que la Table de développement de Kuno Beller?`, t:`Un outil d\u2019observation pour les enfants de 0 à 9 ans, décrivant dans 8 domaines et 18 phases quelles capacités les enfants montrent typiquement à quel âge.`},
+      {h:`Que signifie l\u2019âge de développement?`, t:`L\u2019âge de développement décrit le niveau de votre enfant dans un domaine spécifique, indépendamment de son âge chronologique. Chaque enfant se développe à son propre rythme.`},
+      {h:`Que signifient Base et Plafond?`, t:`La base est le niveau que votre enfant a atteint avec certitude. Le plafond indique jusqu\u2019où votre enfant a été observé. L\u2019espace entre les deux est sa zone de développement actuelle.`},
+      {h:`Quel est l\u2019objectif?`, t:`Reconnaître les forces individuelles de votre enfant et offrir un soutien ciblé. L\u2019observation est toujours orientée vers les ressources.`},
+      {h:`Que se passe-t-il avec les résultats?`, t:`Les résultats sont confidentiels et ne sont transmis qu\u2019avec votre consentement. Votre point de vue est tout aussi important que notre évaluation.`},
     ],
-    closing: `Si vous avez des questions, n\u2019hésitez pas à nous contacter à tout moment!`
+    closing: `N\u2019hésitez pas à nous contacter à tout moment!`
   },
   es: {
     title: `Información para padres y tutores legales`,
     subtitle: `Tabla de Desarrollo de Kuno Beller 0\u20139 años`,
-    intro: `En nuestra institución observamos el desarrollo de su hijo/a de manera sistemática y sensible. Utilizamos la Tabla de Desarrollo de Kuno Beller \u2013 un instrumento pedagógico probado que coloca las fortalezas y el camino de desarrollo individual de cada niño/a en el centro.`,
+    intro: `En nuestra institución observamos el desarrollo de su hijo/a de manera sistemática y sensible, utilizando la Tabla de Desarrollo de Kuno Beller \u2013 un instrumento pedagógico centrado en las fortalezas de cada niño/a.`,
     sections: [
-      {h:`¿Qué es la Tabla de Desarrollo de Kuno Beller?`, t:`La Tabla de Desarrollo de Kuno Beller es una hoja de observación para niños de 0 a 9 años. Describe en 8 áreas de desarrollo y 18 fases qué habilidades muestran típicamente los niños a qué edad. Observamos a su hijo/a en la vida cotidiana y registramos qué competencias ya demuestra.`},
-      {h:`¿Qué significa Edad de Desarrollo?`, t:`La edad de desarrollo describe el nivel de desarrollo que su hijo/a ha alcanzado en un área específica, independientemente de su edad cronológica real. No es un déficit si la edad de desarrollo difiere de la edad cronológica. Cada niño/a se desarrolla a su propio ritmo.`},
-      {h:`¿Qué significan Base y Techo?`, t:`La base es el nivel de desarrollo que su hijo/a ha alcanzado de forma segura en un área. El techo muestra hasta dónde ha sido observado su hijo/a. El espacio entre la base y el techo es el espacio de desarrollo actual de su hijo/a.`},
-      {h:`¿Cuál es el objetivo de la observación?`, t:`Nuestro objetivo no es identificar déficits. Queremos reconocer las fortalezas individuales de su hijo/a, identificar tempranamente las necesidades de apoyo y diseñar juntos el mejor acompañamiento posible. La observación siempre está orientada hacia las fortalezas.`},
-      {h:`¿Qué ocurre con los resultados?`, t:`Los resultados se tratan de forma confidencial y solo se comparten con su consentimiento. Se les invitará a discutir las observaciones con nosotros. Su perspectiva como padre/madre es tan importante como nuestra evaluación pedagógica.`},
+      {h:`¿Qué es la Tabla de Desarrollo de Kuno Beller?`, t:`Una herramienta de observación para niños de 0 a 9 años, que describe en 8 áreas y 18 fases qué habilidades muestran los niños típicamente a cada edad.`},
+      {h:`¿Qué significa Edad de Desarrollo?`, t:`La edad de desarrollo describe el nivel de su hijo/a en un área específica, independientemente de su edad cronológica. Cada niño/a se desarrolla a su propio ritmo.`},
+      {h:`¿Qué significan Base y Techo?`, t:`La base es el nivel que su hijo/a ha alcanzado con seguridad. El techo muestra hasta dónde ha sido observado. El espacio entre ambos es su zona de desarrollo actual.`},
+      {h:`¿Cuál es el objetivo?`, t:`Reconocer las fortalezas individuales de su hijo/a y ofrecer apoyo temprano. La observación siempre está orientada hacia las fortalezas.`},
+      {h:`¿Qué ocurre con los resultados?`, t:`Los resultados son confidenciales y solo se comparten con su consentimiento. Su perspectiva es igual de importante que nuestra evaluación pedagógica.`},
     ],
-    closing: `Si tiene alguna pregunta, no dude en hablar con nosotros en cualquier momento.`
+    closing: `¡No dude en hablar con nosotros en cualquier momento!`
+  },
+  it: {
+    title: `Informazioni per genitori e tutori legali`,
+    subtitle: `Tabella di sviluppo di Kuno Beller 0\u20139 anni`,
+    intro: `Nella nostra struttura osserviamo lo sviluppo di vostro figlio/a in modo sistematico e attento, utilizzando la Tabella di sviluppo di Kuno Beller \u2013 uno strumento pedagogico consolidato che pone al centro i punti di forza di ogni bambino/a.`,
+    sections: [
+      {h:`Cos\u2019è la Tabella di sviluppo di Kuno Beller?`, t:`Uno strumento di osservazione per bambini da 0 a 9 anni, che descrive in 8 aree e 18 fasi quali capacità i bambini mostrano tipicamente a ciascuna età.`},
+      {h:`Cosa significa età di sviluppo?`, t:`L\u2019età di sviluppo descrive il livello del bambino/a in un'area specifica, indipendentemente dall\u2019età cronologica. Ogni bambino/a si sviluppa al proprio ritmo.`},
+      {h:`Cosa significano Base e Tetto?`, t:`La base è il livello raggiunto con certezza. Il tetto indica fino a dove il bambino/a è stato osservato. Lo spazio tra i due è la sua zona di sviluppo attuale.`},
+      {h:`Qual è l\u2019obiettivo?`, t:`Riconoscere i punti di forza individuali e offrire supporto mirato. L\u2019osservazione è sempre orientata alle risorse.`},
+      {h:`Cosa succede con i risultati?`, t:`I risultati sono riservati e condivisi solo con il vostro consenso. La vostra prospettiva è importante quanto la nostra valutazione pedagogica.`},
+    ],
+    closing: `Non esitate a contattarci in qualsiasi momento!`
+  },
+  pl: {
+    title: `Informacje dla rodziców i opiekunów prawnych`,
+    subtitle: `Tabela rozwoju Kuno Bellera 0\u20139 lat`,
+    intro: `W naszej placówce obserwujemy rozwój Państwa dziecka systematycznie i z troską, korzystając z Tabeli rozwoju Kuno Bellera \u2013 sprawdzonego narzędzia pedagogicznego skupionego na mocnych stronach każdego dziecka.`,
+    sections: [
+      {h:`Czym jest Tabela rozwoju Kuno Bellera?`, t:`Narzędzie obserwacji dla dzieci w wieku 0\u20139 lat, opisujące w 8 obszarach i 18 fazach, jakie umiejętności dzieci typowo wykazują w danym wieku.`},
+      {h:`Co oznacza wiek rozwojowy?`, t:`Wiek rozwojowy opisuje poziom dziecka w określonym obszarze, niezależnie od wieku metrykalnego. Każde dziecko rozwija się we własnym tempie.`},
+      {h:`Co oznaczają Podstawa i Pułap?`, t:`Podstawa to poziom, który dziecko osiągnęło z pewnością. Pułap pokazuje, jak daleko zostało zaobserwowane. Przestrzeń między nimi to aktualna strefa rozwoju dziecka.`},
+      {h:`Jaki jest cel obserwacji?`, t:`Rozpoznanie indywidualnych mocnych stron i wczesne oferowanie wsparcia. Obserwacja jest zawsze ukierunkowana na zasoby.`},
+      {h:`Co dzieje się z wynikami?`, t:`Wyniki są poufne i udostępniane wyłącznie za Państwa zgodą. Państwa perspektywa jest tak samo ważna jak nasza ocena pedagogiczna.`},
+    ],
+    closing: `W razie pytań prosimy o kontakt w dowolnym czasie!`
+  },
+  nl: {
+    title: `Informatie voor ouders en wettelijke vertegenwoordigers`,
+    subtitle: `Ontwikkelingstabel van Kuno Beller 0\u20139 jaar`,
+    intro: `In onze instelling observeren wij de ontwikkeling van uw kind systematisch en zorgvuldig, met behulp van de Ontwikkelingstabel van Kuno Beller \u2013 een bewezen pedagogisch instrument dat de sterke punten van elk kind centraal stelt.`,
+    sections: [
+      {h:`Wat is de Ontwikkelingstabel van Kuno Beller?`, t:`Een observatie-instrument voor kinderen van 0 tot 9 jaar, dat in 8 ontwikkelingsgebieden en 18 fasen beschrijft welke vaardigheden kinderen typisch op welke leeftijd laten zien.`},
+      {h:`Wat betekent ontwikkelingsleeftijd?`, t:`De ontwikkelingsleeftijd beschrijft het niveau van uw kind in een specifiek gebied, onafhankelijk van de kalenderleeftijd. Elk kind ontwikkelt zich in zijn eigen tempo.`},
+      {h:`Wat betekenen Basis en Plafond?`, t:`De basis is het niveau dat uw kind zeker heeft bereikt. Het plafond toont hoe ver uw kind is geobserveerd. De ruimte daartussen is de huidige ontwikkelingszone van uw kind.`},
+      {h:`Wat is het doel?`, t:`Individuele sterke punten herkennen en vroeg gerichte ondersteuning bieden. De observatie is altijd gericht op krachten.`},
+      {h:`Wat gebeurt er met de resultaten?`, t:`Resultaten zijn vertrouwelijk en worden alleen met uw toestemming gedeeld. Uw perspectief is even belangrijk als onze pedagogische beoordeling.`},
+    ],
+    closing: `Neem gerust altijd contact met ons op!`
+  },
+  pt: {
+    title: `Informação para pais e representantes legais`,
+    subtitle: `Tabela de Desenvolvimento de Kuno Beller 0\u20139 anos`,
+    intro: `Na nossa instituição, observamos o desenvolvimento do seu filho/a de forma sistemática e cuidadosa, utilizando a Tabela de Desenvolvimento de Kuno Beller \u2013 um instrumento pedagógico comprovado centrado nos pontos fortes de cada criança.`,
+    sections: [
+      {h:`O que é a Tabela de Desenvolvimento de Kuno Beller?`, t:`Um instrumento de observação para crianças dos 0 aos 9 anos, que descreve em 8 áreas e 18 fases quais capacidades as crianças tipicamente mostram em cada idade.`},
+      {h:`O que significa Idade de Desenvolvimento?`, t:`A idade de desenvolvimento descreve o nível da criança numa área específica, independentemente da idade cronológica. Cada criança desenvolve-se ao seu próprio ritmo.`},
+      {h:`O que significam Base e Teto?`, t:`A base é o nível que a criança atingiu com segurança. O teto mostra até onde a criança foi observada. O espaço entre ambos é a sua zona de desenvolvimento atual.`},
+      {h:`Qual é o objetivo?`, t:`Reconhecer os pontos fortes individuais e oferecer apoio precoce. A observação é sempre orientada para os recursos.`},
+      {h:`O que acontece com os resultados?`, t:`Os resultados são confidenciais e só partilhados com o seu consentimento. A sua perspetiva é tão importante quanto a nossa avaliação pedagógica.`},
+    ],
+    closing: `Não hesite em falar connosco a qualquer momento!`
+  },
+  ro: {
+    title: `Informații pentru părinți și reprezentanți legali`,
+    subtitle: `Tabelul de dezvoltare Kuno Beller 0\u20139 ani`,
+    intro: `În instituția noastră observăm dezvoltarea copilului dumneavoastră în mod sistematic și atent, folosind Tabelul de dezvoltare Kuno Beller \u2013 un instrument pedagogic dovedit care pune în centru punctele forte ale fiecărui copil.`,
+    sections: [
+      {h:`Ce este Tabelul de dezvoltare Kuno Beller?`, t:`Un instrument de observație pentru copiii de la 0 la 9 ani, care descrie în 8 domenii și 18 faze ce abilități prezintă copiii în mod tipic la fiecare vârstă.`},
+      {h:`Ce înseamnă vârsta de dezvoltare?`, t:`Vârsta de dezvoltare descrie nivelul copilului într-un domeniu specific, independent de vârsta cronologică. Fiecare copil se dezvoltă în propriul ritm.`},
+      {h:`Ce înseamnă Baza și Plafonul?`, t:`Baza este nivelul pe care copilul l-a atins cu certitudine. Plafonul arată până unde a fost observat copilul. Spațiul dintre ele este zona actuală de dezvoltare.`},
+      {h:`Care este scopul?`, t:`Recunoașterea punctelor forte individuale și oferirea de sprijin timpuriu. Observația este întotdeauna orientată spre resurse.`},
+      {h:`Ce se întâmplă cu rezultatele?`, t:`Rezultatele sunt confidențiale și împărtășite doar cu consimțământul dumneavoastră. Perspectiva dumneavoastră este la fel de importantă ca evaluarea noastră pedagogică.`},
+    ],
+    closing: `Nu ezitați să ne contactați oricând!`
   },
   tr: {
     title: `Ebeveynler ve Yasal Veliler için Bilgi`,
     subtitle: `Kuno Beller Gelişim Tablosu 0\u20139 Yaş`,
-    intro: `Kurumumuzda çocuğunuzun gelişimini sistematik ve hassas bir şekilde gözlemliyoruz. Kuno Beller\u2019in Gelişim Tablosunu kullanıyoruz \u2013 her çocuğun güçlü yönlerini ve bireysel gelişim yolunu merkeze alan kanıtlanmış bir pedagojik araç.`,
+    intro: `Kurumumuzda çocuğunuzun gelişimini sistematik ve hassas bir şekilde gözlemliyoruz. Kuno Beller\u2019in Gelişim Tablosunu kullanıyoruz \u2013 her çocuğun güçlü yönlerini merkeze alan kanıtlanmış bir pedagojik araç.`,
     sections: [
-      {h:`Kuno Beller Gelişim Tablosu nedir?`, t:`Kuno Beller\u2019in Gelişim Tablosu, 0-9 yaş arası çocuklar için bir gözlem formudur. 8 gelişim alanında ve 18 aşamada, çocukların hangi yaşta hangi becerileri tipik olarak gösterdiğini açıklar. Çocuğunuzu günlük hayatta gözlemler ve hangi yeterlilikleri zaten gösterdiğini kaydederiz.`},
-      {h:`Gelişim Yaşı ne anlama gelir?`, t:`Gelişim yaşı, çocuğunuzun belirli bir alanda ulaştığı gelişim düzeyini \u2013 gerçek yaşından bağımsız olarak \u2013 tanımlar. Bir alandaki gelişim yaşının kronolojik yaştan farklı olması bir eksiklik değildir. Her çocuk kendi hızında gelişir.`},
-      {h:`Taban ve Tavan ne anlama gelir?`, t:`Taban, çocuğunuzun bir alanda güvenli şekilde ulaştığı gelişim düzeyidir. Tavan, çocuğunuzun gözlemlendiği noktayı gösterir. Taban ile tavan arasındaki alan, çocuğunuzun mevcut gelişim alanıdır.`},
-      {h:`Gözlemin amacı nedir?`, t:`Amacımız eksiklikleri tespit etmek değildir. Çocuğunuzun bireysel güçlü yönlerini tanımak, destek ihtiyaçlarını erken fark etmek ve sizinle birlikte çocuğunuz için en iyi desteği tasarlamak istiyoruz. Gözlem her zaman güçlere yöneliktir.`},
-      {h:`Sonuçlarla ne yapılır?`, t:`Sonuçlar gizli tutulur ve yalnızca onayınızla paylaşılır. Gözlemleri bizimle birlikte tartışmaya davet edileceksiniz. Ebeveyn olarak sizin bakış açınız, pedagojik değerlendirmemiz kadar önemlidir.`},
+      {h:`Kuno Beller Gelişim Tablosu nedir?`, t:`0-9 yaş arası çocuklar için bir gözlem aracıdır; 8 gelişim alanında ve 18 aşamada hangi becerilerin hangi yaşta görüldüğünü açıklar.`},
+      {h:`Gelişim Yaşı ne anlama gelir?`, t:`Belirli bir alandaki gelişim düzeyini \u2013 kronolojik yaştan bağımsız olarak \u2013 tanımlar. Her çocuk kendi hızında gelişir.`},
+      {h:`Taban ve Tavan ne anlama gelir?`, t:`Taban, çocuğun güvenle ulaştığı düzeydir. Tavan, gözlemlenen noktayı gösterir. İkisi arasındaki alan mevcut gelişim bölgesidir.`},
+      {h:`Gözlemin amacı nedir?`, t:`Bireysel güçlü yönleri tanımak ve erken destek sunmak. Gözlem her zaman güçlere yöneliktir.`},
+      {h:`Sonuçlarla ne yapılır?`, t:`Sonuçlar gizlidir ve yalnızca onayınızla paylaşılır. Ebeveyn olarak sizin bakış açınız pedagojik değerlendirmemiz kadar önemlidir.`},
     ],
     closing: `Sorularınız için lütfen istediğiniz zaman bizimle iletişime geçin!`
-  }
+  },
+  ru: {
+    title: `Информация для родителей и законных представителей`,
+    subtitle: `Таблица развития Куно Беллера 0\u20139 лет`,
+    intro: `В нашем учреждении мы систематически и внимательно наблюдаем за развитием вашего ребёнка, используя Таблицу развития Куно Беллера \u2013 проверенный педагогический инструмент, ориентированный на сильные стороны каждого ребёнка.`,
+    sections: [
+      {h:`Что такое Таблица развития Куно Беллера?`, t:`Инструмент наблюдения для детей от 0 до 9 лет, описывающий в 8 областях и 18 фазах, какие навыки дети обычно демонстрируют в каждом возрасте.`},
+      {h:`Что означает возраст развития?`, t:`Возраст развития описывает уровень ребёнка в конкретной области \u2013 независимо от хронологического возраста. Каждый ребёнок развивается в своём темпе.`},
+      {h:`Что означают База и Потолок?`, t:`База \u2013 это уровень, которого ребёнок достиг уверенно. Потолок показывает, до какого уровня велось наблюдение. Пространство между ними \u2013 текущая зона развития ребёнка.`},
+      {h:`Какова цель наблюдения?`, t:`Выявить индивидуальные сильные стороны и предложить раннюю поддержку. Наблюдение всегда ориентировано на ресурсы.`},
+      {h:`Что происходит с результатами?`, t:`Результаты конфиденциальны и передаются только с вашего согласия. Ваша точка зрения так же важна, как и наша педагогическая оценка.`},
+    ],
+    closing: `Обращайтесь к нам в любое время!`
+  },
+  ar: {
+    title: `معلومات للوالدين والأوصياء القانونيين`,
+    subtitle: `جدول تطور كونو بيلر 0\u20139 سنوات`,
+    intro: `في مؤسستنا نراقب تطور طفلك بشكل منهجي وعناية، باستخدام جدول تطور كونو بيلر \u2013 أداة تربوية مثبتة تركز على نقاط قوة كل طفل.`,
+    sections: [
+      {h:`ما هو جدول تطور كونو بيلر؟`, t:`أداة ملاحظة للأطفال من 0 إلى 9 سنوات، تصف في 8 مجالات و18 مرحلة المهارات التي يُظهرها الأطفال عادةً في كل عمر.`},
+      {h:`ماذا يعني عمر التطور؟`, t:`يصف عمر التطور مستوى الطفل في مجال محدد \u2013 بصرف النظر عن العمر الزمني. كل طفل يتطور بوتيرته الخاصة.`},
+      {h:`ماذا يعني الأساس والسقف؟`, t:`الأساس هو المستوى الذي حققه الطفل بثقة. السقف يُظهر حتى أين تمت الملاحظة. المساحة بينهما هي منطقة التطور الحالية للطفل.`},
+      {h:`ما هو الهدف؟`, t:`التعرف على نقاط القوة الفردية وتقديم الدعم المبكر. الملاحظة موجهة دائماً نحو الموارد والإمكانيات.`},
+      {h:`ماذا يحدث بالنتائج؟`, t:`النتائج سرية ولا تُشارك إلا بموافقتك. وجهة نظرك كوالد مهمة بقدر تقييمنا التربوي.`},
+    ],
+    closing: `لا تتردد في التواصل معنا في أي وقت!`
+  },
 };
-
 
 function downloadElternPDF(lang){
   const t=ELTERN_TEXTS[lang];
   if(!t) return;
+  const isRTL=lang==='ar';
   const w=window.open('','_blank');
   let sectHTML='';
   t.sections.forEach(s=>{
     sectHTML+=`<h3>${s.h}</h3><p>${s.t}</p>`;
   });
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${t.title}</title>
+  w.document.write(`<!DOCTYPE html><html dir="${isRTL?'rtl':'ltr'}"><head><meta charset="UTF-8"><title>${t.title}</title>
   <style>
     body{margin:2cm;font-family:'Helvetica Neue',Arial,sans-serif;color:#2a2520;max-width:17cm}
     h1{font-size:18pt;font-weight:300;color:#3d6b52;margin-bottom:4pt}
