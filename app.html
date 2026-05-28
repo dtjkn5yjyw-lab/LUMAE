@@ -1382,9 +1382,10 @@ function drawRadar(childMonths){
   const canvas=document.getElementById('radarChart');
   if(!canvas) return;
   const ctx=canvas.getContext('2d');
-  const W=canvas.offsetWidth||480;
+  let W=0; let _rEl=canvas; while(_rEl&&W===0){W=_rEl.offsetWidth;_rEl=_rEl.parentElement;} W=Math.max(W,300);
   canvas.width=W; canvas.height=W;
-  const cx=W/2,cy=W/2,r=W*0.36,labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+DATA[id].name.split(' ')[0]);
+  const shortN={kup:'KP&Pflege',ub:'Umgebung',se:'Sozial-Em.',st:'Spieltätig.',sl:'Sprache',kog:'Kognition',gm:'Grobmot.',fm:'Feinmot.'};
+  const cx=W/2,cy=W/2,r=W*0.36,labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+(shortN[id]||DATA[id].name.split(' ')[0]));
   const n=8,max=120;
   ctx.clearRect(0,0,W,W);
   const ang=i=>-Math.PI/2+(2*Math.PI*i/n);
@@ -2030,28 +2031,31 @@ function closeAlterInfo(){
 function drawLinear(childMonths){
   const canvas=document.getElementById('linearChart');
   if(!canvas) return;
-  const W=Math.max(canvas.offsetWidth,canvas.parentElement&&canvas.parentElement.offsetWidth||0,320);
-  const H=320;
+  // Walk up DOM for real width
+  let W=0; let _el=canvas;
+  while(_el&&W===0){W=_el.offsetWidth;_el=_el.parentElement;}
+  W=Math.max(W,320);
+  const H=360;
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
 
-  const PAD={l:52,r:52,t:24,b:48};
+  // Phase → months local map
+  const PMX={0:0,1:2,2:5,3:8,4:11,5:15,6:21,7:27,8:33,9:39,10:45,11:51,12:57,13:63,14:69,15:80,16:92,17:104,18:116};
+
+  const PAD={l:56,r:56,t:28,b:60};
   const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
   const n=AREA_ORDER.length;
   const maxPhase=18;
-  
 
   // Grid
   [0,3,6,9,12,15,18].forEach(ph=>{
     const y=PAD.t+ch-(ph/maxPhase)*ch;
     ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+cw,y);
-    ctx.strokeStyle='#e8dfc8'; ctx.lineWidth=1; ctx.stroke();
-    // Left axis: Phase
+    ctx.strokeStyle=ph%6===0?'#d8cfc0':'#e8dfc8'; ctx.lineWidth=ph%6===0?1:0.7; ctx.stroke();
     ctx.fillStyle='#7a6f60'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='right';
     ctx.fillText('Ph.'+ph, PAD.l-5, y+4);
-    // Right axis: Months
-    const mo=PHASE_MONTHS_MAP[ph]||0;
+    const mo=PMX[ph]||0;
     if(ph>0){ ctx.textAlign='left'; ctx.fillText(mo+'M', PAD.l+cw+5, y+4); }
   });
 
@@ -2497,6 +2501,10 @@ const APP_UI={
     ans_yes:'✓ Tut es', ans_partial:'◑ Teilweise', ans_no:'✗ Tut es nicht', ans_unknown:'? Weiß nicht',
     range_krippe:'Krippenbereich', range_kita:'Kitabereich', range_schule:'Grundschulbereich',
     hdr_sub:'8 Entwicklungsbereiche · Phasen 1–18',
+    area_kup:'Körperbewusstsein & Pflege', area_ub:'Umgebungsbewusstsein',
+    area_se:'Sozial-emotionale Entwicklung', area_st:'Spieltätigkeit',
+    area_sl:'Sprache & Literacy', area_kog:'Kognition',
+    area_gm:'Grobmotorik', area_fm:'Feinmotorik',
   },
   en:{
     nav_setup:"Master data", nav_profile:"Developmental Profile", nav_nach:"Still pending",
@@ -2505,6 +2513,10 @@ const APP_UI={
     ans_yes:"✓ Does it", ans_partial:"◑ Partly", ans_no:"✗ Does not", ans_unknown:"? Don't know",
     range_krippe:"Nursery (0–3)", range_kita:"Kindergarten (3–6)", range_schule:"Primary school (6–9)",
     hdr_sub:"8 developmental areas · Phases 1–18",
+    area_kup:"Body awareness & care", area_ub:"Environmental awareness",
+    area_se:"Social-emotional dev.", area_st:"Play activities",
+    area_sl:"Language & Literacy", area_kog:"Cognition",
+    area_gm:"Gross motor skills", area_fm:"Fine motor skills",
   },
 
   it:{
@@ -2514,6 +2526,10 @@ const APP_UI={
     ans_yes:'✓ Lo fa', ans_partial:'◑ In parte', ans_no:'✗ Non lo fa', ans_unknown:'? Non so',
     range_krippe:'Asilo nido (0–3)', range_kita:'Scuola materna (3–6)', range_schule:'Scuola primaria (6–9)',
     hdr_sub:'8 aree di sviluppo · Fasi 1–18',
+    area_kup:'Cura del corpo', area_ub:"Consapevolezza dell'ambiente",
+    area_se:'Sviluppo socio-emozionale', area_st:'Attività ludiche',
+    area_sl:'Linguaggio & Literacy', area_kog:'Cognizione',
+    area_gm:'Motricità grossolana', area_fm:'Motricità fine',
   },
 };
 let appLang='de';
@@ -2581,6 +2597,15 @@ function setAppLang(lang){
       if(r==='krippe') t.textContent=L.range_krippe;
       else if(r==='kita') t.textContent=L.range_kita;
       else if(r==='schule') t.textContent=L.range_schule;
+    }
+  });
+  // Area names in sidebar
+  const areaKeys={kup:'area_kup',ub:'area_ub',se:'area_se',st:'area_st',sl:'area_sl',kog:'area_kog',gm:'area_gm',fm:'area_fm'};
+  document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
+    const view=el.getAttribute('data-view');
+    if(areaKeys[view]&&L[areaKeys[view]]){
+      const span=el.querySelector('span:last-child');
+      if(span) span.textContent=L[areaKeys[view]];
     }
   });
   try{localStorage.setItem('kbe_app_lang',lang);}catch(e){}
