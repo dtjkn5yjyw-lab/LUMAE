@@ -14,7 +14,7 @@
   --ok:#3d6b52;--partial:#7a6b3d;--unknown:#6a7a8a;--r:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;padding-top:48px}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex}
 
 /* HEADER */
 header{background:var(--text);color:#f5f0e8;padding:1rem 1.5rem;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.3)}
@@ -35,7 +35,7 @@ header h1{font-family:'DM Sans',sans-serif;font-weight:300;font-size:clamp(.95re
 .app{display:grid;grid-template-columns:330px 1fr;min-height:calc(100vh - 62px)}
 
 /* SIDEBAR */
-nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem 0;position:sticky;top:0;height:calc(100vh - 48px);overflow-y:auto;min-width:330px;flex-shrink:0}
+nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem 0;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto;min-width:330px}
 .nav-sec{padding:.5rem 1rem .25rem;font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .nav-item{display:flex;align-items:center;gap:.45rem;padding:.5rem .9rem;cursor:pointer;border-left:3px solid transparent;transition:all .15s;font-size:.8rem}
 .nav-item:hover{background:var(--accent-light)}
@@ -45,7 +45,7 @@ nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem
 .nav-sc{margin-left:auto;font-size:.67rem;color:var(--muted)}
 
 /* MAIN */
-main{padding:1.4rem 1.8rem;overflow-y:auto;flex:1;min-width:0;}
+main{padding:1.4rem 1.8rem;overflow-y:auto;flex:1;min-width:0}
 
 /* SETUP */
 .setup-wrap{max-width:600px;margin:0 auto;padding:1.5rem 0}
@@ -273,21 +273,21 @@ canvas.mychart{width:100%!important}
 </head>
 <body>
 
-  <!-- APP HEADER -->
-  <div id="app-header" style="position:fixed;top:0;left:0;right:0;height:48px;z-index:100;background:#2d5a3d;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;gap:.5rem;box-shadow:0 2px 8px rgba(0,0,0,.2)">
-    <div style="display:flex;align-items:center;gap:.5rem;min-width:0">
-      <div id="prog-wrap" style="display:none;flex-direction:column;gap:2px">
-        <div style="height:4px;width:120px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden">
-          <div class="prog-fill" id="prog-fill" style="height:100%;width:0%;background:#a8d4b8;border-radius:2px;transition:width .4s"></div>
-        </div>
-        <div id="prog-lbl" style="font-size:.62rem;color:rgba(255,255,255,.6)">0 %</div>
-      </div>
+<header>
+  <div class="hdr-row">
+    <div>
+      <h1>Kuno Bellers Entwicklungstabelle 0–9</h1>
+      <div class="hdr-sub" id="hdr-sub">8 Entwicklungsbereiche · Phasen 1–18</div>
     </div>
-    <div class="hdr-btns" style="display:flex;gap:.3rem;align-items:center">
-      <button class="hbtn" onclick="doNewSession()" id="btn-new" title="Neue Erhebung">🆕 <span class="htxt">Neu</span></button>
-      <button class="hbtn" onclick="saveKBD()" id="btn-save" title="Speichern">💾 <span class="htxt">Speichern</span></button>
-      <button class="hbtn" onclick="document.getElementById('file-input').click()" id="btn-open" title="Öffnen">📂 <span class="htxt">Öffnen</span></button>
-      <button class="hbtn" onclick="startInterview()" id="btn-interview" title="Interview-Modus" style="display:none">🎤 <span class="htxt">Interview</span></button>
+    <div class="prog-wrap" id="prog-wrap" style="display:none">
+      <div class="prog-lbl">Fortschritt: <span id="prog-lbl">0%</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+    <div class="hdr-btns">
+      <button class="hbtn hb-interview" onclick="startInterview()" id="iv-btn" style="display:none" title="Interview-Modus">🎤 <span class="htxt">Interview</span></button>
+      <button class="hbtn hb-accent" onclick="exportKBD()" title="Speichern (.kbd)">💾 <span class="htxt">Speichern</span></button>
+      <button class="hbtn" onclick="triggerImport()" title="Öffnen (.kbd)">📂 <span class="htxt">Öffnen</span></button>
+      <button class="hbtn" onclick="confirmNew()" title="Neue Erhebung">✚ <span class="htxt">Neu</span></button>
       <button class="hbtn" onclick="openHelp()" title="Hilfe">❓ <span class="htxt">Hilfe</span></button>
       <div style="position:relative" id="app-lang-wrap">
         <button onclick="toggleAppLangMenu()" style="display:flex;align-items:center;gap:.3rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:.3rem .6rem;cursor:pointer;color:#fff;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500">
@@ -301,9 +301,10 @@ canvas.mychart{width:100%!important}
           </div>
         </div>
       </div>
+      <input type="file" id="imp-input" accept=".kbd" style="display:none" onchange="importKBD(event)">
     </div>
-    <input type="file" id="file-input" accept=".kbd" style="display:none" onchange="loadKBD(this)">
   </div>
+</header>
 
   <nav id="sidebar">
     <div class="nav-sec">Start</div>
@@ -1950,22 +1951,40 @@ function downloadElternPDF(lang){
 // ═══════════════════════════════════════
 const APP_UI={
   de:{
-    nav_setup:'Stammdaten',nav_profile:'Auswertung',nav_nach:'Noch ausstehend',
-    btn_start:'Erhebung starten →',btn_update:'Erhebung aktualisieren →',
-    ans_yes:'✓ Tut es',ans_partial:'◑ Teilweise',ans_no:'✗ Tut es nicht',ans_unknown:'? Weiß nicht',
+    nav_setup:'Stammdaten', nav_profile:'Auswertung', nav_nach:'Noch ausstehend',
+    nav_sec_start:'Start', nav_sec_erhebung:'Datenerhebung', nav_sec_auswertung:'Auswertung',
+    btn_start:'Erhebung starten →', btn_update:'Erhebung aktualisieren →',
+    btn_save:'Speichern', btn_open:'Öffnen', btn_new:'Neu', btn_help:'Hilfe', btn_interview:'Interview',
+    ans_yes:'✓ Tut es', ans_partial:'◑ Teilweise', ans_no:'✗ Tut es nicht', ans_unknown:'? Weiß nicht',
     prof_title:'Entwicklungsprofil',
+    range_krippe:'Krippenbereich', range_kita:'Kitabereich', range_schule:'Grundschulbereich',
+    hdr_sub:'8 Entwicklungsbereiche · Phasen 1–18',
+    lbl_name:'Nachname, Vorname', lbl_obs:'Beobachter:in', lbl_date:'Erhebungsdatum',
+    lbl_reason:'Anlass der Erhebung', lbl_inst:'Institution / Einrichtung',
   },
   en:{
-    nav_setup:'Master data',nav_profile:'Evaluation',nav_nach:'Still pending',
-    btn_start:'Start observation →',btn_update:'Update observation →',
-    ans_yes:'✓ Does it',ans_partial:'◑ Partly',ans_no:'✗ Does not',ans_unknown:'? Don\'t know',
+    nav_setup:'Master data', nav_profile:'Evaluation', nav_nach:'Still pending',
+    nav_sec_start:'Start', nav_sec_erhebung:'Data collection', nav_sec_auswertung:'Evaluation',
+    btn_start:'Start observation →', btn_update:'Update observation →',
+    btn_save:'Save', btn_open:'Open', btn_new:'New', btn_help:'Help', btn_interview:'Interview',
+    ans_yes:'✓ Does it', ans_partial:'◑ Partly', ans_no:'✗ Does not', ans_unknown:'? Don\'t know',
     prof_title:'Developmental Profile',
+    range_krippe:'Nursery (0–3)', range_kita:'Kindergarten (3–6)', range_schule:'Primary school (6–9)',
+    hdr_sub:'8 developmental areas · Phases 1–18',
+    lbl_name:'Last name, First name', lbl_obs:'Observer', lbl_date:'Date of observation',
+    lbl_reason:'Reason for observation', lbl_inst:'Institution / Facility',
   },
   it:{
-    nav_setup:'Dati anagrafici',nav_profile:'Valutazione',nav_nach:'In sospeso',
-    btn_start:'Avvia osservazione →',btn_update:'Aggiorna osservazione →',
-    ans_yes:'✓ Lo fa',ans_partial:'◑ In parte',ans_no:'✗ Non lo fa',ans_unknown:'? Non so',
+    nav_setup:'Dati anagrafici', nav_profile:'Valutazione', nav_nach:'In sospeso',
+    nav_sec_start:'Inizio', nav_sec_erhebung:'Raccolta dati', nav_sec_auswertung:'Valutazione',
+    btn_start:'Avvia osservazione →', btn_update:'Aggiorna osservazione →',
+    btn_save:'Salva', btn_open:'Apri', btn_new:'Nuovo', btn_help:'Aiuto', btn_interview:'Intervista',
+    ans_yes:'✓ Lo fa', ans_partial:'◑ In parte', ans_no:'✗ Non lo fa', ans_unknown:'? Non so',
     prof_title:'Profilo di sviluppo',
+    range_krippe:'Asilo nido (0–3)', range_kita:'Scuola materna (3–6)', range_schule:'Scuola primaria (6–9)',
+    hdr_sub:'8 aree di sviluppo · Fasi 1–18',
+    lbl_name:'Cognome, Nome', lbl_obs:'Osservatore/trice', lbl_date:'Data di osservazione',
+    lbl_reason:'Motivo dell\'osservazione', lbl_inst:'Istituzione / Struttura',
   },
 };
 let appLang='de';
@@ -1992,8 +2011,53 @@ function setAppLang(lang){
   if(fl) fl.textContent=flagM[lang]||'🇩🇪';
   if(ll) ll.textContent=lblM[lang]||'DE';
   // Close menu
-  const m=document.getElementById('app-lang-menu');
-  if(m) m.style.display='none';
+  const m2=document.getElementById('app-lang-menu');
+  if(m2) m2.style.display='none';
+  // Update nav section labels
+  document.querySelectorAll('.nav-sec').forEach((el,i)=>{
+    const labels=[L.nav_sec_start,L.nav_sec_erhebung,L.nav_sec_auswertung];
+    if(labels[i]) el.textContent=labels[i];
+  });
+  // Update nav item labels
+  const ns=document.querySelector('[data-view="setup"] span:last-child');
+  const np=document.querySelector('[data-view="profile"] span:last-child');
+  const nn=document.querySelector('[data-view="nach"] span:last-child');
+  if(ns) ns.textContent=L.nav_setup;
+  if(np) np.textContent=L.nav_profile;
+  if(nn) nn.textContent=L.nav_nach;
+  // Update hdr-sub
+  const hs=document.getElementById('hdr-sub');
+  if(hs && !started) hs.textContent=L.hdr_sub;
+  // Update start button
+  const sb=document.getElementById('start-btn');
+  if(sb) sb.textContent=Object.keys(answers).length>0?L.btn_update:L.btn_start;
+  // Update header buttons
+  document.querySelectorAll('.hbtn .htxt').forEach(el=>{
+    const txt=el.textContent.trim();
+    if(txt==='Speichern'||txt==='Save'||txt==='Salva') el.textContent=L.btn_save;
+    if(txt==='Öffnen'||txt==='Open'||txt==='Apri') el.textContent=L.btn_open;
+    if(txt==='Neu'||txt==='New'||txt==='Nuovo') el.textContent=L.btn_new;
+    if(txt==='Hilfe'||txt==='Help'||txt==='Aiuto') el.textContent=L.btn_help;
+    if(txt==='Interview'||txt==='Intervista') el.textContent=L.btn_interview;
+  });
+  // Update age range cards
+  const rc={krippe:L.range_krippe,kita:L.range_kita,schule:L.range_schule};
+  document.querySelectorAll('.age-card').forEach(card=>{
+    const r=card.dataset.range;
+    if(r&&rc[r]){
+      const t=card.querySelector('.act');
+      if(t) t.textContent=rc[r];
+    }
+  });
+  // Update form labels
+  const fieldMap={
+    'c-name':L.lbl_name,'c-obs':L.lbl_obs,'c-date':L.lbl_date,
+    'c-reason':L.lbl_reason,'c-inst':L.lbl_inst
+  };
+  Object.entries(fieldMap).forEach(([id,txt])=>{
+    const el=document.getElementById(id);
+    if(el&&el.previousElementSibling) el.previousElementSibling.textContent=txt;
+  });
   try{localStorage.setItem('kbe_app_lang',lang);}catch(e){}
 }
 
