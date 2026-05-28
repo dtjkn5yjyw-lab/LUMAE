@@ -35,7 +35,7 @@ header h1{font-family:'DM Sans',sans-serif;font-weight:300;font-size:clamp(.95re
 .app{display:grid;grid-template-columns:330px 1fr;min-height:calc(100vh - 62px)}
 
 /* SIDEBAR */
-nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem 0;position:fixed;top:62px;left:0;width:330px;height:calc(100vh - 62px);overflow-y:auto;}
+nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem 0;position:fixed;top:62px;left:0;width:330px;height:calc(100vh - 62px);overflow-y:auto;display:flex;flex-direction:column;}
 .nav-sec{padding:.5rem 1rem .25rem;font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .nav-item{display:flex;align-items:center;gap:.45rem;padding:.5rem .9rem;cursor:pointer;border-left:3px solid transparent;transition:all .15s;font-size:.8rem}
 .nav-item:hover{background:var(--accent-light)}
@@ -367,7 +367,7 @@ canvas.mychart{width:100%!important}
     <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span>Entwicklungsprofil</span></div>
     <div class="nav-item disabled" id="nav-foerder" data-view="foerder" onclick="showView('foerder')"><span>💡</span><span>Fördermöglichkeiten</span></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
-    <div style="padding:.5rem 1rem;margin-top:auto;font-size:.65rem;color:var(--muted);border-top:1px solid var(--border);margin-top:.5rem">Version 26.5.28 Beta</div>
+    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.5.28 Beta</div>
   </nav>
 
   <main id="main">
@@ -571,9 +571,7 @@ canvas.mychart{width:100%!important}
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:.5rem">
         <h2>❓ Hilfe & Anleitung</h2>
         <div style="display:flex;gap:.3rem">
-          <button id="help-lang-de" onclick="setHelpLang('de')" style="background:var(--accent-light);border:1px solid var(--border);border-radius:5px;padding:.2rem .45rem;cursor:pointer;font-size:.72rem;font-weight:700">DE</button>
-          <button id="help-lang-en" onclick="setHelpLang('en')" style="background:transparent;border:1px solid var(--border);border-radius:5px;padding:.2rem .45rem;cursor:pointer;font-size:.72rem">EN</button>
-          <button id="help-lang-it" onclick="setHelpLang('it')" style="background:transparent;border:1px solid var(--border);border-radius:5px;padding:.2rem .45rem;cursor:pointer;font-size:.72rem">IT</button>
+
         </div>
       </div>
       <button class="help-close" onclick="closeHelp()">✕</button>
@@ -581,16 +579,16 @@ canvas.mychart{width:100%!important}
     <div class="help-body">
 
       <div class="help-toc">
-        <button class="toc-btn active" onclick="showHelpSection('start',this)">🚀 Erste Schritte</button>
-        <button class="toc-btn" onclick="showHelpSection('alter',this)">📅 Altersbereich & Phasen</button>
-        <button class="toc-btn" onclick="showHelpSection('beobachtung',this)">✏️ Beobachtung</button>
-        <button class="toc-btn" onclick="showHelpSection('interview',this)">🎤 Interview-Modus</button>
-        <button class="toc-btn" onclick="showHelpSection('speichern',this)">💾 Speichern & Öffnen</button>
-        <button class="toc-btn" onclick="showHelpSection('diagramm',this)">📊 Diagramme lesen</button>
-        <button class="toc-btn" onclick="showHelpSection('nacharbeiten',this)">📝 Noch ausstehend</button>
-        <button class="toc-btn" onclick="showHelpSection('eltern',this)">👨‍👩‍👧 Elterninformation</button>
-        <button class="toc-btn" onclick="showHelpSection('rechtlich',this)">⚖️ Rechtliches</button>
-        <button class="toc-btn" onclick="showHelpSection('grundprinz',this)">🌱 Grundprinzipien</button>
+        <button class="toc-btn active" onclick="showHelpSection('start',this)" data-section="start">🚀 Erste Schritte</button>
+        <button class="toc-btn" onclick="showHelpSection('alter',this)" data-section="alter">📅 Altersbereich & Phasen</button>
+        <button class="toc-btn" onclick="showHelpSection('beobachtung',this)" data-section="beobachtung">✏️ Beobachtung</button>
+        <button class="toc-btn" onclick="showHelpSection('interview',this)" data-section="interview">🎤 Interview-Modus</button>
+        <button class="toc-btn" onclick="showHelpSection('speichern',this)" data-section="speichern">💾 Speichern & Öffnen</button>
+        <button class="toc-btn" onclick="showHelpSection('diagramm',this)" data-section="diagramm">📊 Diagramme lesen</button>
+        <button class="toc-btn" onclick="showHelpSection('nacharbeiten',this)" data-section="nacharbeiten">📝 Noch ausstehend</button>
+        <button class="toc-btn" onclick="showHelpSection('eltern',this)" data-section="eltern">👨‍👩‍👧 Elterninformation</button>
+        <button class="toc-btn" onclick="showHelpSection('rechtlich',this)" data-section="rechtlich">⚖️ Rechtliches</button>
+        <button class="toc-btn" onclick="showHelpSection('grundprinz',this)" data-section="grundprinz">🌱 Grundprinzipien</button>
       </div>
 
       <div class="help-content">
@@ -1837,8 +1835,8 @@ function calcAge(){
 
 function toggleAgeEdit(){
   ageEditable=!ageEditable;
-  document.getElementById('c-months').readOnly=!ageEditable;
-  document.getElementById('c-years').readOnly=!ageEditable;
+  // months always readonly
+  // years always readonly
   document.getElementById('age-edit-link').textContent=ageEditable?'🔒 sperren':'✏️ bearbeiten';
 }
 
@@ -1937,6 +1935,8 @@ function clearSession(){ try{ sessionStorage.removeItem('kbd_v3'); }catch(e){} }
 // HILFE
 // ═══════════════════════════════════════
 function openHelp(){
+  helpLang=appLang;
+  updateHelpTOC(appLang);
   document.getElementById('help-overlay').classList.add('open');
   // Populate Grundprinzipien
   const gl=document.getElementById('gp-list');
@@ -2559,6 +2559,16 @@ const APP_UI={
     ans_yes:'✓ Tut es', ans_partial:'◑ Teilweise', ans_no:'✗ Tut es nicht', ans_unknown:'? Weiß nicht',
     range_krippe:'Krippenbereich', range_kita:'Kitabereich', range_schule:'Grundschulbereich',
     hdr_sub:'8 Entwicklungsbereiche · Phasen 1–18',
+    prof_chron:'Chron. Alter (Jahre)', prof_avg:'Ø Entwicklungsalter', prof_diff:'Differenz',
+    tbl_bereich:'Bereich', tbl_alter:'Entw.alter', tbl_diff:'Differenz',
+    tbl_kompetenz:'Kompetenz', tbl_basis:'Basis', tbl_decke:'Decke',
+    foerder_h:'💡 Fördermöglichkeiten', foerder_sub:'Konkrete Fördervorschläge für Zuhause und die Einrichtung.',
+    dok_h:'📄 Dokumente', dok_sub:'Wählen Sie die Inhalte für den Export aus.',
+    dok_auswahl:'Auswahl', dok_export:'📄 Auswahl als PDF exportieren',
+    dok_gesamt:'📋 Gesamtbericht PDF (alle Inhalte)',
+    dok_eltern_h:'Sprache der Elterninformation',
+    dok_einzeln:'Einzelne Diagramme',
+    nav_nachstehend:'Noch ausstehend',
     area_kup:'Körperbewusstsein & Pflege', area_ub:'Umgebungsbewusstsein',
     area_se:'Sozial-emotionale Entwicklung', area_st:'Spieltätigkeit',
     area_sl:'Sprache & Literacy', area_kog:'Kognition', area_gm:'Grobmotorik', area_fm:'Feinmotorik',
@@ -2572,6 +2582,15 @@ const APP_UI={
     ans_yes:"✓ Does it", ans_partial:"◑ Partly", ans_no:"✗ Does not", ans_unknown:"? Don't know",
     range_krippe:"Nursery (0–3)", range_kita:"Kindergarten (3–6)", range_schule:"Primary school (6–9)",
     hdr_sub:"8 developmental areas · Phases 1–18",
+    prof_chron:"Chron. age (years)", prof_avg:"Ø Dev. age", prof_diff:"Difference",
+    tbl_bereich:"Area", tbl_alter:"Dev. age", tbl_diff2:"Difference",
+    tbl_kompetenz:"Competency", tbl_basis:"Basis", tbl_decke:"Ceiling",
+    foerder_h:"💡 Support suggestions", foerder_sub:"Concrete support ideas for home and the institution.",
+    dok_h:"📄 Documents", dok_sub:"Select the content for export.",
+    dok_auswahl:"Selection", dok_export:"📄 Export selection as PDF",
+    dok_gesamt:"📋 Full report PDF (all content)",
+    dok_eltern_h:"Language of parent information",
+    dok_einzeln:"Individual charts",
     area_kup:"Body awareness & care", area_ub:"Environmental awareness",
     area_se:"Social-emotional dev.", area_st:"Play activities",
     area_sl:"Language & Literacy", area_kog:"Cognition", area_gm:"Gross motor skills", area_fm:"Fine motor skills",
@@ -2585,6 +2604,15 @@ const APP_UI={
     ans_yes:'✓ Lo fa', ans_partial:'◑ In parte', ans_no:'✗ Non lo fa', ans_unknown:'? Non so',
     range_krippe:'Asilo nido (0–3)', range_kita:'Scuola materna (3–6)', range_schule:'Scuola primaria (6–9)',
     hdr_sub:'8 aree di sviluppo · Fasi 1–18',
+    prof_chron:'Età cron. (anni)', prof_avg:'Ø Età di sviluppo', prof_diff:'Differenza',
+    tbl_bereich:'Area', tbl_alter:'Età di sviluppo', tbl_diff2:'Differenza',
+    tbl_kompetenz:'Competenza', tbl_basis:'Base', tbl_decke:'Soffitto',
+    foerder_h:'💡 Possibilità di sostegno', foerder_sub:'Proposte concrete per casa e per la struttura.',
+    dok_h:'📄 Documenti', dok_sub:'Selezionare i contenuti per l\'esportazione.',
+    dok_auswahl:'Selezione', dok_export:'📄 Esporta selezione come PDF',
+    dok_gesamt:'📋 Rapporto completo PDF (tutti i contenuti)',
+    dok_eltern_h:'Lingua delle informazioni per i genitori',
+    dok_einzeln:'Grafici singoli',
     area_kup:'Cura del corpo', area_ub:"Consapevolezza dell'ambiente",
     area_se:'Sviluppo socio-emozionale', area_st:'Attività ludiche',
     area_sl:'Linguaggio & Literacy', area_kog:'Cognizione', area_gm:'Motricità grossolana', area_fm:'Motricità fine',
@@ -2639,6 +2667,27 @@ function setAppLang(lang){
     const r=card.dataset.range, t=card.querySelector('.act');
     if(r&&t){ if(r==='krippe') t.textContent=L.range_krippe; else if(r==='kita') t.textContent=L.range_kita; else if(r==='schule') t.textContent=L.range_schule; }
   });
+  // Profile summary labels
+  document.querySelectorAll('.sum-l').forEach((el,i)=>{
+    const labels=[L.prof_chron,L.prof_avg,L.prof_diff];
+    if(labels[i]) el.textContent=labels[i];
+  });
+  // Detail table headers
+  const thMap={'Bereich':L.tbl_bereich,'Entw.alter':L.tbl_alter,'Differenz':L.tbl_diff||L.tbl_diff2,'Kompetenz':L.tbl_kompetenz,'Basis':L.tbl_basis,'Decke':L.tbl_decke};
+  document.querySelectorAll('.res-tbl th').forEach(th=>{
+    const mapped=thMap[th.textContent.trim()];
+    if(mapped) th.textContent=mapped;
+  });
+  // Foerder view
+  const fh=document.querySelector('#view-foerder h2');
+  const fs=document.querySelector('#view-foerder p');
+  if(fh&&L.foerder_h) fh.textContent=L.foerder_h;
+  if(fs&&L.foerder_sub) fs.textContent=L.foerder_sub;
+  // Dokumente view
+  const dh=document.querySelector('#view-dokumente h2');
+  const ds=document.querySelector('#view-dokumente > p');
+  if(dh&&L.dok_h) dh.textContent=L.dok_h;
+  if(ds&&L.dok_sub) ds.textContent=L.dok_sub;
   // Area names in sidebar
   const areaKeys={kup:'area_kup',ub:'area_ub',se:'area_se',st:'area_st',sl:'area_sl',kog:'area_kog',gm:'area_gm',fm:'area_fm'};
   document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
@@ -2646,6 +2695,9 @@ function setAppLang(lang){
     if(areaKeys[view]&&L[areaKeys[view]]){ const span=el.querySelector('span:nth-child(2)'); if(span) span.textContent=DATA[view]?DATA[view].emoji+' '+L[areaKeys[view]]:L[areaKeys[view]]; }
   });
   try{localStorage.setItem('kbe_app_lang',lang);}catch(e){}
+  // Sync help language with app language
+  helpLang=lang;
+  updateHelpTOC(lang);
 }
 
 // ═══════════════════════════════════════
@@ -2655,7 +2707,8 @@ let helpLang='de';
 
 const HELP_CONTENT={
   en:{
-    start:`<h3>🚀 Getting started</h3><p>Welcome to the digital implementation of <strong>Kuno Beller's Developmental Table 0–9 Years</strong>.</p><div class="help-step"><div class="help-step-num">1</div><div><strong>Choose age range</strong><br>Select the appropriate age range: nursery (0–3), kindergarten (3–6), or primary school (6–9). The app pre-fills acquired competencies automatically.</div></div><div class="help-step"><div class="help-step-num">2</div><div><strong>Enter master data</strong><br>Enter child's name, date of birth, gender, institution and observer. Age in months is calculated automatically.</div></div><div class="help-step"><div class="help-step-num">3</div><div><strong>Conduct observation</strong><br>Answer items area by area: "Does it", "Partly", "Does not" or "Don't know". Use interview mode for guided observation.</div></div><div class="help-step"><div class="help-step-num">4</div><div><strong>Evaluate & save</strong><br>The developmental profile is generated automatically with charts and support suggestions. Save as .kbd file.</div></div>`,
+    start:`<h3>🚀 Getting started</h3>
+      <p>Welcome to the digital implementation of <strong>Kuno Beller's Developmental Table 0–9 Years</strong>. This app guides you through systematic observation and documentation of child development.</p><div class="help-step"><div class="help-step-num">1</div><div><strong>Choose age range</strong><br>Select the appropriate age range: nursery (0–3), kindergarten (3–6), or primary school (6–9). The app pre-fills acquired competencies automatically.</div></div><div class="help-step"><div class="help-step-num">2</div><div><strong>Enter master data</strong><br>Enter child's name, date of birth, gender, institution and observer. Age in months is calculated automatically.</div></div><div class="help-step"><div class="help-step-num">3</div><div><strong>Conduct observation</strong><br>Answer items area by area: "Does it", "Partly", "Does not" or "Don't know". Use interview mode for guided observation.</div></div><div class="help-step"><div class="help-step-num">4</div><div><strong>Evaluate & save</strong><br>The developmental profile is generated automatically with charts and support suggestions. Save as .kbd file.</div></div>`,
     alter:`<h3>📅 Age range & Phases</h3><p>The developmental table is divided into <strong>18 phases</strong> from birth to 9 years.</p><ul><li><strong>Nursery (0–3):</strong> Phases 1–8 active</li><li><strong>Kindergarten (3–6):</strong> Phases 9–14 active, 1–8 as basis</li><li><strong>Primary school (6–9):</strong> Phases 15–18 active, 1–14 as basis</li></ul><p>Competencies <strong>below</strong> the selected range are pre-filled as acquired. Phases <strong>above</strong> are pre-filled as "does not" but can be changed.</p>`,
     beobachtung:`<h3>✏️ Observation</h3><p>For each item, answer with one of four options:</p><ul><li><strong>✓ Does it</strong> – Behaviour observed reliably</li><li><strong>◑ Partly</strong> – Behaviour sometimes or partially present</li><li><strong>✗ Does not</strong> – Behaviour not yet present</li><li><strong>? Don't know</strong> – Cannot be assessed (noted as pending)</li></ul><p>The <strong>ℹ button</strong> shows example behaviours for each item.</p>`,
     interview:`<h3>🎤 Interview mode</h3><p>Guides you <strong>item by item</strong> through the active range – ideal for direct observation. Click <strong>🎤 Interview</strong> in the header to start.</p>`,
@@ -2791,6 +2844,47 @@ function printElternFromDok(){
   const lang=document.getElementById('eltern-lang-sel')?.value||'de';
   printEltern(lang);
 }
+
+// ═══════════════════════════════════════
+// HELP TOC TITLES
+// ═══════════════════════════════════════
+const HELP_TOC_TITLES={
+  de:{
+    start:'🚀 Erste Schritte', alter:'📅 Altersbereich & Phasen',
+    beobachtung:'✏️ Beobachtung', interview:'🎤 Interview-Modus',
+    speichern:'💾 Speichern & Öffnen', diagramm:'📊 Diagramme lesen',
+    nacharbeiten:'📝 Noch ausstehend', eltern:'👨‍👩‍👧 Elterninformation',
+    rechtlich:'⚖️ Rechtliches', grundprinz:'🌱 Grundprinzipien',
+  },
+  en:{
+    start:'🚀 Getting started', alter:'📅 Age range & Phases',
+    beobachtung:'✏️ Observation', interview:'🎤 Interview mode',
+    speichern:'💾 Save & Open', diagramm:'📊 Reading charts',
+    nacharbeiten:'📝 Still pending', eltern:'👨‍👩‍👧 Parent information',
+    rechtlich:'⚖️ Legal & Privacy', grundprinz:'🌱 Core principles',
+  },
+  it:{
+    start:'🚀 Per iniziare', alter:"📅 Fascia d'età & Fasi",
+    beobachtung:'✏️ Osservazione', interview:'🎤 Modalità intervista',
+    speichern:'💾 Salva & Apri', diagramm:'📊 Leggere i grafici',
+    nacharbeiten:'📝 In sospeso', eltern:'👨‍👩‍👧 Info per genitori',
+    rechtlich:'⚖️ Aspetti legali', grundprinz:'🌱 Principi fondamentali',
+  },
+};
+
+function updateHelpTOC(lang){
+  const titles=HELP_TOC_TITLES[lang]||HELP_TOC_TITLES.de;
+  document.querySelectorAll('.toc-btn[data-section]').forEach(btn=>{
+    const sid=btn.getAttribute('data-section');
+    if(titles[sid]) btn.textContent=titles[sid];
+  });
+  // Also update section labels
+  const sectionLabels={de:'Erste Schritte', en:'Start', it:'Inizio'};
+  // Update help header language indicator
+  const hdrLang=document.querySelector('.help-lang-indicator');
+  if(hdrLang) hdrLang.textContent=lang.toUpperCase();
+}
+
 init();
 </script>
 </body>
