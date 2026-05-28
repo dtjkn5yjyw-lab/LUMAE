@@ -1,9 +1,4 @@
-<!DOCTYP
-      <div style="display:flex;gap:.15rem;align-items:center;margin-left:.2rem">
-        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('de')" id="alng-de" title="Deutsch">🇩🇪</button>
-        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('en')" id="alng-en" title="English">🇬🇧</button>
-        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('it')" id="alng-it" title="Italiano">🇮🇹</button>
-      </div>E html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -278,6 +273,30 @@ canvas.mychart{width:100%!important}
 </head>
 <body>
 
+  <!-- APP HEADER -->
+  <div id="app-header" style="position:fixed;top:0;left:0;right:0;height:48px;z-index:100;background:#2d5a3d;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;gap:.5rem;box-shadow:0 2px 8px rgba(0,0,0,.2)">
+    <div style="display:flex;align-items:center;gap:.5rem;min-width:0">
+      <div id="prog-wrap" style="display:none;flex-direction:column;gap:2px">
+        <div style="height:4px;width:120px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden">
+          <div class="prog-fill" id="prog-fill" style="height:100%;width:0%;background:#a8d4b8;border-radius:2px;transition:width .4s"></div>
+        </div>
+        <div id="prog-lbl" style="font-size:.62rem;color:rgba(255,255,255,.6)">0 %</div>
+      </div>
+    </div>
+    <div class="hdr-btns" style="display:flex;gap:.3rem;align-items:center">
+      <button class="hbtn" onclick="doNewSession()" id="btn-new" title="Neue Erhebung">🆕 <span class="htxt">Neu</span></button>
+      <button class="hbtn" onclick="saveKBD()" id="btn-save" title="Speichern">💾 <span class="htxt">Speichern</span></button>
+      <button class="hbtn" onclick="document.getElementById('file-input').click()" id="btn-open" title="Öffnen">📂 <span class="htxt">Öffnen</span></button>
+      <button class="hbtn" onclick="startInterview()" id="btn-interview" title="Interview-Modus" style="display:none">🎤 <span class="htxt">Interview</span></button>
+      <button class="hbtn" onclick="openHelp()" title="Hilfe">❓ <span class="htxt">Hilfe</span></button>
+      <div style="display:flex;gap:.15rem;align-items:center;margin-left:.2rem">
+        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('de')" id="alng-de" title="Deutsch">🇩🇪</button>
+        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('en')" id="alng-en" title="English">🇬🇧</button>
+        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('it')" id="alng-it" title="Italiano">🇮🇹</button>
+      </div>
+    </div>
+    <input type="file" id="file-input" accept=".kbd" style="display:none" onchange="loadKBD(this)">
+  </div>
 
   <nav id="sidebar">
     <div class="nav-sec">Start</div>
