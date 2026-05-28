@@ -367,6 +367,7 @@ canvas.mychart{width:100%!important}
     <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span>Entwicklungsprofil</span></div>
     <div class="nav-item disabled" id="nav-foerder" data-view="foerder" onclick="showView('foerder')"><span>💡</span><span>Fördermöglichkeiten</span></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
+    <div style="padding:.5rem 1rem;margin-top:auto;font-size:.65rem;color:var(--muted);border-top:1px solid var(--border);margin-top:.5rem">Version 26.5.28 Beta</div>
   </nav>
 
   <main id="main">
@@ -484,8 +485,28 @@ canvas.mychart{width:100%!important}
         <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;font-size:.88rem"><input type="checkbox" id="dok-eltern" style="width:16px;height:16px;accent-color:var(--accent)"> 👪 Elterninformation</label>
       </div>
     </div>
+    <!-- Elterninformation Sprachauswahl -->
+    <div id="eltern-lang-wrap" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:.7rem">
+      <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem">👪 Sprache der Elterninformation</div>
+      <select id="eltern-lang-sel" style="width:100%;padding:.5rem;border-radius:6px;border:1px solid var(--border);font-family:DM Sans,sans-serif;font-size:.85rem;background:var(--bg)">
+        <option value="de">🇩🇪 Deutsch</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="fr">🇫🇷 Français</option>
+        <option value="es">🇪🇸 Español</option>
+        <option value="it">🇮🇹 Italiano</option>
+        <option value="pl">🇵🇱 Polski</option>
+        <option value="nl">🇳🇱 Nederlands</option>
+        <option value="pt">🇵🇹 Português</option>
+        <option value="ro">🇷🇴 Română</option>
+        <option value="tr">🇹🇷 Türkçe</option>
+        <option value="ru">🇷🇺 Русский</option>
+        <option value="ar">🇸🇦 العربية</option>
+      </select>
+      <button class="btn btn-outline btn-sm" style="margin-top:.5rem;width:100%" onclick="printElternFromDok()">👪 Elterninformation drucken / PDF</button>
+    </div>
     <div style="display:flex;flex-direction:column;gap:.7rem">
-      <button class="btn btn-primary" style="width:100%;padding:.75rem;font-size:.9rem" onclick="exportPDF()">📋 Gesamtbericht PDF (alle Inhalte)</button>
+      <button class="btn btn-primary" style="width:100%;padding:.75rem;font-size:.9rem" onclick="exportAuswahl()">📄 Auswahl als PDF exportieren</button>
+      <button class="btn btn-outline" style="width:100%;padding:.75rem;font-size:.9rem" onclick="exportPDF()">📋 Gesamtbericht PDF (alle Inhalte)</button>
       <div style="border-top:1px solid var(--border);padding-top:.7rem;margin-top:.3rem">
         <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem">Einzelne Diagramme</div>
         <div style="display:flex;flex-wrap:wrap;gap:.5rem">
@@ -999,7 +1020,7 @@ function showView(id){
   if(id==='setup'){ document.getElementById('view-setup').style.display=''; }
   else if(id==='nach'){ document.getElementById('view-nach').style.display=''; renderNach(); }
   else if(id==='profile'){ document.getElementById('view-profile').style.display=''; renderProfile(); }
-  else if(id==='foerder'){ document.getElementById('view-foerder').style.display=''; renderFoerder(); }
+  else if(id==='foerder'){ document.getElementById('view-foerder').style.display=''; document.getElementById('foerder-content').innerHTML=renderFoerder(); }
   else if(id==='dokumente'){ document.getElementById('view-dokumente').style.display=''; }
   else if(DATA[id]){ currentAreaId=id; document.getElementById('view-area').style.display=''; renderArea(id); }
 }
@@ -1427,7 +1448,6 @@ function renderProfile(){
     tbody.appendChild(tr);
   });
 
-  document.getElementById('foerder-content').innerHTML=renderFoerder();
   window._chartCm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
   // Draw charts: force-open collapsible bodies temporarily to get real dimensions
   const cm3=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
@@ -2104,25 +2124,43 @@ function drawLinear(childMonths){
   ctx.save(); ctx.translate(W-10,PAD.t+ch/2); ctx.rotate(Math.PI/2);
   ctx.fillStyle='#9a8a7a'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center'; ctx.fillText('Monate',0,0); ctx.restore();
 
-  // Plot each area
+  // Plot each area - collect points first, then draw connecting line
   const bw=cw/AREA_ORDER.length;
+  const plotPoints=[];
   AREA_ORDER.forEach((aid,i)=>{
     const da=calcDevAge(aid);
-    if(da===null) return;
+    if(da===null){ plotPoints.push(null); return; }
     const ph=Object.entries(PMX).reduce((best,[p,mo])=>mo<=da?+p:best,0);
     const frac=Math.min(ph/maxPhase,1);
     const x=PAD.l+i*bw+bw/2;
     const y=PAD.t+ch-frac*ch;
+    plotPoints.push({x,y,aid,da});
+  });
+
+  // Draw connecting line (Beller profile line)
+  const validPts=plotPoints.filter(Boolean);
+  if(validPts.length>1){
+    ctx.beginPath();
+    validPts.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle='rgba(45,90,61,0.6)'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.stroke();
+  }
+
+  // Draw dots and labels
+  plotPoints.forEach((pt,i)=>{
+    if(!pt) return;
+    const aid=AREA_ORDER[i];
     // Vertical connector
-    ctx.beginPath(); ctx.moveTo(x,PAD.t+ch); ctx.lineTo(x,y);
-    ctx.strokeStyle=AREA_COLORS[aid]+'44'; ctx.lineWidth=2; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(pt.x,PAD.t+ch); ctx.lineTo(pt.x,pt.y);
+    ctx.strokeStyle=AREA_COLORS[aid]+'33'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
     // Dot
-    ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2);
+    ctx.beginPath(); ctx.arc(pt.x,pt.y,7,0,Math.PI*2);
     ctx.fillStyle=AREA_COLORS[aid]; ctx.fill();
-    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
-    // Label
-    ctx.fillStyle='#7a6f60'; ctx.font='8px DM Sans,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(DATA[aid].emoji, x, PAD.t+ch+14);
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    // Value label
+    ctx.fillStyle='#333'; ctx.font='bold 9px DM Sans,sans-serif'; ctx.textAlign='center';
+    ctx.fillText((pt.da/12).toFixed(1)+'J', pt.x, pt.y-11);
+    // Emoji
+    ctx.font='11px serif'; ctx.fillText(DATA[aid].emoji, pt.x, PAD.t+ch+14);
   });
 
   // Chronological age line
@@ -2644,20 +2682,115 @@ const HELP_CONTENT={
 
 function setHelpLang(lang){
   helpLang=lang;
-  ['de','en','it'].forEach(l=>{ const b=document.getElementById('help-lang-'+l); if(b){ b.style.fontWeight=l===lang?'700':'400'; b.style.background=l===lang?'var(--accent-light)':'transparent'; } });
+  ['de','en','it'].forEach(l=>{
+    const b=document.getElementById('help-lang-'+l);
+    if(b){ b.style.fontWeight=l===lang?'700':'400'; b.style.background=l===lang?'var(--accent-light)':'transparent'; b.style.border=l===lang?'1px solid var(--accent)':'1px solid var(--border)'; }
+  });
+  // Re-render ALL sections that are currently shown
   const active=document.querySelector('.help-section.active');
-  if(active){ const sid=active.id.replace('hs-',''); const content=HELP_CONTENT[lang]?.[sid]; if(content) active.innerHTML=content; }
+  if(active){
+    const sid=active.id.replace('hs-','');
+    if(lang==='de'){
+      // Reload page to restore DE (simple approach)
+      const btn=document.querySelector(`.toc-btn[data-section="${sid}"]`);
+      // Re-show the section to restore original DE content
+      const deContent=active.getAttribute('data-de-content');
+      if(deContent) active.innerHTML=deContent;
+    } else if(HELP_CONTENT[lang]?.[sid]){
+      // Store DE content first time
+      if(!active.getAttribute('data-de-content')) active.setAttribute('data-de-content', active.innerHTML);
+      active.innerHTML=HELP_CONTENT[lang][sid];
+    }
+  }
 }
 
 function showHelp(id,btn){
   document.querySelectorAll('.help-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.toc-btn').forEach(b=>b.classList.remove('active'));
   const section=document.getElementById('hs-'+id);
-  if(section) section.classList.add('active');
+  if(!section) return;
+  // Store original DE content if not stored yet
+  if(!section.getAttribute('data-de-content')) section.setAttribute('data-de-content', section.innerHTML);
+  section.classList.add('active');
   if(btn) btn.classList.add('active');
-  if(helpLang&&helpLang!=='de'&&HELP_CONTENT[helpLang]?.[id]){ section.innerHTML=HELP_CONTENT[helpLang][id]; }
+  // Apply translation
+  if(helpLang&&helpLang!=='de'&&HELP_CONTENT[helpLang]?.[id]){
+    section.innerHTML=HELP_CONTENT[helpLang][id];
+  } else if(helpLang==='de'){
+    const de=section.getAttribute('data-de-content');
+    if(de) section.innerHTML=de;
+  }
 }
 
+
+// ═══════════════════════════════════════
+// EXPORT AUSWAHL
+// ═══════════════════════════════════════
+function exportAuswahl(){
+  const get=id=>document.getElementById(id)?.checked;
+  const sel={detail:get('dok-detail'),linear:get('dok-linear'),bar:get('dok-bar'),radar:get('dok-radar'),foerder:get('dok-foerder'),eltern:get('dok-eltern')};
+  const name=childInfo.name||'Kind';
+  const cm=parseFloat(childInfo.months)||0;
+  const w=window.open('','_blank');
+  if(!w) return;
+  let body='<html><head><meta charset="UTF-8"><title>Kuno Bellers Entwicklungstabelle – Auswahl</title>';
+  body+='<style>body{font-family:DM Sans,sans-serif;padding:2rem;color:#1a2520}h1{font-size:1.1rem;margin-bottom:.3rem}p{font-size:.8rem;color:#6b7a72;margin-bottom:1.5rem}h2{font-size:.95rem;margin:1.5rem 0 .5rem;color:#2d5a3d}table{width:100%;border-collapse:collapse;font-size:.78rem}th,td{padding:.4rem .6rem;border-bottom:1px solid #e0ebe4;text-align:left}th{background:#f7faf8;font-weight:600;font-size:.65rem;text-transform:uppercase;letter-spacing:.08em}img{max-width:100%;height:auto;margin:.5rem 0}@media print{body{padding:0}}</style></head><body>';
+  body+=`<h1>Kuno Bellers Entwicklungstabelle 0–9 Jahre</h1><p>${name} · ${cm?(cm/12).toFixed(1)+' Jahre':''} · ${rangeLabel(ageRange)||''} · Erstellt: ${new Date().toLocaleDateString('de')}</p>`;
+
+  // Detail table
+  if(sel.detail){
+    body+='<h2>📋 Detailergebnisse</h2><table><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Basis</th><th>Decke</th></tr></thead><tbody>';
+    AREA_ORDER.forEach(aid=>{
+      const da=calcDevAge(aid); const dy=da?(da/12).toFixed(1)+' J':'—';
+      const d=da&&cm?da-cm:null; const ds=d!==null?(d>=0?'+':'')+(d/12).toFixed(1)+' J':'—';
+      const {basis,decke}=calcBasisDecke(aid);
+      body+=`<tr><td>${DATA[aid].emoji} ${DATA[aid].name}</td><td>${dy}</td><td>${ds}</td><td>${basis?'Phase '+basis:'—'}</td><td>${decke?'Phase '+decke:'—'}</td></tr>`;
+    });
+    body+='</tbody></table>';
+  }
+
+  // Charts as images
+  const chartMap={linear:'linearChart',bar:'barChart',radar:'radarChart'};
+  const chartNames={linear:'📈 Liniendiagramm',bar:'📊 Balkendiagramm',radar:'🎯 Radialdiagramm'};
+  ['linear','bar','radar'].forEach(key=>{
+    if(!sel[key]) return;
+    const cv=document.getElementById(chartMap[key]);
+    if(!cv) return;
+    body+=`<h2>${chartNames[key]}</h2><img src="${cv.toDataURL('image/png')}">`;
+  });
+
+  // Foerder
+  if(sel.foerder){
+    body+='<h2>💡 Fördermöglichkeiten</h2>';
+    const fc=document.getElementById('foerder-content');
+    if(fc) body+=fc.innerHTML; else body+=renderFoerder();
+  }
+
+  // Elterninformation
+  if(sel.eltern){
+    const lang=document.getElementById('eltern-lang-sel')?.value||'de';
+    body+='<h2>👨‍👩‍👧 Elterninformation</h2>';
+    body+=buildElternHTML(name,cm,lang);
+  }
+
+  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.5.28 Beta</p></body></html>';
+  w.document.write(body); w.document.close(); w.print();
+}
+
+function buildElternHTML(name,cm,lang){
+  // Use existing ELTERN_TEXTS if available
+  if(typeof ELTERN_TEXTS !== 'undefined' && ELTERN_TEXTS[lang]){
+    const txt=ELTERN_TEXTS[lang];
+    return `<p>${txt.greeting||''}</p><p>${txt.intro||''}</p>`;
+  }
+  return '<p>Elterninformation – '+lang.toUpperCase()+'</p>';
+}
+
+
+function printElternFromDok(){
+  const lang=document.getElementById('eltern-lang-sel')?.value||'de';
+  printEltern(lang);
+}
 init();
 </script>
 </body>
