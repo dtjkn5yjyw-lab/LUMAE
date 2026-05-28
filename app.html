@@ -273,6 +273,8 @@ canvas.mychart{width:100%!important}
   .iv-question{font-size:1.1rem}
   .hdr-btns .hbtn .htxt{display:none}
 }
+
+.res-tbl td{font-weight:400!important}
 </style>
 </head>
 <body>
@@ -318,6 +320,7 @@ canvas.mychart{width:100%!important}
     <div class="nav-sec" style="margin-top:.2rem">Auswertung</div>
     <div class="nav-item disabled" id="nav-nach" data-view="nach" onclick="showView('nach')" style="display:none"><span>📝</span><span>Noch ausstehend</span><span class="nav-sc" id="nach-cnt"></span></div>
     <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span>Entwicklungsprofil</span></div>
+    <div class="nav-item disabled" id="nav-foerder" data-view="foerder" onclick="showView('foerder')"><span>💡</span><span>Fördermöglichkeiten</span></div>
   </nav>
 
   <main id="main">
@@ -414,7 +417,14 @@ canvas.mychart{width:100%!important}
       <div id="prof-content"></div>
     </div>
 
-  </main>
+  
+  <!-- FÖRDERMÖGLICHKEITEN VIEW -->
+  <div id="view-foerder" style="display:none">
+    <h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)">💡 Fördermöglichkeiten</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.2rem" id="foerder-view-sub">Konkrete Fördervorschläge für Zuhause und die Einrichtung.</p>
+    <div id="foerder-content"></div>
+  </div>
+</main>
 </div>
 
 <!-- INTERVIEW OVERLAY -->
@@ -916,13 +926,14 @@ function rangeLabel(r){
 // NAVIGATION
 // ═══════════════════════════════════════
 function showView(id){
-  ['setup','area','nach','profile'].forEach(v=>document.getElementById('view-'+v).style.display='none');
+  ['setup','area','nach','profile','foerder'].forEach(v=>document.getElementById('view-'+v).style.display='none');
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const ne=document.querySelector(`[data-view="${id}"]`);
   if(ne) ne.classList.add('active');
   if(id==='setup'){ document.getElementById('view-setup').style.display=''; }
   else if(id==='nach'){ document.getElementById('view-nach').style.display=''; renderNach(); }
   else if(id==='profile'){ document.getElementById('view-profile').style.display=''; renderProfile(); }
+  else if(id==='foerder'){ document.getElementById('view-foerder').style.display=''; renderFoerder(); }
   else if(DATA[id]){ currentAreaId=id; document.getElementById('view-area').style.display=''; renderArea(id); }
 }
 
@@ -1310,12 +1321,12 @@ function renderProfile(){
 
   // 2. Lineardiagramm (Beller-Profil)
   html+=collCard('linear','📈','Liniendiagramm: Entwicklungsprofil nach Beller',
-    `<div style="position:relative"><canvas id="linearChart" class="mychart" height="320"></canvas></div>
+    `<div style="position:relative"><canvas id="linearChart" class="mychart"></canvas></div>
      <div class="chart-actions"><button class="btn btn-outline btn-sm" onclick="exportCanvasPDF('linearChart','Liniendiagramm')">⬇ PDF</button></div>`,false);
 
   // 3. Balkendiagramm
   html+=collCard('bar','📊','Balkendiagramm: Entwicklungsalter je Bereich',
-    `<canvas id="barChart" class="mychart" height="280"></canvas>
+    `<canvas id="barChart" class="mychart"></canvas>
      <div class="chart-actions"><button class="btn btn-outline btn-sm" onclick="exportCanvasPDF('barChart','Balkendiagramm')">⬇ PDF</button></div>`,false);
 
   // 4. Radialdiagramm
@@ -1334,7 +1345,7 @@ function renderProfile(){
     gpInner+=`<div style="background:var(--bg);border-radius:8px;padding:.65rem .85rem;display:flex;gap:.55rem;align-items:flex-start"><span style="background:var(--accent);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;flex-shrink:0;margin-top:.1rem">${i+1}</span><div><div style="font-size:.82rem;font-weight:500;margin-bottom:.15rem">${p.n}</div><div style="font-size:.76rem;color:var(--muted);line-height:1.5">${p.t}</div></div></div>`;
   });
   gpInner+=`</div><div style="margin-top:.9rem;background:var(--accent-light);border-left:3px solid var(--accent);border-radius:6px;padding:.75rem 1rem;font-size:.81rem;line-height:1.7;color:var(--accent)"><strong>Ziel:</strong> Das Ziel ist nicht, Kinder möglichst früh leistungsfähig zu machen, sondern sie dabei zu begleiten, sich sicher zu fühlen, Vertrauen in die eigenen Fähigkeiten zu entwickeln, Beziehungen aufzubauen, neugierig zu bleiben, selbstständig zu handeln und ihre Umwelt aktiv mitzugestalten.</div>`;
-  html+=collCard('grundp','🌱','Grundprinzipien entwicklungsfördernder Begleitung',gpInner,false);
+  // Grundprinzipien moved to Hilfe only
 
   // Gesamtbericht
   html+=`<div class="chart-actions" style="margin-top:.8rem"><button class="btn btn-primary btn-sm" onclick="exportPDF()">⬇ Gesamtbericht PDF</button></div>`;
@@ -1352,7 +1363,7 @@ function renderProfile(){
     const {basis,decke}=calcBasisDecke(aid);
     const complete=isAreaComplete(aid);
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><strong>${a.emoji} ${a.name}</strong>${!complete?'<span style="font-size:.65rem;color:var(--warn);margin-left:.4rem">⚠ unvollständig</span>':''}</td>
+    tr.innerHTML=`<td>${a.emoji} ${a.name}${!complete?'<span style="font-size:.65rem;color:var(--warn);margin-left:.4rem">⚠ unvollständig</span>':''}</td>
       <td><span class="dev-badge" style="background:${complete?AREA_COLORS[aid]:'#bbb'}">${dy}</span></td>
       <td style="color:${dc};font-weight:500">${dstr}</td>
       <td><div class="bar-wrap"><div class="bar-fill" style="width:${sc}%;background:${AREA_COLORS[aid]}"></div></div> <span style="font-size:.7rem;color:var(--muted)">${sc}%</span></td>
@@ -1457,83 +1468,6 @@ function drawRadar(childMonths){
 }
 
 // ── Pure Canvas Bar ──
-function drawBar(childMonths){
-  const canvas=document.getElementById('barChart');
-  if(!canvas) return;
-  let W=0; let el=canvas;
-  while(el&&W===0){W=el.offsetWidth;el=el.parentElement;}
-  W=Math.max(W,320);
-  const PM={0:0,1:2,2:5,3:8,4:11,5:15,6:21,7:27,8:33,9:39,10:45,11:51,12:57,13:63,14:69,15:80,16:92,17:104,18:116};
-  const legendH=54, H=440+legendH;
-  canvas.width=W; canvas.height=H;
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-  const pad={l:52,r:56,t:24,b:8};
-  const chartH=H-legendH;
-  const cw=W-pad.l-pad.r, ch=chartH-pad.t-pad.b;
-  const maxM=120;
-  const devAges=AREA_ORDER.map(id=>calcDevAge(id)||0);
-  const bw=cw/AREA_ORDER.length, bpad=bw*0.22;
-  for(let ph=0;ph<=18;ph++){
-    const mo=PM[ph]||0;
-    const y=pad.t+ch-(mo/maxM)*ch;
-    const isMajor=(ph%3===0);
-    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y);
-    ctx.strokeStyle=isMajor?'#cfc8b8':'#ece8e0'; ctx.lineWidth=isMajor?1:0.5; ctx.stroke();
-    if(isMajor){
-      ctx.fillStyle='#7a6f60'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='right';
-      ctx.fillText((mo/12).toFixed(0)+' J', pad.l-5, y+4);
-    }
-    ctx.fillStyle=isMajor?'#5a4f45':'#9a8a7a';
-    ctx.font=(isMajor?'bold ':'')+' 9px DM Sans,sans-serif'; ctx.textAlign='left';
-    ctx.fillText(''+ph, pad.l+cw+5, y+4);
-  }
-  ctx.save(); ctx.translate(12,pad.t+ch/2); ctx.rotate(-Math.PI/2);
-  ctx.fillStyle='#7a6f60'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
-  ctx.fillText('Jahre',0,0); ctx.restore();
-  ctx.save(); ctx.translate(W-10,pad.t+ch/2); ctx.rotate(Math.PI/2);
-  ctx.fillStyle='#9a8a7a'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
-  ctx.fillText('Phase',0,0); ctx.restore();
-  devAges.forEach((v,i)=>{
-    const x=pad.l+i*bw+bpad/2, bwidth=bw-bpad;
-    const bh=(Math.min(v,maxM)/maxM)*ch, by=pad.t+ch-bh;
-    ctx.fillStyle='rgba(0,0,0,0.04)'; ctx.fillRect(x+2,by+2,bwidth,bh);
-    ctx.fillStyle=AREA_COLORS[AREA_ORDER[i]]; ctx.fillRect(x,by,bwidth,bh);
-    if(v>0){
-      const phVal=Object.entries(PM).reduce((best,[ph,mo])=>mo<=v?+ph:best,0);
-      ctx.fillStyle='#333'; ctx.font='bold 9px DM Sans,sans-serif'; ctx.textAlign='center';
-      ctx.fillText('Ph.'+phVal, x+bwidth/2, by-5);
-    }
-  });
-  if(childMonths){
-    const ly=pad.t+ch-(Math.min(childMonths,maxM)/maxM)*ch;
-    ctx.beginPath(); ctx.moveTo(pad.l,ly); ctx.lineTo(pad.l+cw,ly);
-    ctx.strokeStyle='rgba(184,80,80,0.85)'; ctx.lineWidth=2; ctx.setLineDash([7,4]); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle='#b85050'; ctx.font='bold 9px DM Sans,sans-serif'; ctx.textAlign='left';
-    ctx.fillText('Chron. '+(childMonths/12).toFixed(1)+' J', pad.l+4, ly-5);
-  }
-  const ages=devAges.filter(v=>v>0);
-  if(ages.length>0){
-    const avg=ages.reduce((a,b)=>a+b,0)/ages.length;
-    const ly2=pad.t+ch-(Math.min(avg,maxM)/maxM)*ch;
-    ctx.beginPath(); ctx.moveTo(pad.l,ly2); ctx.lineTo(pad.l+cw,ly2);
-    ctx.strokeStyle='rgba(61,107,82,0.7)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle='#3d6b52'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='right';
-    ctx.fillText('Oe '+(avg/12).toFixed(1)+' J', pad.l+cw-4, ly2-5);
-  }
-  ctx.strokeStyle='#bbb'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ch); ctx.lineTo(pad.l+cw,pad.t+ch); ctx.stroke();
-  const legendY=chartH+4, colW=W/8;
-  const shortNames={kup:'KP',ub:'UB',se:'SE',st:'ST',sl:'SL',kog:'KO',gm:'GM',fm:'FM'};
-  AREA_ORDER.forEach((aid,i)=>{
-    const cx=i*colW+colW/2;
-    ctx.fillStyle=AREA_COLORS[aid]; ctx.fillRect(cx-14,legendY,12,8);
-    ctx.font='13px serif'; ctx.textAlign='center';
-    ctx.fillText(DATA[aid].emoji, cx-8, legendY+24);
-    ctx.fillStyle='#7a6f60'; ctx.font='8px DM Sans,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(shortNames[aid]||aid, cx-8, legendY+38);
-  });
-}
 function renderFoerder(){
   const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
   const year=Math.min(9,Math.floor(cm/12));
@@ -2060,7 +1994,7 @@ function drawLinear(childMonths){
   let W=0; let _el=canvas;
   while(_el&&W===0){W=_el.offsetWidth;_el=_el.parentElement;}
   W=Math.max(W,320);
-  const H=420;
+  const H=480;
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
@@ -2153,50 +2087,80 @@ function drawLinear(childMonths){
 function drawBar(childMonths){
   const canvas=document.getElementById('barChart');
   if(!canvas) return;
-  const W=canvas.offsetWidth||600;
-  canvas.width=W; canvas.height=280;
+  let W=0; let el=canvas;
+  while(el&&W===0){W=el.offsetWidth;el=el.parentElement;}
+  W=Math.max(W,320);
+  const PM={0:0,1:2,2:5,3:8,4:11,5:15,6:21,7:27,8:33,9:39,10:45,11:51,12:57,13:63,14:69,15:80,16:92,17:104,18:116};
+  const legendH=54, H=520+legendH;
+  canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,W,280);
-  const pad={l:44,r:16,t:20,b:60};
-  const cw=W-pad.l-pad.r,ch=280-pad.t-pad.b;
-  const max=130;
-  const devAges=AREA_ORDER.map(id=>{ const da=calcDevAge(id); return da||0; });
-  const bw=cw/AREA_ORDER.length,bpad=bw*0.2;
-  // Grid
-  [0,30,60,90,120].forEach(v=>{
-    const y=pad.t+ch-(v/max)*ch;
+  ctx.clearRect(0,0,W,H);
+  const pad={l:52,r:72,t:24,b:8};
+  const chartH=H-legendH;
+  const cw=W-pad.l-pad.r, ch=chartH-pad.t-pad.b;
+  const maxM=120;
+  const devAges=AREA_ORDER.map(id=>calcDevAge(id)||0);
+  const bw=cw/AREA_ORDER.length, bpad=bw*0.22;
+  for(let ph=0;ph<=18;ph++){
+    const mo=PM[ph]||0;
+    const y=pad.t+ch-(mo/maxM)*ch;
+    const isMajor=(ph%3===0);
     ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y);
-    ctx.strokeStyle='#e8dfc8'; ctx.lineWidth=1; ctx.stroke();
-    ctx.fillStyle='#aaa'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='right';
-    ctx.fillText(v+'M',pad.l-4,y+4);
-  });
-  // Bars
-  devAges.forEach((v,i)=>{
-    const x=pad.l+i*bw+bpad/2,bwidth=bw-bpad;
-    const bh=(v/max)*ch,by=pad.t+ch-bh;
-    // Shadow
-    ctx.fillStyle='rgba(0,0,0,0.04)'; ctx.fillRect(x+2,by+2,bwidth,bh);
-    // Bar
-    ctx.fillStyle=AREA_COLORS[AREA_ORDER[i]]; ctx.fillRect(x,by,bwidth,bh);
-    // Value
-    if(v>0){ ctx.fillStyle='#555'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='center'; ctx.fillText(v+'M',x+bwidth/2,by-4); }
-    // Label
-    const lbl=DATA[AREA_ORDER[i]].emoji+' '+DATA[AREA_ORDER[i]].name.split(' ')[0];
-    ctx.fillStyle='#7a6f60'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='center';
-    ctx.save(); ctx.translate(x+bwidth/2,pad.t+ch+8); ctx.rotate(-0.4); ctx.fillText(lbl,0,0); ctx.restore();
-  });
-  // Child age line
-  if(childMonths){
-    const ly=pad.t+ch-(Math.min(childMonths,max)/max)*ch;
-    ctx.beginPath(); ctx.moveTo(pad.l,ly); ctx.lineTo(pad.l+cw,ly);
-    ctx.strokeStyle='rgba(184,80,80,0.7)'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle='#b85050'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='left';
-    ctx.fillText('Chron. Alter: '+childMonths+'M',pad.l+4,ly-4);
+    ctx.strokeStyle=isMajor?'#cfc8b8':'#ece8e0'; ctx.lineWidth=isMajor?1:0.5; ctx.stroke();
+    if(isMajor){
+      ctx.fillStyle='#7a6f60'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='right';
+      ctx.fillText((mo/12).toFixed(0)+' J', pad.l-5, y+4);
+    }
+    ctx.fillStyle=isMajor?'#5a4f45':'#9a8a7a';
+    ctx.font=(isMajor?'bold ':'')+'9px DM Sans,sans-serif'; ctx.textAlign='left';
+    ctx.fillText('Ph.'+ph, pad.l+cw+6, y+4);
   }
+  ctx.save(); ctx.translate(12,pad.t+ch/2); ctx.rotate(-Math.PI/2);
+  ctx.fillStyle='#7a6f60'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
+  ctx.fillText('Jahre',0,0); ctx.restore();
+  ctx.save(); ctx.translate(W-6,pad.t+ch/2); ctx.rotate(Math.PI/2);
+  ctx.fillStyle='#9a8a7a'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
+  ctx.fillText('Phase',0,0); ctx.restore();
+  devAges.forEach((v,i)=>{
+    const x=pad.l+i*bw+bpad/2, bwidth=bw-bpad;
+    const bh=(Math.min(v,maxM)/maxM)*ch, by=pad.t+ch-bh;
+    ctx.fillStyle='rgba(0,0,0,0.04)'; ctx.fillRect(x+2,by+2,bwidth,bh);
+    ctx.fillStyle=AREA_COLORS[AREA_ORDER[i]]; ctx.fillRect(x,by,bwidth,bh);
+    if(v>0){
+      const phVal=Object.entries(PM).reduce((best,[ph,mo])=>mo<=v?+ph:best,0);
+      ctx.fillStyle='#333'; ctx.font='bold 9px DM Sans,sans-serif'; ctx.textAlign='center';
+      ctx.fillText('Ph.'+phVal, x+bwidth/2, by-5);
+    }
+  });
+  if(childMonths){
+    const ly=pad.t+ch-(Math.min(childMonths,maxM)/maxM)*ch;
+    ctx.beginPath(); ctx.moveTo(pad.l,ly); ctx.lineTo(pad.l+cw,ly);
+    ctx.strokeStyle='rgba(184,80,80,0.85)'; ctx.lineWidth=2; ctx.setLineDash([7,4]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#b85050'; ctx.font='bold 9px DM Sans,sans-serif'; ctx.textAlign='left';
+    ctx.fillText('Chron. '+(childMonths/12).toFixed(1)+' J', pad.l+4, ly-5);
+  }
+  const ages=devAges.filter(v=>v>0);
+  if(ages.length>0){
+    const avg=ages.reduce((a,b)=>a+b,0)/ages.length;
+    const ly2=pad.t+ch-(Math.min(avg,maxM)/maxM)*ch;
+    ctx.beginPath(); ctx.moveTo(pad.l,ly2); ctx.lineTo(pad.l+cw,ly2);
+    ctx.strokeStyle='rgba(61,107,82,0.7)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#3d6b52'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='right';
+    ctx.fillText('\u00d8 Entw. '+(avg/12).toFixed(1)+' J', pad.l+cw-4, ly2-5);
+  }
+  ctx.strokeStyle='#bbb'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ch); ctx.lineTo(pad.l+cw,pad.t+ch); ctx.stroke();
+  const legendY=chartH+4, colW=W/8;
+  const shortNames={kup:'KP',ub:'UB',se:'SE',st:'ST',sl:'SL',kog:'KO',gm:'GM',fm:'FM'};
+  AREA_ORDER.forEach((aid,i)=>{
+    const cx=i*colW+colW/2;
+    ctx.fillStyle=AREA_COLORS[aid]; ctx.fillRect(cx-14,legendY,12,8);
+    ctx.font='13px serif'; ctx.textAlign='center';
+    ctx.fillText(DATA[aid].emoji, cx-8, legendY+24);
+    ctx.fillStyle='#7a6f60'; ctx.font='8px DM Sans,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(shortNames[aid]||aid, cx-8, legendY+38);
+  });
 }
-
-// ── PDF Export (simple, no external lib) ──
-
 function exportCanvasPDF(canvasId,title){
   const canvas=document.getElementById(canvasId);
   if(!canvas){ showToast('Diagramm nicht gefunden'); return; }
@@ -2530,6 +2494,7 @@ const APP_UI={
     range_krippe:'Krippenbereich', range_kita:'Kitabereich', range_schule:'Grundschulbereich',
     hdr_sub:'8 Entwicklungsbereiche · Phasen 1–18',
     btn_start:'Erhebung starten →', btn_resume:'Erhebung fortsetzen →', btn_update:'Erhebung aktualisieren →',
+    nav_foerder:'Fördermöglichkeiten',
     area_kup:'Körperbewusstsein & Pflege', area_ub:'Umgebungsbewusstsein',
     area_se:'Sozial-emotionale Entwicklung', area_st:'Spieltätigkeit',
     area_sl:'Sprache & Literacy', area_kog:'Kognition',
@@ -2543,6 +2508,7 @@ const APP_UI={
     range_krippe:"Nursery (0–3)", range_kita:"Kindergarten (3–6)", range_schule:"Primary school (6–9)",
     hdr_sub:"8 developmental areas · Phases 1–18",
     btn_start:"Start observation →", btn_resume:"Continue observation →", btn_update:"Update observation →",
+    nav_foerder:"Support suggestions",
     area_kup:"Body awareness & care", area_ub:"Environmental awareness",
     area_se:"Social-emotional dev.", area_st:"Play activities",
     area_sl:"Language & Literacy", area_kog:"Cognition",
@@ -2557,6 +2523,7 @@ const APP_UI={
     range_krippe:'Asilo nido (0–3)', range_kita:'Scuola materna (3–6)', range_schule:'Scuola primaria (6–9)',
     hdr_sub:'8 aree di sviluppo · Fasi 1–18',
     btn_start:'Avvia osservazione →', btn_resume:'Continua osservazione →', btn_update:'Aggiorna osservazione →',
+    nav_foerder:'Possibilità di sostegno',
     area_kup:'Cura del corpo', area_ub:"Consapevolezza dell'ambiente",
     area_se:'Sviluppo socio-emozionale', area_st:'Attività ludiche',
     area_sl:'Linguaggio & Literacy', area_kog:'Cognizione',
@@ -2597,9 +2564,11 @@ function setAppLang(lang){
   const ns=document.querySelector('[data-view="setup"] span:last-child');
   const np=document.querySelector('[data-view="profile"] span:last-child');
   const nn=document.querySelector('[data-view="nach"] span:last-child');
+  const nf=document.querySelector('[data-view="foerder"] span:last-child');
   if(ns) ns.textContent=L.nav_setup;
   if(np) np.textContent=L.nav_profile;
   if(nn) nn.textContent=L.nav_nach;
+  if(nf&&L.nav_foerder) nf.textContent=L.nav_foerder;
   // hdr-sub (only if not in an active session)
   const hs=document.getElementById('hdr-sub');
   if(hs&&!started) hs.textContent=L.hdr_sub;
