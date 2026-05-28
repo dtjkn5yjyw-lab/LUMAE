@@ -183,7 +183,7 @@ main{padding:1.4rem 1.8rem;overflow-y:auto;margin-left:330px;min-height:calc(100
 .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.3rem;margin-bottom:1rem}
 .chart-card h3{font-family:'DM Sans',sans-serif;font-weight:300;font-size:1rem;margin-bottom:.9rem}
 .chart-actions{margin-top:.7rem;display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap}
-canvas.mychart{width:100%!important}
+canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
 .res-tbl{width:100%;border-collapse:collapse;font-size:.79rem}
 .res-tbl th{text-align:left;padding:.45rem .7rem;background:var(--bg);border-bottom:2px solid var(--border);font-size:.67rem;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
 .res-tbl td{padding:.55rem .7rem;border-bottom:1px solid var(--border);vertical-align:middle}
@@ -1410,15 +1410,15 @@ function renderProfile(){
 
   // 2. Lineardiagramm (Beller-Profil)
   html+=collCard('linear','📈','Liniendiagramm: Entwicklungsprofil nach Beller',
-    `<div style="position:relative"><canvas id="linearChart" class="mychart" height="320"></canvas></div>`,false);
+    `<div style="position:relative"><canvas id="linearChart" class="mychart"></canvas></div>`,false);
 
   // 3. Balkendiagramm
   html+=collCard('bar','📊','Balkendiagramm: Entwicklungsalter je Bereich',
-    `<canvas id="barChart" class="mychart" height="280"></canvas>`,false);
+    `<canvas id="barChart" class="mychart"></canvas>`,false);
 
   // 4. Radialdiagramm
   html+=collCard('radar','🎯','Radialdiagramm: Entwicklungsprofil',
-    `<div style="max-width:480px;margin:0 auto"><canvas id="radarChart" class="mychart" height="480"></canvas></div>`,false);
+    `<div style="max-width:480px;margin:0 auto"><canvas id="radarChart" class="mychart"></canvas></div>`,false);
 
   // Fördermöglichkeiten: separate nav item
 
@@ -1908,7 +1908,7 @@ function openHelp(){
   const active=document.querySelector('.help-section.active');
   if(active){
     const sid=active.id.replace('hs-','');
-    showHelpSection(sid, null);
+    renderHelpSection(active, sid);
   }
   // Populate Grundprinzipien
   const gl=document.getElementById('gp-list');
@@ -1923,11 +1923,25 @@ function openHelp(){
 function closeHelp(){
   document.getElementById('help-overlay').classList.remove('open');
 }
+
+function renderHelpSection(section, id){
+  if(!section) return;
+  const lang=helpLang||appLang||'de';
+  if(lang!=='de' && HELP_CONTENT[lang]?.[id]){
+    section.innerHTML=HELP_CONTENT[lang][id];
+  } else if(lang==='de'){
+    const de=section.getAttribute('data-de-content');
+    if(de) section.innerHTML=de;
+  }
+}
+
 function showHelpSection(id, btn){
   document.querySelectorAll('.help-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.toc-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('hs-'+id).classList.add('active');
-  btn.classList.add('active');
+  const section=document.getElementById('hs-'+id);
+  if(section) section.classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(section) renderHelpSection(section, id);
 }
 // Close help on overlay click
 document.getElementById('help-overlay').addEventListener('click', function(e){
@@ -2707,25 +2721,11 @@ const HELP_CONTENT={
 
 function setHelpLang(lang){
   helpLang=lang;
-  ['de','en','it'].forEach(l=>{
-    const b=document.getElementById('help-lang-'+l);
-    if(b){ b.style.fontWeight=l===lang?'700':'400'; b.style.background=l===lang?'var(--accent-light)':'transparent'; b.style.border=l===lang?'1px solid var(--accent)':'1px solid var(--border)'; }
-  });
-  // Re-render ALL sections that are currently shown
+  updateHelpTOC(lang);
   const active=document.querySelector('.help-section.active');
   if(active){
     const sid=active.id.replace('hs-','');
-    if(lang==='de'){
-      // Reload page to restore DE (simple approach)
-      const btn=document.querySelector(`.toc-btn[data-section="${sid}"]`);
-      // Re-show the section to restore original DE content
-      const deContent=active.getAttribute('data-de-content');
-      if(deContent) active.innerHTML=deContent;
-    } else if(HELP_CONTENT[lang]?.[sid]){
-      // Store DE content first time
-      if(!active.getAttribute('data-de-content')) active.setAttribute('data-de-content', active.innerHTML);
-      active.innerHTML=HELP_CONTENT[lang][sid];
-    }
+    renderHelpSection(active, sid);
   }
 }
 
@@ -2856,6 +2856,16 @@ function updateHelpTOC(lang){
   const hdrLang=document.querySelector('.help-lang-indicator');
   if(hdrLang) hdrLang.textContent=lang.toUpperCase();
 }
+
+// Pre-store all help section DE content at startup
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.help-section').forEach(function(s){
+    if(!s.getAttribute('data-de-content')){
+      s.setAttribute('data-de-content', s.innerHTML);
+    }
+  });
+});
+
 
 init();
 </script>
