@@ -14,7 +14,7 @@
   --ok:#3d6b52;--partial:#7a6b3d;--unknown:#6a7a8a;--r:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;padding-top:48px}
 
 /* HEADER */
 header{background:var(--text);color:#f5f0e8;padding:1rem 1.5rem;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.3)}
@@ -35,7 +35,7 @@ header h1{font-family:'DM Sans',sans-serif;font-weight:300;font-size:clamp(.95re
 .app{display:grid;grid-template-columns:330px 1fr;min-height:calc(100vh - 62px)}
 
 /* SIDEBAR */
-nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem 0;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto;min-width:330px}
+nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem 0;position:sticky;top:0;height:calc(100vh - 48px);overflow-y:auto;min-width:330px;flex-shrink:0}
 .nav-sec{padding:.5rem 1rem .25rem;font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .nav-item{display:flex;align-items:center;gap:.45rem;padding:.5rem .9rem;cursor:pointer;border-left:3px solid transparent;transition:all .15s;font-size:.8rem}
 .nav-item:hover{background:var(--accent-light)}
@@ -45,7 +45,7 @@ nav{background:var(--surface);border-right:1px solid var(--border);padding:.8rem
 .nav-sc{margin-left:auto;font-size:.67rem;color:var(--muted)}
 
 /* MAIN */
-main{padding:1.4rem 1.8rem;overflow-y:auto}
+main{padding:1.4rem 1.8rem;overflow-y:auto;flex:1;min-width:0;}
 
 /* SETUP */
 .setup-wrap{max-width:600px;margin:0 auto;padding:1.5rem 0}
@@ -289,10 +289,17 @@ canvas.mychart{width:100%!important}
       <button class="hbtn" onclick="document.getElementById('file-input').click()" id="btn-open" title="Öffnen">📂 <span class="htxt">Öffnen</span></button>
       <button class="hbtn" onclick="startInterview()" id="btn-interview" title="Interview-Modus" style="display:none">🎤 <span class="htxt">Interview</span></button>
       <button class="hbtn" onclick="openHelp()" title="Hilfe">❓ <span class="htxt">Hilfe</span></button>
-      <div style="display:flex;gap:.15rem;align-items:center;margin-left:.2rem">
-        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('de')" id="alng-de" title="Deutsch">🇩🇪</button>
-        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('en')" id="alng-en" title="English">🇬🇧</button>
-        <button class="hbtn" style="padding:.3rem .35rem;font-size:.9rem;min-width:0;line-height:1" onclick="setAppLang('it')" id="alng-it" title="Italiano">🇮🇹</button>
+      <div style="position:relative" id="app-lang-wrap">
+        <button onclick="toggleAppLangMenu()" style="display:flex;align-items:center;gap:.3rem;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:.3rem .6rem;cursor:pointer;color:#fff;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500">
+          <span id="app-lang-flag">🇩🇪</span><span id="app-lang-lbl">DE</span><span style="font-size:.55rem;opacity:.7">▾</span>
+        </button>
+        <div id="app-lang-menu" style="display:none;position:absolute;top:calc(100% + .4rem);right:0;background:#fff;border:1px solid #e0ebe4;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);min-width:140px;z-index:500;overflow:hidden">
+          <div style="padding:.3rem">
+            <button onclick="setAppLang('de')" style="display:block;width:100%;text-align:left;padding:.45rem .8rem;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#1a2520;border-radius:6px" onmouseover="this.style.background='#f0f7f3'" onmouseout="this.style.background='transparent'">🇩🇪 Deutsch</button>
+            <button onclick="setAppLang('en')" style="display:block;width:100%;text-align:left;padding:.45rem .8rem;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#1a2520;border-radius:6px" onmouseover="this.style.background='#f0f7f3'" onmouseout="this.style.background='transparent'">🇬🇧 English</button>
+            <button onclick="setAppLang('it')" style="display:block;width:100%;text-align:left;padding:.45rem .8rem;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.82rem;color:#1a2520;border-radius:6px" onmouseover="this.style.background='#f0f7f3'" onmouseout="this.style.background='transparent'">🇮🇹 Italiano</button>
+          </div>
+        </div>
       </div>
     </div>
     <input type="file" id="file-input" accept=".kbd" style="display:none" onchange="loadKBD(this)">
@@ -304,7 +311,7 @@ canvas.mychart{width:100%!important}
     <div class="nav-sec" style="margin-top:.2rem">Datenerhebung</div>
     <div id="nav-areas"></div>
     <div class="nav-sec" style="margin-top:.2rem">Auswertung</div>
-    <div class="nav-item disabled" id="nav-nach" data-view="nach" onclick="showView('nach')"><span>📝</span><span>Noch ausstehend</span><span class="nav-sc" id="nach-cnt"></span></div>
+    <div class="nav-item disabled" id="nav-nach" data-view="nach" onclick="showView('nach')" style="display:none"><span>📝</span><span>Noch ausstehend</span><span class="nav-sc" id="nach-cnt"></span></div>
     <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span>Entwicklungsprofil</span></div>
   </nav>
 
@@ -1977,10 +1984,16 @@ function setAppLang(lang){
   if(navS) navS.textContent=L.nav_setup;
   if(navP) navP.textContent=L.nav_profile;
   if(navN) navN.textContent=L.nav_nach;
-  ['de','en','it'].forEach(l=>{
-    const b=document.getElementById('alng-'+l);
-    if(b) b.style.background=l===lang?'var(--accent-light)':'';
-  });
+  // Update dropdown button
+  const flagM={de:'🇩🇪',en:'🇬🇧',it:'🇮🇹'};
+  const lblM={de:'DE',en:'EN',it:'IT'};
+  const fl=document.getElementById('app-lang-flag');
+  const ll=document.getElementById('app-lang-lbl');
+  if(fl) fl.textContent=flagM[lang]||'🇩🇪';
+  if(ll) ll.textContent=lblM[lang]||'DE';
+  // Close menu
+  const m=document.getElementById('app-lang-menu');
+  if(m) m.style.display='none';
   try{localStorage.setItem('kbe_app_lang',lang);}catch(e){}
 }
 
