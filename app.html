@@ -327,7 +327,7 @@ canvas.mychart{width:100%!important}
       <div class="setup-wrap">
         <div class="setup-big">📊</div>
         <h2 class="setup-h">Stammdaten</h2>
-        <p class="setup-p">Wählen Sie zunächst den Altersbereich des Kindes. Kompetenzen unterhalb des Bereichs werden als vorhanden angenommen (Basis), Phasen darüber werden ausgeblendet.</p>
+        <p class="setup-p">Bitte wählen Sie den Altersbereich des Kindes, um die Datenerfassung zu starten.</p>
 
         <div class="age-grid">
           <div class="age-card" data-range="krippe" onclick="selectAge('krippe',this)">
@@ -840,14 +840,36 @@ function buildNav(){
 // ═══════════════════════════════════════
 // SETUP
 // ═══════════════════════════════════════
+function getStartBtnLabel(range){
+  const L=APP_UI[appLang]||APP_UI.de;
+  if(Object.keys(answers).length===0) return L.btn_start||'Erhebung starten →';
+  if(range && loadedAgeRange && range!==loadedAgeRange) return L.btn_update||'Erhebung aktualisieren →';
+  if(range){
+    const rp=RANGE_PHASES[range];
+    if(rp){
+      let hasOpen=false;
+      AREA_ORDER.forEach(aid=>{
+        rp.active.forEach(ph=>{
+          (DATA[aid].phases[String(ph)]||[]).forEach((_,i)=>{
+            const v=answers[`${aid}-${ph}-${i}`];
+            if(!v||v==='unknown') hasOpen=true;
+          });
+        });
+      });
+      if(hasOpen) return L.btn_resume||'Erhebung fortsetzen →';
+    }
+  }
+  return L.btn_update||'Erhebung aktualisieren →';
+}
+let loadedAgeRange=null;
+
 function selectAge(range,el){
   ageRange=range;
   document.querySelectorAll('.age-card').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
   const btn=document.getElementById('start-btn');
-  const hasData=Object.keys(answers).length>0;
   btn.disabled=false;
-  btn.textContent=hasData?'Erhebung aktualisieren →':'Erhebung starten →';
+  btn.textContent=getStartBtnLabel(range);
   document.getElementById('start-hint').textContent='';
   // Reset nav indicators since range changed
   AREA_ORDER.forEach(aid=>{
@@ -1140,7 +1162,7 @@ function closeConfirm(){ document.getElementById('confirm-modal').classList.remo
 
 function doNewSession(){
   answers={}; childInfo={}; ageRange=null; started=false; ageEditable=false;
-  systemPrefilled=new Set();
+  systemPrefilled=new Set(); loadedAgeRange=null;
   document.querySelectorAll('.age-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('start-btn').disabled=true;
   document.getElementById('start-hint').textContent='Bitte zuerst Altersbereich wählen';
@@ -1822,7 +1844,10 @@ function importKBD(evt){
       loadChildUI();
       if(ageRange){
         document.querySelectorAll('.age-card').forEach(c=>c.classList.toggle('sel',c.dataset.range===ageRange));
-        document.getElementById('start-btn').disabled=false;
+        loadedAgeRange=ageRange;
+        const importBtn=document.getElementById('start-btn');
+        importBtn.disabled=false;
+        importBtn.textContent=getStartBtnLabel(ageRange);
         document.getElementById('start-hint').textContent='';
       }
       if(started){
@@ -2035,7 +2060,7 @@ function drawLinear(childMonths){
   let W=0; let _el=canvas;
   while(_el&&W===0){W=_el.offsetWidth;_el=_el.parentElement;}
   W=Math.max(W,320);
-  const H=360;
+  const H=420;
   canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d');
   ctx.clearRect(0,0,W,H);
@@ -2048,16 +2073,19 @@ function drawLinear(childMonths){
   const n=AREA_ORDER.length;
   const maxPhase=18;
 
-  // Grid
-  [0,3,6,9,12,15,18].forEach(ph=>{
+  // Grid - all 18 phases
+  for(let ph=0;ph<=18;ph++){
     const y=PAD.t+ch-(ph/maxPhase)*ch;
+    const isMajor=ph%3===0;
     ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+cw,y);
-    ctx.strokeStyle=ph%6===0?'#d8cfc0':'#e8dfc8'; ctx.lineWidth=ph%6===0?1:0.7; ctx.stroke();
-    ctx.fillStyle='#7a6f60'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='right';
-    ctx.fillText('Ph.'+ph, PAD.l-5, y+4);
-    const mo=PMX[ph]||0;
-    if(ph>0){ ctx.textAlign='left'; ctx.fillText(mo+'M', PAD.l+cw+5, y+4); }
-  });
+    ctx.strokeStyle=isMajor?'#d8cfc0':'#ece8e0'; ctx.lineWidth=isMajor?1:0.5; ctx.stroke();
+    if(isMajor){
+      ctx.fillStyle='#7a6f60'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='right';
+      ctx.fillText('Ph.'+ph, PAD.l-5, y+4);
+      const mo=PMX[ph]||0;
+      if(ph>0){ ctx.textAlign='left'; ctx.fillText(mo+'M', PAD.l+cw+5, y+4); }
+    }
+  }
 
   // X axis labels
   const bw=cw/n;
@@ -2501,6 +2529,7 @@ const APP_UI={
     ans_yes:'✓ Tut es', ans_partial:'◑ Teilweise', ans_no:'✗ Tut es nicht', ans_unknown:'? Weiß nicht',
     range_krippe:'Krippenbereich', range_kita:'Kitabereich', range_schule:'Grundschulbereich',
     hdr_sub:'8 Entwicklungsbereiche · Phasen 1–18',
+    btn_start:'Erhebung starten →', btn_resume:'Erhebung fortsetzen →', btn_update:'Erhebung aktualisieren →',
     area_kup:'Körperbewusstsein & Pflege', area_ub:'Umgebungsbewusstsein',
     area_se:'Sozial-emotionale Entwicklung', area_st:'Spieltätigkeit',
     area_sl:'Sprache & Literacy', area_kog:'Kognition',
@@ -2513,6 +2542,7 @@ const APP_UI={
     ans_yes:"✓ Does it", ans_partial:"◑ Partly", ans_no:"✗ Does not", ans_unknown:"? Don't know",
     range_krippe:"Nursery (0–3)", range_kita:"Kindergarten (3–6)", range_schule:"Primary school (6–9)",
     hdr_sub:"8 developmental areas · Phases 1–18",
+    btn_start:"Start observation →", btn_resume:"Continue observation →", btn_update:"Update observation →",
     area_kup:"Body awareness & care", area_ub:"Environmental awareness",
     area_se:"Social-emotional dev.", area_st:"Play activities",
     area_sl:"Language & Literacy", area_kog:"Cognition",
@@ -2526,6 +2556,7 @@ const APP_UI={
     ans_yes:'✓ Lo fa', ans_partial:'◑ In parte', ans_no:'✗ Non lo fa', ans_unknown:'? Non so',
     range_krippe:'Asilo nido (0–3)', range_kita:'Scuola materna (3–6)', range_schule:'Scuola primaria (6–9)',
     hdr_sub:'8 aree di sviluppo · Fasi 1–18',
+    btn_start:'Avvia osservazione →', btn_resume:'Continua osservazione →', btn_update:'Aggiorna osservazione →',
     area_kup:'Cura del corpo', area_ub:"Consapevolezza dell'ambiente",
     area_se:'Sviluppo socio-emozionale', area_st:'Attività ludiche',
     area_sl:'Linguaggio & Literacy', area_kog:'Cognizione',
@@ -2604,8 +2635,8 @@ function setAppLang(lang){
   document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
     const view=el.getAttribute('data-view');
     if(areaKeys[view]&&L[areaKeys[view]]){
-      const span=el.querySelector('span:last-child');
-      if(span) span.textContent=L[areaKeys[view]];
+      const span=el.querySelector('span:nth-child(2)');
+      if(span) span.textContent=DATA[view]?DATA[view].emoji+' '+L[areaKeys[view]]:L[areaKeys[view]];
     }
   });
   try{localStorage.setItem('kbe_app_lang',lang);}catch(e){}
