@@ -1366,18 +1366,23 @@ function calcAreaStats(aid){
 }
 
 function calcDevAge(aid){
-  let ws=0,wt=0;
-  Object.keys(DATA[aid].phases).map(Number).sort((a,b)=>a-b).forEach(ph=>{
-    const items=DATA[aid].phases[ph];
+  // Beller method: developmental age = month value of the HIGHEST phase
+  // where >= 50% of items are answered 'yes' or 'partial'
+  const phases=Object.keys(DATA[aid].phases).map(Number).sort((a,b)=>a-b);
+  let highestPh=0;
+  phases.forEach(ph=>{
+    const items=DATA[aid].phases[String(ph)];
+    if(!items||items.length===0) return;
     let sc=0;
     items.forEach((_,i)=>{
       const a=answers[`${aid}-${ph}-${i}`];
       if(a==='yes') sc+=1; else if(a==='partial') sc+=0.5;
     });
     const norm=sc/items.length;
-    if(norm>0){ ws+=norm*(PHASE_MONTHS[ph]||ph*6); wt+=norm; }
+    // Phase counts if >= 50% competency shown
+    if(norm>=0.5) highestPh=ph;
   });
-  return wt>0?Math.round(ws/wt):null;
+  return highestPh>0?(PHASE_MONTHS[highestPh]||highestPh*6):null;
 }
 
 function calcBasisDecke(aid){
