@@ -312,22 +312,6 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
 .wc-title{font-family:'DM Sans',sans-serif;font-weight:600;font-size:1rem;color:#7a6f60;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.2rem}
 .wc-sub{font-family:'DM Sans',sans-serif;font-weight:300;font-size:1.4rem;color:#2a2520;margin-bottom:.2rem}
 .wc-years{font-size:.85rem;color:#3d6b52;font-weight:500;margin-bottom:1.5rem}
-.wc-input{
-  width:100%;padding:.65rem 1rem;
-  border:2px solid #e8dfc8;border-radius:8px;
-  font-family:'DM Sans',sans-serif;font-size:1rem;
-  color:#2a2520;background:#f5f0e8;
-  text-align:center;letter-spacing:.15em;
-  margin-bottom:.7rem;transition:border-color .2s;
-}
-.wc-input:focus{outline:none;border-color:#3d6b52}
-.wc-btn{
-  width:100%;padding:.65rem;border-radius:8px;
-  background:#3d6b52;color:white;border:none;
-  font-family:'DM Sans',sans-serif;font-size:.95rem;
-  font-weight:500;cursor:pointer;transition:opacity .15s;
-  margin-bottom:.8rem;
-}
 .wc-btn:hover{opacity:.85}
 .wc-error{font-size:.75rem;color:#b85050;margin-bottom:.5rem;display:none}
 .wc-version{font-size:.65rem;color:#bbb;margin-bottom:.3rem}
@@ -421,7 +405,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
             <div class="field"><label>Geburtsdatum</label><input type="date" id="c-birth" oninput="saveChild();calcAge()"></div>
             <div id="age-plausibility" style="grid-column:1/-1;display:none;font-size:.75rem;color:var(--danger);padding:.3rem .5rem;background:#fce8e8;border-radius:6px"></div>
             <div class="field">
-              <label>Alter in Monaten <span class="age-edit-link" id="age-edit-link" onclick="toggleAgeEdit()" style="display:none">✏️ bearbeiten</span></label>
+              <label>Alter in Monaten <span class="age-edit-link"</label>
               <input type="number" id="c-months" placeholder="z. B. 36" readonly oninput="saveChild()">
             </div>
             <div class="field"><label>Alter in Jahren</label><input type="number" step="0.1" id="c-years" placeholder="Wird automatisch berechnet" readonly style="background:#f0ece4;color:var(--muted);cursor:default"></div>
