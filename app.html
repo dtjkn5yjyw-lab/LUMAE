@@ -2241,18 +2241,16 @@ function drawLinear(childMonths){
 function drawBar(childMonths){
   const canvas=document.getElementById('barChart');
   if(!canvas) return;
-  // Get real display width - canvas will be CSS width:100% of container
   let W=0;
   const cb=document.getElementById('cb-bar');
-  if(cb&&cb.offsetWidth>0) W=cb.offsetWidth-32; // -32 for coll-body padding
+  if(cb&&cb.offsetWidth>0) W=cb.offsetWidth-32;
   if(!W){ let el=canvas.parentElement; while(el&&!W){W=el.offsetWidth;el=el.parentElement;} W=W>40?W-32:W; }
   if(!W){ const main=document.getElementById('main'); if(main) W=main.offsetWidth-72; }
   W=Math.max(W,480);
-  // Ensure right labels don't clip: canvas internal width matches display
-  canvas.style.width=W+'px';
   const PM={0:0,1:2,2:5,3:8,4:11,5:15,6:21,7:27,8:33,9:39,10:45,11:51,12:57,13:63,14:69,15:80,16:92,17:104,18:116};
-  const legendH=60, H=540+legendH;
+  const legendH=70, H=540+legendH;
   canvas.width=W; canvas.height=H;
+  canvas.style.width=W+'px';
   const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
   const pad={l:56,r:76,t:28,b:8};
   const chartH=H-legendH;
@@ -2281,36 +2279,72 @@ function drawBar(childMonths){
   ctx.save(); ctx.translate(W-8,pad.t+ch/2); ctx.rotate(Math.PI/2);
   ctx.fillStyle='#5a4f45'; ctx.font='bold 13px DM Sans,sans-serif'; ctx.textAlign='center'; ctx.fillText('Phase',0,0); ctx.restore();
 
-  // Bars with Basis + Decke lines
-  devAges.forEach((v,i)=>{
-    const aid=AREA_ORDER[i];
+  // Collect bar center X positions and basis/decke Y values
+  const barCenters=[];
+  const basisPoints=[], deckePoints=[];
+
+  AREA_ORDER.forEach((aid,i)=>{
     const x=pad.l+i*bw+bpad/2, bwidth=bw-bpad;
-    const bh=(Math.min(v,maxM)/maxM)*ch, by=pad.t+ch-bh;
-    ctx.fillStyle='rgba(0,0,0,0.04)'; ctx.fillRect(x+2,by+2,bwidth,bh);
-    ctx.fillStyle=AREA_COLORS[aid]; ctx.fillRect(x,by,bwidth,bh);
-    if(v>0){
-      const phVal=Object.entries(PM).reduce((best,[ph,mo])=>mo<=v?+ph:best,0);
-      ctx.fillStyle='#fff'; ctx.font='bold 12px DM Sans,sans-serif'; ctx.textAlign='center';
-      ctx.fillText('Ph.'+phVal, x+bwidth/2, by-7);
-    }
-    // Basis line (dark grey) = highest phase all-yes
+    const cx_bar=x+bwidth/2;
+    barCenters.push({x,bwidth,cx_bar});
+
     const bd=calcBasisDecke(aid);
     if(bd.basis){
-      const basisM=PM[bd.basis]||0;
-      const basisY=pad.t+ch-(basisM/maxM)*ch;
-      ctx.beginPath(); ctx.moveTo(x,basisY); ctx.lineTo(x+bwidth,basisY);
-      ctx.strokeStyle='rgba(80,80,80,0.7)'; ctx.lineWidth=2; ctx.setLineDash([]);  ctx.stroke();
+      const mo=PM[bd.basis]||0;
+      basisPoints.push({x:cx_bar, y:pad.t+ch-(mo/maxM)*ch, mo, ph:bd.basis});
+    } else {
+      basisPoints.push(null);
     }
-    // Decke line (light grey) = first phase all-no
     if(bd.decke){
-      const deckeM=PM[bd.decke]||0;
-      const deckeY=pad.t+ch-(deckeM/maxM)*ch;
-      ctx.beginPath(); ctx.moveTo(x,deckeY); ctx.lineTo(x+bwidth,deckeY);
-      ctx.strokeStyle='rgba(160,160,160,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+      const mo=PM[bd.decke]||0;
+      deckePoints.push({x:cx_bar, y:pad.t+ch-(mo/maxM)*ch, mo, ph:bd.decke});
+    } else {
+      deckePoints.push(null);
     }
   });
 
-  // Chronological age line (red)
+  // Draw bars (behind lines)
+  devAges.forEach((v,i)=>{
+    const {x,bwidth,cx_bar}=barCenters[i];
+    const bh=(Math.min(v,maxM)/maxM)*ch, by=pad.t+ch-bh;
+    ctx.fillStyle='rgba(0,0,0,0.04)'; ctx.fillRect(x+2,by+2,bwidth,bh);
+    ctx.fillStyle=AREA_COLORS[AREA_ORDER[i]]; ctx.fillRect(x,by,bwidth,bh);
+    if(v>0){
+      const phVal=Object.entries(PM).reduce((best,[ph,mo])=>mo<=v?+ph:best,0);
+      ctx.fillStyle='#fff'; ctx.font='bold 12px DM Sans,sans-serif'; ctx.textAlign='center';
+      ctx.fillText('Ph.'+phVal, cx_bar, by-7);
+    }
+  });
+
+  // Draw BASIS connecting line (dark grey, solid, 2.5px)
+  const validBasis=basisPoints.filter(Boolean);
+  if(validBasis.length>=2){
+    ctx.beginPath();
+    validBasis.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle='rgba(60,60,60,0.8)'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.stroke();
+    // Dots on basis line
+    validBasis.forEach(p=>{
+      ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2);
+      ctx.fillStyle='rgba(60,60,60,0.85)'; ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+    });
+  }
+
+  // Draw DECKE connecting line (medium grey, dashed, 2px)
+  const validDecke=deckePoints.filter(Boolean);
+  if(validDecke.length>=2){
+    ctx.beginPath();
+    validDecke.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
+    ctx.strokeStyle='rgba(140,140,140,0.8)'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+    // Dots on decke line
+    validDecke.forEach(p=>{
+      ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2);
+      ctx.fillStyle='rgba(140,140,140,0.85)'; ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+    });
+  }
+
+  // Chronological age line (red dashed)
   if(childMonths){
     const ly=pad.t+ch-(Math.min(childMonths,maxM)/maxM)*ch;
     ctx.beginPath(); ctx.moveTo(pad.l,ly); ctx.lineTo(pad.l+cw,ly);
@@ -2319,7 +2353,7 @@ function drawBar(childMonths){
     ctx.fillText('Chron. '+(childMonths/12).toFixed(1)+' J', pad.l+4, ly-8);
   }
 
-  // Average dev age line (green)
+  // Average dev age line (green dashed)
   const ages=devAges.filter(v=>v>0);
   if(ages.length>0){
     const avg=ages.reduce((a,b)=>a+b,0)/ages.length;
@@ -2334,26 +2368,30 @@ function drawBar(childMonths){
   ctx.strokeStyle='#b0a898'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ch); ctx.lineTo(pad.l+cw,pad.t+ch); ctx.stroke();
 
-  // Basis/Decke legend entries
-  const bdLegendY=chartH+6;
-  ctx.beginPath(); ctx.moveTo(pad.l, bdLegendY+5); ctx.lineTo(pad.l+20, bdLegendY+5);
-  ctx.strokeStyle='rgba(80,80,80,0.7)'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
-  ctx.fillStyle='#555'; ctx.font='11px DM Sans,sans-serif'; ctx.textAlign='left';
-  ctx.fillText('Basis', pad.l+24, bdLegendY+9);
-  ctx.beginPath(); ctx.moveTo(pad.l+70, bdLegendY+5); ctx.lineTo(pad.l+90, bdLegendY+5);
-  ctx.strokeStyle='rgba(160,160,160,0.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
-  ctx.fillStyle='#888'; ctx.fillText('Decke', pad.l+94, bdLegendY+9);
+  // Legend
+  const lY=chartH+10, lY2=chartH+32;
+  // Row 1: Basis + Decke lines
+  ctx.beginPath(); ctx.moveTo(pad.l,lY); ctx.lineTo(pad.l+22,lY);
+  ctx.strokeStyle='rgba(60,60,60,0.8)'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.stroke();
+  ctx.beginPath(); ctx.arc(pad.l+11,lY,3,0,Math.PI*2); ctx.fillStyle='rgba(60,60,60,0.85)'; ctx.fill();
+  ctx.fillStyle='#333'; ctx.font='12px DM Sans,sans-serif'; ctx.textAlign='left';
+  ctx.fillText('Basis', pad.l+26, lY+4);
 
-  // Emoji + short name legend
-  const legendY=chartH+22, colW=W/8;
+  ctx.beginPath(); ctx.moveTo(pad.l+80,lY); ctx.lineTo(pad.l+102,lY);
+  ctx.strokeStyle='rgba(140,140,140,0.8)'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(pad.l+91,lY,3,0,Math.PI*2); ctx.fillStyle='rgba(140,140,140,0.85)'; ctx.fill();
+  ctx.fillStyle='#666'; ctx.fillText('Decke', pad.l+106, lY+4);
+
+  // Row 2: emoji + short names
   const shortNames={kup:'KP',ub:'UB',se:'SE',st:'ST',sl:'SL',kog:'KO',gm:'GM',fm:'FM'};
+  const colW=W/8;
   AREA_ORDER.forEach((aid,i)=>{
-    const cx=i*colW+colW/2;
-    ctx.fillStyle=AREA_COLORS[aid]; ctx.fillRect(cx-16,legendY,14,10);
-    ctx.font='14px serif'; ctx.textAlign='center';
-    ctx.fillText(DATA[aid].emoji, cx-9, legendY+28);
+    const cx2=i*colW+colW/2;
+    ctx.fillStyle=AREA_COLORS[aid]; ctx.fillRect(cx2-14,lY2-8,12,8);
+    ctx.font='13px serif'; ctx.textAlign='center';
+    ctx.fillText(DATA[aid].emoji, cx2-8, lY2+12);
     ctx.fillStyle='#5a4f45'; ctx.font='bold 11px DM Sans,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(shortNames[aid]||aid, cx-9, legendY+44);
+    ctx.fillText(shortNames[aid]||aid, cx2-8, lY2+26);
   });
 }
 
