@@ -1401,6 +1401,7 @@ function calcBasisDecke(aid){
 // PROFILE / CHARTS (pure Canvas)
 // ═══════════════════════════════════════
 function renderProfile(){
+  const L=APP_UI[appLang]||APP_UI.de;
   const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
   const name=childInfo.name||'Kind';
   const ages=AREA_ORDER.map(calcDevAge).filter(a=>a!==null);
