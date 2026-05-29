@@ -1507,9 +1507,9 @@ function drawRadar(childMonths){
   const ctx=canvas.getContext('2d');
   let W=0;
   const cb=document.getElementById('cb-radar');
-  if(cb&&cb.offsetWidth>0) W=Math.min(cb.offsetWidth-32, 720);
-  if(!W){ let _rEl=canvas.parentElement; while(_rEl&&!W){W=_rEl.offsetWidth;_rEl=_rEl.parentElement;} W=Math.min(W-32,720); }
-  if(!W){ const main=document.getElementById('main'); if(main) W=Math.min(main.offsetWidth-80,720); }
+  if(cb&&cb.offsetWidth>0) W=Math.min(cb.offsetWidth-32, 800);
+  if(!W){ let _rEl=canvas.parentElement; while(_rEl&&!W){W=_rEl.offsetWidth;_rEl=_rEl.parentElement;} W=Math.min(W-32,800); }
+  if(!W){ const main=document.getElementById('main'); if(main) W=Math.min(main.offsetWidth-80,800); }
   W=Math.max(W,440);
   // Add extra height for labels below
   const labelSpace=60;
@@ -1520,6 +1520,8 @@ function drawRadar(childMonths){
   const n=8, max=120;
   ctx.clearRect(0,0,W,W+labelSpace);
   const ang=i=>-Math.PI/2+(2*Math.PI*i/n);
+  // Short labels for radar (emoji + abbreviated name)
+  const radarShort={kup:'Körper',ub:'Umgebung',se:'Sozial-Em.',st:'Spieltätig.',sl:'Sprache',kog:'Kognition',gm:'Grobmot.',fm:'Feinmot.'};
 
   // Grid circles
   [0.25,0.5,0.75,1].forEach(f=>{
@@ -1543,7 +1545,7 @@ function drawRadar(childMonths){
   }
 
   // Area labels - outside the circle with good padding
-  const labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+DATA[id].name.split(' ')[0]);
+  const labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+(radarShort[id]||DATA[id].name.split(' ')[0]));
   const labelR=r+42; // distance from center for labels
   for(let i=0;i<n;i++){
     const a=ang(i);
@@ -2279,16 +2281,32 @@ function drawBar(childMonths){
   ctx.save(); ctx.translate(W-8,pad.t+ch/2); ctx.rotate(Math.PI/2);
   ctx.fillStyle='#5a4f45'; ctx.font='bold 13px DM Sans,sans-serif'; ctx.textAlign='center'; ctx.fillText('Phase',0,0); ctx.restore();
 
-  // Bars
+  // Bars with Basis + Decke lines
   devAges.forEach((v,i)=>{
+    const aid=AREA_ORDER[i];
     const x=pad.l+i*bw+bpad/2, bwidth=bw-bpad;
     const bh=(Math.min(v,maxM)/maxM)*ch, by=pad.t+ch-bh;
     ctx.fillStyle='rgba(0,0,0,0.04)'; ctx.fillRect(x+2,by+2,bwidth,bh);
-    ctx.fillStyle=AREA_COLORS[AREA_ORDER[i]]; ctx.fillRect(x,by,bwidth,bh);
+    ctx.fillStyle=AREA_COLORS[aid]; ctx.fillRect(x,by,bwidth,bh);
     if(v>0){
       const phVal=Object.entries(PM).reduce((best,[ph,mo])=>mo<=v?+ph:best,0);
       ctx.fillStyle='#fff'; ctx.font='bold 12px DM Sans,sans-serif'; ctx.textAlign='center';
       ctx.fillText('Ph.'+phVal, x+bwidth/2, by-7);
+    }
+    // Basis line (dark grey) = highest phase all-yes
+    const bd=calcBasisDecke(aid);
+    if(bd.basis){
+      const basisM=PM[bd.basis]||0;
+      const basisY=pad.t+ch-(basisM/maxM)*ch;
+      ctx.beginPath(); ctx.moveTo(x,basisY); ctx.lineTo(x+bwidth,basisY);
+      ctx.strokeStyle='rgba(80,80,80,0.7)'; ctx.lineWidth=2; ctx.setLineDash([]);  ctx.stroke();
+    }
+    // Decke line (light grey) = first phase all-no
+    if(bd.decke){
+      const deckeM=PM[bd.decke]||0;
+      const deckeY=pad.t+ch-(deckeM/maxM)*ch;
+      ctx.beginPath(); ctx.moveTo(x,deckeY); ctx.lineTo(x+bwidth,deckeY);
+      ctx.strokeStyle='rgba(160,160,160,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
     }
   });
 
@@ -2316,8 +2334,18 @@ function drawBar(childMonths){
   ctx.strokeStyle='#b0a898'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ch); ctx.lineTo(pad.l+cw,pad.t+ch); ctx.stroke();
 
-  // Legend with emoji + short name + color swatch
-  const legendY=chartH+6, colW=W/8;
+  // Basis/Decke legend entries
+  const bdLegendY=chartH+6;
+  ctx.beginPath(); ctx.moveTo(pad.l, bdLegendY+5); ctx.lineTo(pad.l+20, bdLegendY+5);
+  ctx.strokeStyle='rgba(80,80,80,0.7)'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
+  ctx.fillStyle='#555'; ctx.font='11px DM Sans,sans-serif'; ctx.textAlign='left';
+  ctx.fillText('Basis', pad.l+24, bdLegendY+9);
+  ctx.beginPath(); ctx.moveTo(pad.l+70, bdLegendY+5); ctx.lineTo(pad.l+90, bdLegendY+5);
+  ctx.strokeStyle='rgba(160,160,160,0.7)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#888'; ctx.fillText('Decke', pad.l+94, bdLegendY+9);
+
+  // Emoji + short name legend
+  const legendY=chartH+22, colW=W/8;
   const shortNames={kup:'KP',ub:'UB',se:'SE',st:'ST',sl:'SL',kog:'KO',gm:'GM',fm:'FM'};
   AREA_ORDER.forEach((aid,i)=>{
     const cx=i*colW+colW/2;
