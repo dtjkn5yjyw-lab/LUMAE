@@ -1437,7 +1437,7 @@ function renderProfile(){
 
   // 4. Radialdiagramm
   html+=collCard('radar','🎯','Radialdiagramm: Entwicklungsprofil',
-    `<div style="max-width:480px;margin:0 auto"><canvas id="radarChart" class="mychart"></canvas></div>`,false);
+    `<div style="max-width:700px;margin:0 auto"><canvas id="radarChart" class="mychart"></canvas></div>`,false);
 
   // Fördermöglichkeiten: separate nav item
 
@@ -1505,9 +1505,15 @@ function drawRadar(childMonths){
   const canvas=document.getElementById('radarChart');
   if(!canvas) return;
   const ctx=canvas.getContext('2d');
-  let W=0; let _rEl=canvas; while(_rEl&&W===0){W=_rEl.offsetWidth;_rEl=_rEl.parentElement;} W=Math.max(W,300);
+  // Get real width including from visible parent
+  let W=0;
+  const cb=document.getElementById('cb-radar');
+  if(cb&&cb.offsetWidth>0) W=Math.min(cb.offsetWidth, 700);
+  if(!W){ let _rEl=canvas.parentElement; while(_rEl&&!W){W=_rEl.offsetWidth;_rEl=_rEl.parentElement;} W=Math.min(W,700); }
+  if(!W){ const main=document.getElementById('main'); if(main) W=Math.min(main.offsetWidth-80,700); }
+  W=Math.max(W,420);
   canvas.width=W; canvas.height=W;
-  const cx=W/2,cy=W/2,r=W*0.36,labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+DATA[id].name.split(' ')[0]);
+  const cx=W/2,cy=W/2,r=W*0.38,labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+DATA[id].name.split(' ')[0]);
   const n=8,max=120;
   ctx.clearRect(0,0,W,W);
   const ang=i=>-Math.PI/2+(2*Math.PI*i/n);
@@ -1516,7 +1522,7 @@ function drawRadar(childMonths){
     ctx.beginPath();
     for(let i=0;i<n;i++){ const a=ang(i); i===0?ctx.moveTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)):ctx.lineTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)); }
     ctx.closePath(); ctx.strokeStyle='#e8dfc8'; ctx.lineWidth=1; ctx.stroke();
-    ctx.fillStyle='#aaa'; ctx.font='10px DM Sans,sans-serif'; ctx.textAlign='center';
+    ctx.fillStyle='#aaa'; ctx.font='13px DM Sans,sans-serif'; ctx.textAlign='center';
     ctx.fillText(Math.round(max*f)+'M',cx+4,cy-r*f+4);
   });
   // Axes
@@ -1526,7 +1532,7 @@ function drawRadar(childMonths){
     ctx.strokeStyle='#e8dfc8'; ctx.lineWidth=1; ctx.stroke();
     // Label
     const lx=cx+(r+24)*Math.cos(a),ly=cy+(r+24)*Math.sin(a);
-    ctx.fillStyle='#7a6f60'; ctx.font='10px DM Sans,sans-serif';
+    ctx.fillStyle='#7a6f60'; ctx.font='13px DM Sans,sans-serif';
     ctx.textAlign=lx<cx-5?'right':lx>cx+5?'left':'center';
     ctx.fillText(labels[i],lx,ly+4);
   }
@@ -1547,7 +1553,7 @@ function drawRadar(childMonths){
   // Legend
   const ly2=W-18;
   ctx.fillStyle='#3d6b52'; ctx.fillRect(cx-100,ly2-10,14,10);
-  ctx.fillStyle='#555'; ctx.font='11px DM Sans,sans-serif'; ctx.textAlign='left';
+  ctx.fillStyle='#555'; ctx.font='13px DM Sans,sans-serif'; ctx.textAlign='left';
   ctx.fillText('Entwicklungsalter',cx-82,ly2);
   if(childMonths){
     ctx.strokeStyle='rgba(184,80,80,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
@@ -2101,13 +2107,14 @@ function closeAlterInfo(){
 function drawLinear(childMonths){
   const canvas=document.getElementById('linearChart');
   if(!canvas) return;
-  // Get width from parent container or coll-card
+  // Get real display width
   let W=0;
   const cb=document.getElementById('cb-linear');
-  if(cb&&cb.offsetWidth>0) W=cb.offsetWidth;
-  if(!W){ let _el=canvas.parentElement; while(_el&&!W){W=_el.offsetWidth;_el=_el.parentElement;} }
-  if(!W){ const main=document.getElementById('main'); if(main) W=main.offsetWidth-40; }
+  if(cb&&cb.offsetWidth>0) W=cb.offsetWidth-32;
+  if(!W){ let _el=canvas.parentElement; while(_el&&!W){W=_el.offsetWidth;_el=_el.parentElement;} W=W>40?W-32:W; }
+  if(!W){ const main=document.getElementById('main'); if(main) W=main.offsetWidth-72; }
   W=Math.max(W,480);
+  canvas.style.width=W+'px';
   const H=500; canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
   const PMX={0:0,1:2,2:5,3:8,4:11,5:15,6:21,7:27,8:33,9:39,10:45,11:51,12:57,13:63,14:69,15:80,16:92,17:104,18:116};
@@ -2193,13 +2200,15 @@ function drawLinear(childMonths){
 function drawBar(childMonths){
   const canvas=document.getElementById('barChart');
   if(!canvas) return;
-  // Get real width from visible container
+  // Get real display width - canvas will be CSS width:100% of container
   let W=0;
   const cb=document.getElementById('cb-bar');
-  if(cb&&cb.offsetWidth>0) W=cb.offsetWidth;
-  if(!W){ let el=canvas.parentElement; while(el&&!W){W=el.offsetWidth;el=el.parentElement;} }
-  if(!W){ const main=document.getElementById('main'); if(main) W=main.offsetWidth-40; }
+  if(cb&&cb.offsetWidth>0) W=cb.offsetWidth-32; // -32 for coll-body padding
+  if(!W){ let el=canvas.parentElement; while(el&&!W){W=el.offsetWidth;el=el.parentElement;} W=W>40?W-32:W; }
+  if(!W){ const main=document.getElementById('main'); if(main) W=main.offsetWidth-72; }
   W=Math.max(W,480);
+  // Ensure right labels don't clip: canvas internal width matches display
+  canvas.style.width=W+'px';
   const PM={0:0,1:2,2:5,3:8,4:11,5:15,6:21,7:27,8:33,9:39,10:45,11:51,12:57,13:63,14:69,15:80,16:92,17:104,18:116};
   const legendH=60, H=540+legendH;
   canvas.width=W; canvas.height=H;
