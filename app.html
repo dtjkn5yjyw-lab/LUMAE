@@ -480,13 +480,13 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
 
   
   <div id="view-foerder" style="display:none">
-    <h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)">💡 Fördermöglichkeiten</h2>
+    <h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)" id="foerder-view-h">💡 Fördermöglichkeiten</h2>
     <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.2rem">Konkrete Fördervorschläge für Zuhause und die Einrichtung.</p>
     <div id="foerder-content"></div>
   </div>
 
   <div id="view-dokumente" style="display:none">
-    <h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)">📄 Dokumente</h2>
+    <h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)" id="dokumente-view-h">📄 Dokumente</h2>
     <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.5rem">Wählen Sie die Inhalte für den Export aus.</p>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:1rem">
       <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.8rem">Auswahl</div>
@@ -1417,9 +1417,9 @@ function renderProfile(){
 
   // Summary with info button
   let html=`<div class="sum-box">
-    <div><div class="sum-n">${cm?(cm/12).toFixed(1):'—'}</div><div class="sum-l">Chron. Alter (Jahre)</div></div>
-    <div><div class="sum-n">${oy}</div><div class="sum-l">Ø Entwicklungsalter</div></div>
-    <div><div class="sum-n" style="color:${diffColor}">${diffStr}</div><div class="sum-l">Differenz</div></div>
+    <div><div class="sum-n">${cm?(cm/12).toFixed(1):'—'}</div><div class="sum-l">${L.prof_chron||'Chron. Alter (Jahre)'}</div></div>
+    <div><div class="sum-n">${oy}</div><div class="sum-l">${L.prof_avg||'Ø Entwicklungsalter'}</div></div>
+    <div><div class="sum-n" style="color:${diffColor}">${diffStr}</div><div class="sum-l">${L.prof_diff||'Differenz'}</div></div>
     <div style="margin-left:auto"><button onclick="openAlterInfo()" style="background:transparent;border:none;cursor:pointer;font-size:1.1rem;color:var(--accent);padding:0 .3rem" title="Was bedeuten diese Werte?">ℹ</button></div>
   </div>`;
 
@@ -2160,25 +2160,15 @@ function drawLinear(childMonths){
   const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
   const maxPhase=18;
 
-  // Dynamic Y-axis: show active range + 1 phase buffer
-  let minPh=0, maxPh=18;
-  if(ageRange&&RANGE_PHASES[ageRange]){
-    const rp=RANGE_PHASES[ageRange];
-    const allPhs=[...rp.active,...rp.prefilled].filter(p=>p>0);
-    if(allPhs.length>0){
-      minPh=Math.max(0,Math.min(...allPhs)-1);
-      maxPh=Math.min(18,Math.max(...rp.active)+1);
-    }
-  }
-  const phRange=maxPh-minPh||18;
-  // Grid lines for visible range
-  for(let ph=minPh;ph<=maxPh;ph++){
-    const frac=(ph-minPh)/phRange;
+  // Fixed Y-axis: always Ph.0-18 for comparability
+  const minPh=0, maxPh=18, phRange=18;
+  for(let ph=0;ph<=18;ph++){
+    const frac=ph/18;
     const y=PAD.t+ch-frac*ch;
     const isMajor=(ph%3===0);
     ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+cw,y);
     ctx.strokeStyle=isMajor?'#cfc8b8':'#e8e0d0'; ctx.lineWidth=isMajor?1:0.5; ctx.stroke();
-    if(isMajor||ph===minPh||ph===maxPh){
+    if(isMajor){
       ctx.fillStyle='#5a4f45'; ctx.font='bold 13px DM Sans,sans-serif'; ctx.textAlign='right';
       ctx.fillText('Ph.'+ph, PAD.l-6, y+5);
       const mo=PMX[ph]||0;
@@ -2582,6 +2572,12 @@ const APP_UI={
     range_krippe:'Krippenbereich', range_kita:'Kitabereich', range_schule:'Grundschulbereich',
     hdr_sub:'8 Entwicklungsbereiche · Phasen 1–18',
     prof_chron:'Chron. Alter (Jahre)', prof_avg:'Ø Entwicklungsalter', prof_diff:'Differenz',
+    card_detail:'📋 Detailergebnisse',
+    card_linear:'📈 Liniendiagramm: Entwicklungsprofil nach Beller',
+    card_bar:'📊 Balkendiagramm: Entwicklungsalter je Bereich',
+    card_radar:'🎯 Radialdiagramm: Entwicklungsprofil',
+    foerder_title:'💡 Fördermöglichkeiten',
+    dok_title:'📄 Dokumente',
     tbl_bereich:'Bereich', tbl_alter:'Entw.alter', tbl_diff:'Differenz',
     tbl_kompetenz:'Kompetenz', tbl_basis:'Basis', tbl_decke:'Decke',
     foerder_h:'💡 Fördermöglichkeiten', foerder_sub:'Konkrete Fördervorschläge für Zuhause und die Einrichtung.',
@@ -2605,6 +2601,12 @@ const APP_UI={
     range_krippe:"Nursery (0–3)", range_kita:"Kindergarten (3–6)", range_schule:"Primary school (6–9)",
     hdr_sub:"8 developmental areas · Phases 1–18",
     prof_chron:"Chron. age (years)", prof_avg:"Ø Dev. age", prof_diff:"Difference",
+    card_detail:"📋 Detail results",
+    card_linear:"📈 Line chart: Developmental profile (Beller)",
+    card_bar:"📊 Bar chart: Developmental age per area",
+    card_radar:"🎯 Radar chart: Developmental profile",
+    foerder_title:"💡 Support suggestions",
+    dok_title:"📄 Documents",
     tbl_bereich:"Area", tbl_alter:"Dev. age", tbl_diff2:"Difference",
     tbl_kompetenz:"Competency", tbl_basis:"Basis", tbl_decke:"Ceiling",
     foerder_h:"💡 Support suggestions", foerder_sub:"Concrete support ideas for home and the institution.",
@@ -2627,6 +2629,12 @@ const APP_UI={
     range_krippe:'Asilo nido (0–3)', range_kita:'Scuola materna (3–6)', range_schule:'Scuola primaria (6–9)',
     hdr_sub:'8 aree di sviluppo · Fasi 1–18',
     prof_chron:'Età cron. (anni)', prof_avg:'Ø Età di sviluppo', prof_diff:'Differenza',
+    card_detail:'📋 Risultati dettagliati',
+    card_linear:'📈 Grafico a linee: Profilo di sviluppo (Beller)',
+    card_bar:'📊 Grafico a barre: Età di sviluppo per area',
+    card_radar:'🎯 Grafico radar: Profilo di sviluppo',
+    foerder_title:'💡 Possibilità di sostegno',
+    dok_title:'📄 Documenti',
     tbl_bereich:'Area', tbl_alter:'Età di sviluppo', tbl_diff2:'Differenza',
     tbl_kompetenz:'Competenza', tbl_basis:'Base', tbl_decke:'Soffitto',
     foerder_h:'💡 Possibilità di sostegno', foerder_sub:'Proposte concrete per casa e per la struttura.',
@@ -2701,15 +2709,27 @@ function setAppLang(lang){
     if(mapped) th.textContent=mapped;
   });
   // Foerder view
-  const fh=document.querySelector('#view-foerder h2');
+  const fh=document.getElementById('foerder-view-h');
   const fs=document.querySelector('#view-foerder p');
-  if(fh&&L.foerder_h) fh.textContent=L.foerder_h;
+  if(fh&&L.foerder_title) fh.textContent=L.foerder_title;
   if(fs&&L.foerder_sub) fs.textContent=L.foerder_sub;
   // Dokumente view
-  const dh=document.querySelector('#view-dokumente h2');
+  const dh=document.getElementById('dokumente-view-h');
   const ds=document.querySelector('#view-dokumente > p');
-  if(dh&&L.dok_h) dh.textContent=L.dok_h;
+  if(dh&&L.dok_title) dh.textContent=L.dok_title;
   if(ds&&L.dok_sub) ds.textContent=L.dok_sub;
+  // Update profile collCard titles when profile is open
+  document.querySelectorAll('.coll-hdr').forEach(hdr=>{
+    const body=hdr.nextElementSibling;
+    if(!body) return;
+    const id=body.id?body.id.replace('cb-',''):'';
+    const titleEl=hdr.querySelector('span:first-child');
+    if(!titleEl) return;
+    if(id==='detail'&&L.card_detail) titleEl.textContent=L.card_detail;
+    else if(id==='linear'&&L.card_linear) titleEl.textContent=L.card_linear;
+    else if(id==='bar'&&L.card_bar) titleEl.textContent=L.card_bar;
+    else if(id==='radar'&&L.card_radar) titleEl.textContent=L.card_radar;
+  });
   // Area names in sidebar
   const areaKeys={kup:'area_kup',ub:'area_ub',se:'area_se',st:'area_st',sl:'area_sl',kog:'area_kog',gm:'area_gm',fm:'area_fm'};
   document.querySelectorAll('.nav-item[data-view]').forEach(el=>{
