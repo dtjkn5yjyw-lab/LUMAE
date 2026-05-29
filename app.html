@@ -1505,64 +1505,103 @@ function drawRadar(childMonths){
   const canvas=document.getElementById('radarChart');
   if(!canvas) return;
   const ctx=canvas.getContext('2d');
-  // Get real width including from visible parent
   let W=0;
   const cb=document.getElementById('cb-radar');
-  if(cb&&cb.offsetWidth>0) W=Math.min(cb.offsetWidth, 700);
-  if(!W){ let _rEl=canvas.parentElement; while(_rEl&&!W){W=_rEl.offsetWidth;_rEl=_rEl.parentElement;} W=Math.min(W,700); }
-  if(!W){ const main=document.getElementById('main'); if(main) W=Math.min(main.offsetWidth-80,700); }
-  W=Math.max(W,420);
-  canvas.width=W; canvas.height=W;
-  const cx=W/2,cy=W/2,r=W*0.38,labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+DATA[id].name.split(' ')[0]);
-  const n=8,max=120;
-  ctx.clearRect(0,0,W,W);
+  if(cb&&cb.offsetWidth>0) W=Math.min(cb.offsetWidth-32, 720);
+  if(!W){ let _rEl=canvas.parentElement; while(_rEl&&!W){W=_rEl.offsetWidth;_rEl=_rEl.parentElement;} W=Math.min(W-32,720); }
+  if(!W){ const main=document.getElementById('main'); if(main) W=Math.min(main.offsetWidth-80,720); }
+  W=Math.max(W,440);
+  // Add extra height for labels below
+  const labelSpace=60;
+  canvas.width=W; canvas.height=W+labelSpace;
+  canvas.style.width=W+'px';
+  const cx=W/2, cy=W/2;
+  const r=W*0.33; // smaller radius = more room for labels
+  const n=8, max=120;
+  ctx.clearRect(0,0,W,W+labelSpace);
   const ang=i=>-Math.PI/2+(2*Math.PI*i/n);
-  // Grid
+
+  // Grid circles
   [0.25,0.5,0.75,1].forEach(f=>{
     ctx.beginPath();
-    for(let i=0;i<n;i++){ const a=ang(i); i===0?ctx.moveTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)):ctx.lineTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)); }
-    ctx.closePath(); ctx.strokeStyle='#e8dfc8'; ctx.lineWidth=1; ctx.stroke();
-    ctx.fillStyle='#aaa'; ctx.font='13px DM Sans,sans-serif'; ctx.textAlign='center';
-    ctx.fillText(Math.round(max*f)+'M',cx+4,cy-r*f+4);
+    for(let i=0;i<n;i++){
+      const a=ang(i);
+      i===0?ctx.moveTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)):ctx.lineTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.strokeStyle=f===1?'#c8bfb0':'#e8dfc8'; ctx.lineWidth=f===1?1.5:0.8; ctx.stroke();
+    // Month label on grid
+    ctx.fillStyle='#9a8a7a'; ctx.font='12px DM Sans,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(Math.round(max*f)+'M', cx+4, cy-r*f-4);
   });
+
   // Axes
   for(let i=0;i<n;i++){
     const a=ang(i);
     ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+r*Math.cos(a),cy+r*Math.sin(a));
-    ctx.strokeStyle='#e8dfc8'; ctx.lineWidth=1; ctx.stroke();
-    // Label
-    const lx=cx+(r+24)*Math.cos(a),ly=cy+(r+24)*Math.sin(a);
-    ctx.fillStyle='#7a6f60'; ctx.font='13px DM Sans,sans-serif';
-    ctx.textAlign=lx<cx-5?'right':lx>cx+5?'left':'center';
-    ctx.fillText(labels[i],lx,ly+4);
+    ctx.strokeStyle='#ddd5c5'; ctx.lineWidth=1; ctx.stroke();
   }
-  // Child age reference circle
+
+  // Area labels - outside the circle with good padding
+  const labels=AREA_ORDER.map(id=>DATA[id].emoji+' '+DATA[id].name.split(' ')[0]);
+  const labelR=r+42; // distance from center for labels
+  for(let i=0;i<n;i++){
+    const a=ang(i);
+    const lx=cx+labelR*Math.cos(a);
+    const ly=cy+labelR*Math.sin(a);
+    ctx.fillStyle='#4a4035';
+    ctx.font='bold 14px DM Sans,sans-serif';
+    ctx.textAlign=lx<cx-8?'right':lx>cx+8?'left':'center';
+    ctx.fillText(labels[i], lx, ly+5);
+  }
+
+  // Chronological age reference
   if(childMonths){
     const rf=Math.min(childMonths,max)/max;
     ctx.beginPath();
-    for(let i=0;i<n;i++){ const a=ang(i); i===0?ctx.moveTo(cx+r*rf*Math.cos(a),cy+r*rf*Math.sin(a)):ctx.lineTo(cx+r*rf*Math.cos(a),cy+r*rf*Math.sin(a)); }
-    ctx.closePath(); ctx.strokeStyle='rgba(184,80,80,0.5)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
+    for(let i=0;i<n;i++){
+      const a=ang(i);
+      i===0?ctx.moveTo(cx+r*rf*Math.cos(a),cy+r*rf*Math.sin(a)):ctx.lineTo(cx+r*rf*Math.cos(a),cy+r*rf*Math.sin(a));
+    }
+    ctx.closePath();
+    ctx.strokeStyle='rgba(184,80,80,0.55)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
   }
+
   // Data polygon
   const devAges=AREA_ORDER.map(id=>{ const da=calcDevAge(id); return da?Math.min(da,max):0; });
   ctx.beginPath();
-  devAges.forEach((v,i)=>{ const a=ang(i),f=v/max; i===0?ctx.moveTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)):ctx.lineTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)); });
-  ctx.closePath(); ctx.fillStyle='rgba(61,107,82,0.18)'; ctx.fill();
-  ctx.strokeStyle='#3d6b52'; ctx.lineWidth=2.5; ctx.stroke();
-  devAges.forEach((v,i)=>{ const a=ang(i),f=v/max; ctx.beginPath(); ctx.arc(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a),4,0,Math.PI*2); ctx.fillStyle='#3d6b52'; ctx.fill(); });
-  // Legend
-  const ly2=W-18;
-  ctx.fillStyle='#3d6b52'; ctx.fillRect(cx-100,ly2-10,14,10);
-  ctx.fillStyle='#555'; ctx.font='13px DM Sans,sans-serif'; ctx.textAlign='left';
-  ctx.fillText('Entwicklungsalter',cx-82,ly2);
+  devAges.forEach((v,i)=>{
+    const a=ang(i), f=v/max;
+    i===0?ctx.moveTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a)):ctx.lineTo(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a));
+  });
+  ctx.closePath();
+  ctx.fillStyle='rgba(45,90,61,0.15)'; ctx.fill();
+  ctx.strokeStyle='#2d5a3d'; ctx.lineWidth=2.5; ctx.stroke();
+
+  // Data points
+  devAges.forEach((v,i)=>{
+    const a=ang(i), f=v/max;
+    ctx.beginPath();
+    ctx.arc(cx+r*f*Math.cos(a),cy+r*f*Math.sin(a),6,0,Math.PI*2);
+    ctx.fillStyle='#2d5a3d'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  });
+
+  // Legend - bigger and clearer
+  const legendY=W+labelSpace-18;
+  const legendX=cx-120;
+  // Dev age
+  ctx.fillStyle='#2d5a3d'; ctx.fillRect(legendX,legendY-11,18,12);
+  ctx.fillStyle='#333'; ctx.font='bold 14px DM Sans,sans-serif'; ctx.textAlign='left';
+  ctx.fillText('Entwicklungsalter', legendX+22, legendY);
+  // Chron age
   if(childMonths){
-    ctx.strokeStyle='rgba(184,80,80,0.6)'; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
-    ctx.beginPath(); ctx.moveTo(cx+20,ly2-5); ctx.lineTo(cx+34,ly2-5); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle='#555'; ctx.fillText('Chron. Alter',cx+38,ly2);
+    ctx.strokeStyle='rgba(184,80,80,0.7)'; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(legendX+160,legendY-5); ctx.lineTo(legendX+180,legendY-5); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#333'; ctx.fillText('Chron. Alter', legendX+184, legendY);
   }
 }
 
-// ── Pure Canvas Bar ──
 function renderFoerder(){
   const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
   const year=Math.min(9,Math.floor(cm/12));
@@ -2789,7 +2828,8 @@ const HELP_CONTENT={
       <div class="help-box">🍼 <strong>Nursery (0–3 years)</strong><br>Phases 1–8 active</div>
       <div class="help-box">🧸 <strong>Kindergarten (3–6 years)</strong><br>Phases 9–14 active · Phases 1–8 as basis (pre-filled)</div>
       <div class="help-box">📚 <strong>Primary school (6–9 years)</strong><br>Phases 15–18 active · Phases 1–14 as basis</div>
-      <p style="margin-top:.8rem"><strong>Basis:</strong> Competencies below the selected range are pre-filled as "Does it".<br><strong>Above range:</strong> Pre-filled as "Does not" – but can be changed if the child shows advanced development.</p>`,
+      <p style="margin-top:.8rem"><strong>Basis:</strong> Competencies below the selected range are pre-filled as "Does it".<br><strong>Above range:</strong> Pre-filled as "Does not" – but can be changed if the child shows advanced development.</p>
+      <div class="help-tip">💡 <strong>Tip:</strong> Choose the age range that matches the child's actual age. If the child is near a boundary, use your professional judgement.</div>`,
     beobachtung:`<h3>✏️ Observation &amp; Assessment</h3>
       <p>Rate each item according to the following scheme:</p>
       <div class="help-ans yes">✓ <strong>Does it:</strong> The child shows the behaviour reliably and consistently.</div>
@@ -2818,12 +2858,14 @@ const HELP_CONTENT={
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">📊 Bar chart</h4>
       <p>Developmental age per area as bars. <span style="color:#b85050">Red dashed</span> = chronological age · <span style="color:#2d5a3d">Green dashed</span> = average developmental age.</p>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">🎯 Radar chart</h4>
-      <p>All 8 areas in a spider web diagram – quick overview of strengths and areas for development.</p>`,
+      <p>All 8 areas in a spider web diagram – quick overview of strengths and areas for development.</p>
+      <div class="help-tip">💡 <strong>Tip:</strong> Open the charts by clicking the arrow ▸ on the right. Charts are drawn when opened – so they always reflect the current state of the observation.</div>`,
     nacharbeiten:`<h3>📝 Still pending</h3>
       <p>Items answered with <strong>"Don't know" (?)</strong> are collected here. This navigation item is <strong>only visible when there are pending items</strong>.</p>
       <div class="help-step"><div class="help-step-num">1</div><div>Open "Still pending" in the left navigation.</div></div>
       <div class="help-step"><div class="help-step-num">2</div><div>All "Don't know" items are listed there.</div></div>
-      <div class="help-step"><div class="help-step-num">3</div><div>Answer the items when you have had the opportunity to observe the behaviour.</div></div>`,
+      <div class="help-step"><div class="help-step-num">3</div><div>Answer the items when you have had the opportunity to observe the behaviour.</div></div>
+      <div class="help-tip">💡 <strong>Tip:</strong> "Don't know" is not a weakness – it means you are observing carefully and honestly. Better to note it as pending than to guess.</div>`,
     rechtlich:`<h3>⚖️ Legal &amp; Privacy</h3>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">Copyright</h4>
       <p><strong>Contents:</strong> © Kuno Beller / <a href="https://www.verlagdasnetz.de" target="_blank">Verlag das netz</a><br><strong>Digital implementation:</strong> © 2025 Jens Trost · <a href="https://www.kunobelleronline.de">kunobelleronline.de</a></p>
@@ -2848,7 +2890,8 @@ const HELP_CONTENT={
       <div class="help-box">🍼 <strong>Asilo nido (0–3 anni)</strong><br>Fasi 1–8 attive</div>
       <div class="help-box">🧸 <strong>Scuola materna (3–6 anni)</strong><br>Fasi 9–14 attive · Fasi 1–8 come base (precompilate)</div>
       <div class="help-box">📚 <strong>Scuola primaria (6–9 anni)</strong><br>Fasi 15–18 attive · Fasi 1–14 come base</div>
-      <p style="margin-top:.8rem"><strong>Base:</strong> Le competenze al di sotto della fascia selezionata sono precompilate con "Lo fa".<br><strong>Sopra la fascia:</strong> Precompilate con "Non lo fa" – ma modificabili se il bambino mostra uno sviluppo avanzato.</p>`,
+      <p style="margin-top:.8rem"><strong>Base:</strong> Le competenze al di sotto della fascia selezionata sono precompilate con "Lo fa".<br><strong>Sopra la fascia:</strong> Precompilate con "Non lo fa" – ma modificabili se il bambino mostra uno sviluppo avanzato.</p>
+      <div class="help-tip">💡 <strong>Consiglio:</strong> Scegliere la fascia d'età che corrisponde all'età effettiva del bambino. Se il bambino è vicino a un confine, utilizzare il proprio giudizio professionale.</div>`,
     beobachtung:`<h3>✏️ Osservazione &amp; Valutazione</h3>
       <p>Valutare ogni item secondo il seguente schema:</p>
       <div class="help-ans yes">✓ <strong>Lo fa:</strong> Il bambino mostra il comportamento in modo affidabile e costante.</div>
@@ -2877,12 +2920,14 @@ const HELP_CONTENT={
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">📊 Grafico a barre</h4>
       <p>Età di sviluppo per area come barre. <span style="color:#b85050">Rosso tratteggiato</span> = età cronologica · <span style="color:#2d5a3d">Verde tratteggiato</span> = media età di sviluppo.</p>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">🎯 Grafico radar</h4>
-      <p>Tutte le 8 aree in un diagramma a ragno – panoramica rapida dei punti di forza e delle aree di sviluppo.</p>`,
+      <p>Tutte le 8 aree in un diagramma a ragno – panoramica rapida dei punti di forza e delle aree di sviluppo.</p>
+      <div class="help-tip">💡 <strong>Consiglio:</strong> Aprire i grafici facendo clic sulla freccia ▸ a destra. I grafici vengono disegnati all'apertura e riflettono sempre lo stato attuale dell'osservazione.</div>`,
     nacharbeiten:`<h3>📝 In sospeso</h3>
       <p>Gli item risposti con <strong>"Non so" (?)</strong> vengono raccolti qui. Visibile <strong>solo quando ci sono item in sospeso</strong>.</p>
       <div class="help-step"><div class="help-step-num">1</div><div>Aprire "In sospeso" nella navigazione sinistra.</div></div>
       <div class="help-step"><div class="help-step-num">2</div><div>Tutti gli item "Non so" sono elencati lì.</div></div>
-      <div class="help-step"><div class="help-step-num">3</div><div>Rispondere agli item non appena si ha l'opportunità di osservare il comportamento.</div></div>`,
+      <div class="help-step"><div class="help-step-num">3</div><div>Rispondere agli item non appena si ha l'opportunità di osservare il comportamento.</div></div>
+      <div class="help-tip">💡 <strong>Consiglio:</strong> "Non so" non è una debolezza – significa che si sta osservando con attenzione e onestà. Meglio annotarlo come in sospeso che indovinare.</div>`,
     rechtlich:`<h3>⚖️ Aspetti legali &amp; Privacy</h3>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">Copyright</h4>
       <p><strong>Contenuti:</strong> © Kuno Beller / <a href="https://www.verlagdasnetz.de" target="_blank">Verlag das netz</a><br><strong>Implementazione digitale:</strong> © 2025 Jens Trost · <a href="https://www.kunobelleronline.de">kunobelleronline.de</a></p>
