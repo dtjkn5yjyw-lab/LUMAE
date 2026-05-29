@@ -1864,15 +1864,13 @@ function calcAge(){
   saveChild();
 }
 
-function toggleAgeEdit(){
-  ageEditable=!ageEditable;
-  // months always readonly
-  // years always readonly
-  document.getElementById('age-edit-link').textContent=ageEditable?'🔒 sperren':'✏️ bearbeiten';
-}
-
 function loadChildUI(){
   const fields={name:'c-name',gender:'c-gender',birth:'c-birth',months:'c-months',years:'c-years',inst:'c-inst',obs:'c-obs',date:'c-date',reason:'c-reason'};
+  // Months always readonly - never editable
+  const mEl=document.getElementById('c-months');
+  const yEl=document.getElementById('c-years');
+  if(mEl) mEl.readOnly=true;
+  if(yEl) yEl.readOnly=true;
   Object.entries(fields).forEach(([k,id])=>{ const el=document.getElementById(id); if(el&&childInfo[k]) el.value=childInfo[k]; });
   if(childInfo.birth){ document.getElementById('age-edit-link').style.display=''; }
 }
@@ -2102,7 +2100,7 @@ function setLang(lang){
     'wc-help-txt': L.help,
   };
   Object.entries(els).forEach(([id,txt])=>{const el=document.getElementById(id);if(el)el.textContent=txt;});
-  const inp=document.getElementById('wc-input');
+  const inp=null;
   if(inp) inp.placeholder=L.pw;
   // Update active button
   document.querySelectorAll('.lang-btn').forEach(b=>b.classList.remove('active'));
@@ -2162,17 +2160,29 @@ function drawLinear(childMonths){
   const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
   const maxPhase=18;
 
-  // Grid - all 18 phases
-  for(let ph=0;ph<=18;ph++){
-    const y=PAD.t+ch-(ph/maxPhase)*ch;
+  // Dynamic Y-axis: show active range + 1 phase buffer
+  let minPh=0, maxPh=18;
+  if(ageRange&&RANGE_PHASES[ageRange]){
+    const rp=RANGE_PHASES[ageRange];
+    const allPhs=[...rp.active,...rp.prefilled].filter(p=>p>0);
+    if(allPhs.length>0){
+      minPh=Math.max(0,Math.min(...allPhs)-1);
+      maxPh=Math.min(18,Math.max(...rp.active)+1);
+    }
+  }
+  const phRange=maxPh-minPh||18;
+  // Grid lines for visible range
+  for(let ph=minPh;ph<=maxPh;ph++){
+    const frac=(ph-minPh)/phRange;
+    const y=PAD.t+ch-frac*ch;
     const isMajor=(ph%3===0);
     ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+cw,y);
     ctx.strokeStyle=isMajor?'#cfc8b8':'#e8e0d0'; ctx.lineWidth=isMajor?1:0.5; ctx.stroke();
-    if(isMajor){
+    if(isMajor||ph===minPh||ph===maxPh){
       ctx.fillStyle='#5a4f45'; ctx.font='bold 13px DM Sans,sans-serif'; ctx.textAlign='right';
       ctx.fillText('Ph.'+ph, PAD.l-6, y+5);
       const mo=PMX[ph]||0;
-      if(ph>0){ ctx.textAlign='left'; ctx.fillStyle='#7a6f60'; ctx.font='12px DM Sans,sans-serif'; ctx.fillText(mo+'M', PAD.l+cw+7, y+5); }
+      if(mo>0){ ctx.textAlign='left'; ctx.fillStyle='#7a6f60'; ctx.font='12px DM Sans,sans-serif'; ctx.fillText(mo+'M', PAD.l+cw+7, y+5); }
     }
   }
 
@@ -2189,7 +2199,7 @@ function drawLinear(childMonths){
     const da=calcDevAge(aid);
     if(da===null){ plotPoints.push(null); return; }
     const ph=Object.entries(PMX).reduce((best,[p,mo])=>mo<=da?+p:best,0);
-    const frac=Math.min(ph/maxPhase,1);
+    const frac=Math.min(Math.max(ph-minPh,0)/phRange,1);
     const x=PAD.l+i*bw+bw/2;
     const y=PAD.t+ch-frac*ch;
     plotPoints.push({x,y,aid,da});
@@ -2224,7 +2234,8 @@ function drawLinear(childMonths){
 
   // Chronological age line
   if(childMonths){
-    const phFrac=Math.min(childMonths/114*maxPhase,maxPhase)/maxPhase;
+    const chronPh=Object.entries(PMX).reduce((best,[p,mo])=>mo<=childMonths?+p:best,0);
+    const phFrac=Math.min(Math.max(chronPh-minPh,0)/phRange,1);
     const ly=PAD.t+ch-phFrac*ch;
     ctx.beginPath(); ctx.moveTo(PAD.l,ly); ctx.lineTo(PAD.l+cw,ly);
     ctx.strokeStyle='rgba(184,80,80,0.85)'; ctx.lineWidth=2; ctx.setLineDash([8,4]); ctx.stroke(); ctx.setLineDash([]);
@@ -2395,133 +2406,6 @@ function drawBar(childMonths){
 
 // ── PDF Export (simple, no external lib) ──
 
-function exportCanvasPDF(canvasId,title){
-  const canvas=document.getElementById(canvasId);
-  if(!canvas){ showToast('Diagramm nicht gefunden'); return; }
-  const img=canvas.toDataURL('image/png',1.0);
-  // Use a simple print window
-  const w=window.open('','_blank');
-  const name=childInfo.name||'Kind';
-  const date=new Date().toLocaleDateString('de-DE');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
-  <style>body{margin:1cm;font-family:sans-serif}h2{color:#2a2520;font-size:16pt}p{color:#7a6f60;font-size:10pt}img{max-width:100%;margin-top:1cm}@media print{button{display:none}}</style></head>
-  <body><h2>Kuno Bellers Entwicklungstabelle – ${title}</h2>
-  <p>${name} · ${rangeLabel(ageRange)} · ${date}</p>
-  <img src="${img}">
-  <br><button onclick="window.print()">🖨 Drucken / Als PDF speichern</button>
-  </body></html>`);
-  w.document.close();
-  showToast('Druckansicht geöffnet – als PDF speichern');
-}
-
-function exportPDF(){
-  const name=childInfo.name||'Kind';
-  const date=new Date().toLocaleDateString('de-DE');
-  const erhDatum=childInfo.date?new Date(childInfo.date).toLocaleDateString('de-DE'):date;
-  const lc=document.getElementById('linearChart');
-  const bc=document.getElementById('barChart');
-  const rc=document.getElementById('radarChart');
-  const li=lc?lc.toDataURL('image/png',1):'';
-  const bi=bc?bc.toDataURL('image/png',1):'';
-  const ri=rc?rc.toDataURL('image/png',1):'';
-  const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  const year=Math.min(9,Math.floor(cm/12));
-  const fd=FOERDER[String(year)]||{};
-  const aN={kup:'K\u00f6rperbewusstsein & Pflege',ub:'Umgebungsbewusstsein',se:'Sozial-emotionale Entwicklung',st:'Spielt\u00e4tigkeit',sl:'Sprache & Literacy',kog:'Kognition',gm:'Grobmotorik',fm:'Feinmotorik'};
-  const aE={kup:'\ud83e\uddf4',ub:'\ud83c\udfd8\ufe0f',se:'\u2764\ufe0f',st:'\ud83e\uddf8',sl:'\ud83d\udde3\ufe0f',kog:'\ud83e\udde0',gm:'\ud83d\udd28',fm:'\ud83e\udeb6'};
-  let tR='';
-  AREA_ORDER.forEach(aid=>{
-    const a=DATA[aid],s=calcAreaStats(aid);
-    const da=calcDevAge(aid),dy=da?(da/12).toFixed(1)+' J':'--';
-    const d2=da&&cm?da-cm:null,ds=d2!==null?(d2>=0?'+':'')+(d2/12).toFixed(1)+' J':'--';
-    const sc=s.total>0?Math.round(((s.yes+s.partial*.5)/s.total)*100):0;
-    const {basis,decke}=calcBasisDecke(aid);
-    tR+=`<tr><td>${a.emoji} ${a.name}</td><td>${dy}</td><td>${ds}</td><td>${sc}%</td><td>${basis?'Phase '+basis:'--'}</td><td>${decke?'Phase '+decke:'--'}</td></tr>`;
-  });
-  let fR='';
-  AREA_ORDER.forEach(aid=>{const f=fd[aid];if(!f)return;fR+=`<tr><td style="font-weight:600;vertical-align:top">${aE[aid]} ${aN[aid]}</td><td>${f.home}</td><td>${f.inst}</td></tr>`;});
-  ['sl_quer','medien'].forEach(k=>{if(!fd[k])return;const lb=k==='sl_quer'?'\ud83c\udf0d Mehrsprachigkeit':'\ud83d\udcbb Medien';fR+=`<tr><td style="font-weight:600;vertical-align:top">${lb}</td><td>${fd[k].home}</td><td>${fd[k].inst}</td></tr>`;});
-  let gR=GRUNDPRINZIPIEN.map((p,i)=>`<tr><td style="font-weight:600">${i+1}. ${p.n}</td><td style="color:#555">${p.t}</td></tr>`).join('');
-  const css='body{margin:1.5cm;font-family:Arial,sans-serif;color:#2a2520;font-size:9pt}h1{font-size:16pt;font-weight:300;color:#3d6b52;margin-bottom:3pt}h2{font-size:10pt;font-weight:600;margin:12pt 0 4pt;border-bottom:1pt solid #e8dfc8;padding-bottom:3pt}.mg{display:grid;grid-template-columns:1fr 1fr;gap:3pt 16pt;font-size:8pt;color:#555;margin:6pt 0}.mr{display:flex;gap:4pt}.ml{color:#aaa;min-width:80pt}img{max-width:48%;display:inline-block;margin:3pt;vertical-align:top}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f5f0e8;padding:4pt 6pt;text-align:left;border-bottom:2pt solid #e8dfc8;font-size:7pt;text-transform:uppercase}td{padding:3pt 6pt;border-bottom:1pt solid #e8dfc8;vertical-align:top}.hl{background:#f0f7f3;border-left:3pt solid #3d6b52;padding:6pt 8pt;font-size:8pt;line-height:1.5;color:#3d6b52;margin:5pt 0}.ft{font-size:7pt;color:#aaa;margin-top:10pt;border-top:1pt solid #e8dfc8;padding-top:4pt}@media print{button{display:none}}';
-  const w=window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Gesamtbericht</title><style>'+css+'</style></head><body>');
-  w.document.write('<h1>Kuno Bellers Entwicklungstabelle 0\u20139 Jahre</h1><p style="color:#7a6f60;margin-bottom:8pt">Gesamtbericht \u2013 Entwicklungsprofil</p><div class="mg"><div class="mr"><span class="ml">Name:</span><strong>'+name+'</strong></div><div class="mr"><span class="ml">Geschlecht:</span>'+(childInfo.gender||'--')+'</div><div class="mr"><span class="ml">Geburtsdatum:</span>'+(childInfo.birth?new Date(childInfo.birth).toLocaleDateString("de-DE"):"--")+'</div><div class="mr"><span class="ml">Chron. Alter:</span>'+(cm?Math.round(cm)+' M / '+(cm/12).toFixed(1)+' J':'--')+'</div><div class="mr"><span class="ml">Institution:</span>'+(childInfo.inst||'--')+'</div><div class="mr"><span class="ml">Altersbereich:</span>'+rangeLabel(ageRange)+'</div><div class="mr"><span class="ml">Beobachter:in:</span>'+(childInfo.obs||'--')+'</div><div class="mr"><span class="ml">Erhebungsdatum:</span>'+erhDatum+'</div><div class="mr"><span class="ml">Anlass:</span>'+(childInfo.reason||'--')+'</div><div class="mr"><span class="ml">Erstellt am:</span>'+date+'</div></div>');
-  w.document.write('<hr style="border:1pt solid #3d6b52;margin:10pt 0">');
-  w.document.write('<h2>\ud83d\udccb Detailergebnisse</h2><table><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Kompetenz</th><th>Basis</th><th>Decke</th></tr></thead><tbody>'+tR+'</tbody></table>');
-  if(li||bi||ri){w.document.write('<h2>\ud83d\udcca Diagramme</h2><div>'+(li?'<img src="'+li+'" alt="Liniendiagramm" style="max-width:98%;display:block;margin-bottom:6pt">':'')+(bi?'<img src="'+bi+'" alt="Balkendiagramm">':'')+(ri?'<img src="'+ri+'" alt="Radialdiagramm">':'')+'</div>');}
-  w.document.write('<h2>\ud83d\udca1 F\u00f6rderm\u00f6glichkeiten \u2013 '+year+'. Lebensjahr</h2><div class="hl">Entwicklungsbegleitend \u2013 st\u00e4rkenorientiert</div><table><thead><tr><th>Bereich</th><th>\ud83c\udfe0 Zuhause</th><th>\ud83c\udfe2 Einrichtung</th></tr></thead><tbody>'+fR+'</tbody></table>');
-  w.document.write('<h2>\ud83c\udf31 Grundprinzipien</h2><table><thead><tr><th style="width:30%">Prinzip</th><th>Erl\u00e4uterung</th></tr></thead><tbody>'+gR+'</tbody></table>');
-  w.document.write('<div class="hl"><strong>Ziel:</strong> Kinder dabei begleiten, sich sicher zu f\u00fchlen, Vertrauen in eigene F\u00e4higkeiten zu entwickeln, Beziehungen aufzubauen, neugierig zu bleiben und ihre Umwelt aktiv mitzugestalten.</div>');
-  w.document.write('<div class="ft">Inhalte: \u00a9 Kuno Beller / Verlag das netz \u00b7 Digitale Umsetzung: \u00a9 2025 Jens Trost \u00b7 Erstellt am '+date+' \u00b7 www.verlagdasnetz.de</div>');
-  w.document.write('<br><button onclick="window.print()" style="margin-top:.7cm;padding:.4rem 1rem;background:#3d6b52;color:white;border:none;border-radius:6px;cursor:pointer">Drucken / Als PDF</button></body></html>');
-  w.document.close();
-  showToast('Gesamtbericht ge\u00f6ffnet \u2013 als PDF speichern');
-}
-
-function renderFoerder(){
-  const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  const year=Math.min(9,Math.floor(cm/12));
-  const fd=FOERDER[String(year)];
-  if(!fd) return '<p style="color:var(--muted);font-size:.85rem">Bitte zuerst das Geburtsdatum eingeben.</p>';
-  const areaNames={kup:'Körperbewusstsein & Pflege',ub:'Umgebungsbewusstsein',se:'Sozial-emotionale Entwicklung',st:'Spieltätigkeit',sl:'Sprache & Literacy',kog:'Kognition',gm:'Grobmotorik',fm:'Feinmotorik'};
-  const areaEmoji={kup:'🧼',ub:'🏘️',se:'❤️',st:'🧸',sl:'🗣️',kog:'🧠',gm:'🔨',fm:'🪶'};
-  let html=`<div style="background:var(--accent-light);border:1px solid #b8d4c8;border-radius:8px;padding:.8rem 1.1rem;margin-bottom:1rem;font-size:.82rem;color:var(--accent)"><strong>Fördermöglichkeiten für das ${year}. Lebensjahr</strong><br><span style="font-size:.75rem;opacity:.8">Entwicklungsbegleitend – stärkenorientiert</span></div>`;
-  AREA_ORDER.forEach(aid=>{
-    const f=fd[aid]; if(!f) return;
-    html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;margin-bottom:.7rem">
-      <div style="font-weight:500;margin-bottom:.5rem;font-size:.88rem">${areaEmoji[aid]} ${areaNames[aid]}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">🏠 Zuhause</div><div style="font-size:.81rem;line-height:1.6">${f.home}</div></div>
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">🏫 Einrichtung</div><div style="font-size:.81rem;line-height:1.6">${f.inst}</div></div>
-      </div></div>`;
-  });
-  ['sl_quer','medien'].forEach(k=>{
-    if(!fd[k]) return;
-    const lbl=k==='sl_quer'?'🌍 Mehrsprachigkeit (Querschnittsthema)':'💻 Medien & Digitales';
-    html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;margin-bottom:.7rem">
-      <div style="font-weight:500;margin-bottom:.5rem;font-size:.88rem">${lbl}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">🏠 Zuhause</div><div style="font-size:.81rem;line-height:1.6">${fd[k].home}</div></div>
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">🏫 Einrichtung</div><div style="font-size:.81rem;line-height:1.6">${fd[k].inst}</div></div>
-      </div></div>`;
-  });
-  return html;
-}
-
-function exportFoerderPDF(){
-  const name=childInfo.name||'Kind';
-  const date=new Date().toLocaleDateString('de-DE');
-  const erhDatum=childInfo.date?new Date(childInfo.date).toLocaleDateString('de-DE'):date;
-  const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  const year=Math.min(9,Math.floor(cm/12));
-  const fd=FOERDER[String(year)]||{};
-  const areaNames={kup:'K\u00f6rperbewusstsein & Pflege',ub:'Umgebungsbewusstsein',se:'Sozial-emotionale Entwicklung',st:'Spielt\u00e4tigkeit',sl:'Sprache & Literacy',kog:'Kognition',gm:'Grobmotorik',fm:'Feinmotorik'};
-  const areaEmoji={kup:'\ud83e\uddf4',ub:'\ud83c\udfd8\ufe0f',se:'\u2764\ufe0f',st:'\ud83e\uddf8',sl:'\ud83d\udde3\ufe0f',kog:'\ud83e\udde0',gm:'\ud83d\udd28',fm:'\ud83e\udeb6'};
-  let fRows='';
-  AREA_ORDER.forEach(aid=>{
-    const f=fd[aid]; if(!f) return;
-    fRows+=`<tr><td style="font-weight:600;vertical-align:top;padding:5pt 7pt;border-bottom:1pt solid #e8dfc8">${areaEmoji[aid]} ${areaNames[aid]}</td><td style="padding:5pt 7pt;border-bottom:1pt solid #e8dfc8;border-left:1pt solid #e8dfc8">${f.home}</td><td style="padding:5pt 7pt;border-bottom:1pt solid #e8dfc8;border-left:1pt solid #e8dfc8">${f.inst}</td></tr>`;
-  });
-  ['sl_quer','medien'].forEach(k=>{
-    if(!fd[k]) return;
-    const lbl=k==='sl_quer'?'\ud83c\udf0d Mehrsprachigkeit':'\ud83d\udcbb Medien & Digitales';
-    fRows+=`<tr><td style="font-weight:600;vertical-align:top;padding:5pt 7pt;border-bottom:1pt solid #e8dfc8">${lbl}</td><td style="padding:5pt 7pt;border-bottom:1pt solid #e8dfc8;border-left:1pt solid #e8dfc8">${fd[k].home}</td><td style="padding:5pt 7pt;border-bottom:1pt solid #e8dfc8;border-left:1pt solid #e8dfc8">${fd[k].inst}</td></tr>`;
-  });
-  let gpRows=GRUNDPRINZIPIEN.map((p,i)=>`<tr><td style="font-weight:600;padding:4pt 7pt;border-bottom:1pt solid #e8dfc8">${i+1}. ${p.n}</td><td style="padding:4pt 7pt;border-bottom:1pt solid #e8dfc8;color:#555">${p.t}</td></tr>`).join('');
-  const pdfCSS='body{margin:1.5cm;font-family:Helvetica Neue,Arial,sans-serif;color:#2a2520;font-size:9.5pt}.cover{border-bottom:3pt solid #3d6b52;padding-bottom:9pt;margin-bottom:12pt}h1{font-size:16pt;font-weight:300;color:#3d6b52;margin-bottom:3pt}h2{font-size:11pt;font-weight:600;color:#2a2520;margin:12pt 0 5pt;border-bottom:1pt solid #e8dfc8;padding-bottom:3pt}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:3pt 18pt;font-size:8pt;color:#555;margin-top:6pt}.meta-row{display:flex;gap:4pt}.meta-label{color:#aaa;min-width:85pt}table{width:100%;border-collapse:collapse;font-size:8.5pt}th{background:#f5f0e8;padding:4pt 7pt;text-align:left;border-bottom:2pt solid #e8dfc8;font-size:7.5pt;text-transform:uppercase}.highlight{background:#f0f7f3;border-left:3pt solid #3d6b52;border-radius:3pt;padding:7pt 9pt;font-size:8.5pt;line-height:1.6;color:#3d6b52;margin:7pt 0}.footer{font-size:7pt;color:#aaa;margin-top:14pt;border-top:1pt solid #e8dfc8;padding-top:4pt}@media print{button{display:none}}';
-  const w=window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Foerderbericht</title><style>'+pdfCSS+'</style></head><body>');
-  w.document.write('<div class="cover"><h1>Kuno Bellers Entwicklungstabelle 0\u20139 Jahre</h1><div style="font-size:10pt;color:#7a6f60;margin-bottom:7pt">F\u00f6rderbericht \u2013 '+year+'. Lebensjahr</div><div class="meta-grid"><div class="meta-row"><span class="meta-label">Name:</span><strong>'+name+'</strong></div><div class="meta-row"><span class="meta-label">Alter:</span>'+(cm?Math.round(cm)+' M / '+(cm/12).toFixed(1)+' J':'—')+'</div><div class="meta-row"><span class="meta-label">Institution:</span>'+(childInfo.inst||'—')+'</div><div class="meta-row"><span class="meta-label">Beobachter:in:</span>'+(childInfo.obs||'—')+'</div><div class="meta-row"><span class="meta-label">Erhebungsdatum:</span>'+erhDatum+'</div><div class="meta-row"><span class="meta-label">Altersbereich:</span>'+rangeLabel(ageRange)+'</div></div></div>');
-  w.document.write('<div class="highlight">Diese Angebote sind entwicklungsbegleitend und st\u00e4rkenorientiert.</div>');
-  w.document.write('<h2>\ud83d\udca1 F\u00f6rderm\u00f6glichkeiten nach Entwicklungsbereich</h2><table><thead><tr><th>Bereich</th><th>\ud83c\udfe0 Zuhause</th><th>\ud83c\udfe2 Einrichtung</th></tr></thead><tbody>'+fRows+'</tbody></table>');
-  w.document.write('<h2>\ud83c\udf31 Grundprinzipien entwicklungsf\u00f6rdernder Begleitung</h2><table><thead><tr><th style="width:32%">Prinzip</th><th>Erl\u00e4uterung</th></tr></thead><tbody>'+gpRows+'</tbody></table>');
-  w.document.write('<div class="highlight"><strong>Ziel:</strong> Kinder dabei begleiten, sich sicher zu f\u00fchlen, Vertrauen in eigene F\u00e4higkeiten zu entwickeln, Beziehungen aufzubauen, neugierig zu bleiben und ihre Umwelt aktiv mitzugestalten.</div>');
-  w.document.write('<div class="footer">Inhalte: \u00a9 Kuno Beller / Verlag das netz \u00b7 Digitale Umsetzung: \u00a9 2025 Jens Trost \u00b7 Erstellt am '+date+' \u00b7 <a href="https://www.verlagdasnetz.de">www.verlagdasnetz.de</a></div>');
-  w.document.write('<br><button onclick="window.print()" style="margin-top:.7cm;padding:.4rem 1rem;background:#3d6b52;color:white;border:none;border-radius:6px;cursor:pointer">\ud83d\udda8 Drucken / Als PDF speichern</button>');
-  w.document.write('</body></html>');
-  w.document.close();
-  showToast('F\u00f6rderbericht PDF ge\u00f6ffnet \u2713');
-}
 
 const ELTERN_TEXTS = {
   de: {
@@ -2682,38 +2566,6 @@ const ELTERN_TEXTS = {
   },
 };
 
-function downloadElternPDF(lang){
-  const t=ELTERN_TEXTS[lang];
-  if(!t) return;
-  const isRTL=lang==='ar';
-  const w=window.open('','_blank');
-  let sectHTML='';
-  t.sections.forEach(s=>{
-    sectHTML+=`<h3>${s.h}</h3><p>${s.t}</p>`;
-  });
-  w.document.write(`<!DOCTYPE html><html dir="${isRTL?'rtl':'ltr'}"><head><meta charset="UTF-8"><title>${t.title}</title>
-  <style>
-    body{margin:2cm;font-family:'Helvetica Neue',Arial,sans-serif;color:#2a2520;max-width:17cm}
-    h1{font-size:18pt;font-weight:300;color:#3d6b52;margin-bottom:4pt}
-    h2{font-size:11pt;color:#7a6f60;font-weight:400;margin-bottom:16pt;border-bottom:1pt solid #e8dfc8;padding-bottom:6pt}
-    h3{font-size:11pt;font-weight:600;color:#2a2520;margin:14pt 0 4pt}
-    p{font-size:10pt;line-height:1.7;color:#555;margin-bottom:8pt}
-    .intro{background:#f0f7f3;border-left:4pt solid #3d6b52;padding:10pt 12pt;border-radius:4pt;font-size:10pt;line-height:1.7;color:#3d6b52;margin-bottom:16pt}
-    .closing{background:#f5f0e8;border-radius:6pt;padding:10pt 12pt;font-size:10pt;color:#7a6f60;margin-top:16pt;font-style:italic}
-    .footer{font-size:7pt;color:#aaa;margin-top:20pt;border-top:1pt solid #e8dfc8;padding-top:6pt}
-    @media print{button{display:none}}
-  </style></head><body>
-  <h1>${t.title}</h1>
-  <h2>${t.subtitle}</h2>
-  <div class="intro">${t.intro}</div>
-  ${sectHTML}
-  <div class="closing">${t.closing}</div>
-  <div class="footer">Kuno Bellers Entwicklungstabelle 0–9 Jahre · © Verlag das netz · Nur für internen pädagogischen Gebrauch</div>
-  <br><button onclick="window.print()" style="margin-top:1cm;padding:.5rem 1.2rem;background:#3d6b52;color:white;border:none;border-radius:6px;cursor:pointer">🖨 Drucken / Als PDF speichern</button>
-  </body></html>`);
-  w.document.close();
-  showToast(`Elterninformation (${lang.toUpperCase()}) geöffnet ✓`);
-}
 
 
 // ═══════════════════════════════════════
