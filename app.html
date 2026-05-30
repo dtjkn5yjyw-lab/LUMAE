@@ -907,6 +907,7 @@ const RANGE_PHASES={
 // STATE
 // ═══════════════════════════════════════
 let answers={}, childInfo={}, ageRange=null, currentAreaId=null, started=false;
+let previousErhebungen=[]; // stores past snapshots for comparison
 let systemPrefilled=new Set();
 let ageEditable=false;
 let confirmCallback=null;
@@ -1255,7 +1256,7 @@ function closeConfirm(){ document.getElementById('confirm-modal').classList.remo
 
 function doNewSession(){
   answers={}; childInfo={}; ageRange=null; started=false; ageEditable=false;
-  systemPrefilled=new Set(); loadedAgeRange=null;
+  systemPrefilled=new Set(); loadedAgeRange=null; previousErhebungen=[];
   setNavProgressive(false);
   document.querySelectorAll('.age-card').forEach(c=>c.classList.remove('sel'));
   document.getElementById('start-btn').disabled=true;
@@ -1868,7 +1869,7 @@ function buildFilename(){
 }
 
 function exportKBD(){
-  const payload={version:2,format:'kbd',created:new Date().toISOString(),childInfo,ageRange,answers};
+  const payload={version:2,format:'kbd',created:new Date().toISOString(),savedAt:new Date().toISOString(),childInfo,ageRange,answers,erhebungen:previousErhebungen||[]};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/octet-stream'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -3074,6 +3075,264 @@ function setNavProgressive(showAll){
   // nav-nach follows its own visibility logic (only when pending items)
   // but hide it when collapsing
   if(!showAll && navNach) navNach.style.display='none';
+}
+
+
+// ═══════════════════════════════════════
+// 30-TAGE-REGEL HELPERS
+// ═══════════════════════════════════════
+
+function daysSince(isoDate){
+  if(!isoDate) return 999;
+  const saved=new Date(isoDate);
+  const now=new Date();
+  return Math.floor((now-saved)/(1000*60*60*24));
+}
+
+function isErhebungComplete(answersObj, ageRangeKey){
+  if(!ageRangeKey||!RANGE_PHASES[ageRangeKey]) return false;
+  const active=RANGE_PHASES[ageRangeKey].active;
+  let hasUnanswered=false;
+  AREA_ORDER.forEach(aid=>{
+    active.forEach(ph=>{
+      (DATA[aid].phases[String(ph)]||[]).forEach((_,i)=>{
+        const v=answersObj[`${aid}-${ph}-${i}`];
+        if(!v||v==='unknown') hasUnanswered=true;
+      });
+    });
+  });
+  return !hasUnanswered;
+}
+
+function showDayRuleInfo(){
+  // ℹ Modal mit Erklärung der 30-Tage-Regel
+  const lang=appLang||'de';
+  const texts={
+    de:{
+      title:'ℹ Die 30-Tage-Regel',
+      body:'30 Tage ist der kürzeste sinnvolle Beobachtungszeitraum in der pädagogischen Praxis nach Kuno Beller. Kürzere Abstände bilden keine nachweisliche Entwicklung ab und entsprechen nicht den Qualitätsstandards systematischer Entwicklungsbeobachtung.',
+      btn:'Verstanden'
+    },
+    en:{
+      title:'ℹ The 30-day rule',
+      body:'30 days is the shortest meaningful observation period in educational practice according to Kuno Beller. Shorter intervals do not reflect demonstrable development and do not meet the quality standards of systematic developmental observation.',
+      btn:'Understood'
+    },
+    it:{
+      title:"ℹ La regola dei 30 giorni",
+      body:"30 giorni è il periodo di osservazione minimo significativo nella pratica pedagogica secondo Kuno Beller. Intervalli più brevi non riflettono uno sviluppo dimostrabile e non soddisfano gli standard qualitativi dell'osservazione sistematica dello sviluppo.",
+      btn:'Capito'
+    }
+  };
+  const T=texts[lang]||texts.de;
+  document.getElementById('alter-info-content').innerHTML=`
+    <h4 style="color:var(--accent)">${T.title}</h4>
+    <div style="font-size:.85rem;line-height:1.7;color:var(--muted);margin:.7rem 0">
+      <p>${T.body}</p>
+      <div style="background:var(--accent-light);border-left:3px solid var(--accent);border-radius:6px;padding:.75rem 1rem;margin:.8rem 0;font-size:.82rem;color:var(--accent)">
+        <strong>📅 Aktuell:</strong> Erhebungen müssen mindestens 30 Tage auseinanderliegen, um als eigenständige Verlaufspunkte zu gelten.
+      </div>
+    </div>
+    <button class="modal-close" onclick="closeAlterInfo()">${T.btn}</button>`;
+  document.getElementById('alter-info-modal').classList.add('open');
+}
+
+function handleThirtyDayRule(d, file){
+  const days=daysSince(d.savedAt||d.created);
+  const complete=isErhebungComplete(d.answers||{}, d.ageRange);
+  const lang=appLang||'de';
+
+  const labels={
+    de:{
+      scen_b_title:'⚠️ Erhebung noch nicht abgeschlossen',
+      scen_b_body:'Diese Erhebung wurde vor <strong>DAYS Tagen</strong> begonnen und ist noch nicht vollständig. Bitte schließen Sie die aktuelle Erhebung ab, bevor ein Entwicklungsvergleich möglich ist.',
+      scen_b_btn_cont:'Erhebung fortsetzen',
+      scen_d_title:'⚠️ Erhebung ungültig',
+      scen_d_body:'Die Erhebung vom DATUM wurde nicht vollständig abgeschlossen und ist daher <strong>ungültig</strong>. Ein Entwicklungsvergleich ist nicht möglich.<br><br>Sie können eine neue Erhebung für dieses Kind starten.',
+      scen_d_btn_new:'Neue Erhebung starten',
+      scen_d_btn_cancel:'Abbrechen',
+      scen_c_title:'🔄 Neue Erhebung möglich',
+      scen_c_body:'Die letzte Erhebung liegt <strong>DAYS Tage</strong> zurück und war vollständig. Sie können jetzt eine neue Erhebung starten.<br><br>Die alte Erhebung wird als Vergleichspunkt gespeichert und nach Abschluss der neuen Erhebung im Entwicklungsprofil sichtbar.',
+      scen_c_btn_new:'Neue Erhebung starten',
+      scen_c_btn_cont:'Alte Erhebung ansehen',
+      days_label:'Tag',
+    },
+    en:{
+      scen_b_title:'⚠️ Observation not yet complete',
+      scen_b_body:'This observation was started <strong>DAYS days</strong> ago and is not yet complete. Please finish the current observation before a developmental comparison is possible.',
+      scen_b_btn_cont:'Continue observation',
+      scen_d_title:'⚠️ Observation invalid',
+      scen_d_body:'The observation from DATE was not completed and is therefore <strong>invalid</strong>. A developmental comparison is not possible.<br><br>You can start a new observation for this child.',
+      scen_d_btn_new:'Start new observation',
+      scen_d_btn_cancel:'Cancel',
+      scen_c_title:'🔄 New observation possible',
+      scen_c_body:'The last observation was <strong>DAYS days</strong> ago and was complete. You can now start a new observation.<br><br>The old observation will be saved as a comparison point and shown in the developmental profile after the new observation is complete.',
+      scen_c_btn_new:'Start new observation',
+      scen_c_btn_cont:'View old observation',
+      days_label:'day',
+    },
+    it:{
+      scen_b_title:"⚠️ Osservazione non ancora completata",
+      scen_b_body:"Questa osservazione è stata iniziata <strong>DAYS giorni</strong> fa e non è ancora completa. Completare l'osservazione corrente prima che sia possibile un confronto dello sviluppo.",
+      scen_b_btn_cont:"Continua osservazione",
+      scen_d_title:"⚠️ Osservazione non valida",
+      scen_d_body:"L'osservazione del DATA non è stata completata ed è quindi <strong>non valida</strong>. Un confronto dello sviluppo non è possibile.<br><br>È possibile avviare una nuova osservazione per questo bambino.",
+      scen_d_btn_new:"Avvia nuova osservazione",
+      scen_d_btn_cancel:"Annulla",
+      scen_c_title:"🔄 Nuova osservazione possibile",
+      scen_c_body:"L'ultima osservazione risale a <strong>DAYS giorni</strong> fa ed era completa. È ora possibile avviare una nuova osservazione.<br><br>La vecchia osservazione verrà salvata come punto di confronto e sarà visibile nel profilo di sviluppo dopo il completamento della nuova.",
+      scen_c_btn_new:"Avvia nuova osservazione",
+      scen_c_btn_cont:"Visualizza vecchia osservazione",
+      days_label:"giorno",
+    }
+  };
+  const T=labels[lang]||labels.de;
+  const dateStr=d.savedAt?new Date(d.savedAt).toLocaleDateString('de'):'?';
+
+  // SZENARIO A: < 30 Tage + vollständig → einfach fortsetzen (kein Dialog)
+  if(days<30 && complete){
+    return 'continue'; // normal load
+  }
+
+  // SZENARIO B: < 30 Tage + unvollständig → Hinweis
+  if(days<30 && !complete){
+    showRuleDialog(
+      T.scen_b_title,
+      T.scen_b_body.replace('DAYS', days),
+      [{label:T.scen_b_btn_cont, action:'continue', primary:true},
+       {label:'ℹ', action:'info', primary:false}]
+    );
+    return 'dialog';
+  }
+
+  // SZENARIO C: ≥ 30 Tage + vollständig → neue Erhebung anbieten
+  if(days>=30 && complete){
+    showRuleDialog(
+      T.scen_c_title,
+      T.scen_c_body.replace('DAYS', days),
+      [{label:T.scen_c_btn_new, action:'new_erhebung', primary:true},
+       {label:T.scen_c_btn_cont, action:'continue', primary:false},
+       {label:'ℹ', action:'info', primary:false}]
+    );
+    return 'dialog';
+  }
+
+  // SZENARIO D: ≥ 30 Tage + unvollständig → ungültig
+  if(days>=30 && !complete){
+    showRuleDialog(
+      T.scen_d_title,
+      T.scen_d_body.replace('DATUM', dateStr).replace('DATE', dateStr).replace('DATA', dateStr),
+      [{label:T.scen_d_btn_new, action:'new_only', primary:true},
+       {label:T.scen_d_btn_cancel, action:'cancel', primary:false}]
+    );
+    return 'dialog';
+  }
+
+  return 'continue';
+}
+
+// Pending loaded data for dialog actions
+let _pendingLoad=null;
+
+function showRuleDialog(title, body, buttons){
+  const btnHtml=buttons.map(b=>`
+    <button class="${b.primary?'btn btn-primary':'btn btn-outline'}" 
+      style="margin:.25rem;${b.label==='ℹ'?'padding:.4rem .7rem;':'padding:.6rem 1.2rem;'}"
+      onclick="handleRuleAction('${b.action}')">${b.label}</button>`).join('');
+  document.getElementById('alter-info-content').innerHTML=`
+    <h4 style="color:var(--accent)">${title}</h4>
+    <div style="font-size:.85rem;line-height:1.7;color:var(--muted);margin:.7rem 0">
+      <p>${body}</p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:1rem">${btnHtml}</div>`;
+  document.getElementById('alter-info-modal').classList.add('open');
+}
+
+function handleRuleAction(action){
+  closeAlterInfo();
+  const d=_pendingLoad;
+  if(!d) return;
+
+  if(action==='continue'){
+    // Normal load - all answers restored
+    _finishLoad(d, false);
+
+  } else if(action==='new_erhebung'){
+    // ≥30 days, complete: snapshot old, start fresh
+    const snapshot={
+      savedAt: d.savedAt||d.created,
+      ageRange: d.ageRange,
+      childInfo: d.childInfo,
+      answers: d.answers,
+      erhebungen: d.erhebungen||[]
+    };
+    previousErhebungen=[snapshot, ...(d.erhebungen||[])].slice(0,5); // max 5 Erhebungen
+    // Load child info but clear answers
+    childInfo=d.childInfo||{};
+    ageRange=d.ageRange;
+    answers={};
+    started=false;
+    loadedAgeRange=null;
+    loadChildUI();
+    if(ageRange){
+      document.querySelectorAll('.age-card').forEach(el=>el.classList.toggle('sel',el.dataset.range===ageRange));
+      document.getElementById('start-btn').disabled=false;
+      document.getElementById('start-btn').textContent=getStartBtnLabel(ageRange);
+    }
+    setNavProgressive(false); // Progressive: user must click Starten
+    showView('setup');
+    saveSession();
+    showToast('Neue Erhebung bereit – alte Erhebung als Vergleich gespeichert ✓');
+
+  } else if(action==='new_only'){
+    // ≥30 days, incomplete: discard old, fresh start with child info only
+    childInfo=d.childInfo||{};
+    ageRange=null; answers={}; started=false; loadedAgeRange=null;
+    previousErhebungen=[];
+    loadChildUI();
+    setNavProgressive(false);
+    showView('setup');
+    saveSession();
+    showToast('Ungültige Erhebung verworfen – neue Erhebung starten ✓');
+
+  } else if(action==='info'){
+    // Show 30-day rule info, then re-show dialog
+    showDayRuleInfo();
+
+  } else if(action==='cancel'){
+    _pendingLoad=null;
+    showToast('Abgebrochen');
+  }
+  if(action!=='info') _pendingLoad=null;
+}
+
+function _finishLoad(d, isNew){
+  answers=d.answers||{};
+  childInfo=d.childInfo||{};
+  ageRange=d.ageRange||null;
+  previousErhebungen=d.erhebungen||[];
+  started=!!ageRange;
+  systemPrefilled=new Set();
+  loadChildUI();
+  if(ageRange){
+    document.querySelectorAll('.age-card').forEach(el=>el.classList.toggle('sel',el.dataset.range===ageRange));
+    loadedAgeRange=ageRange;
+    const importBtn=document.getElementById('start-btn');
+    importBtn.disabled=false;
+    importBtn.textContent=getStartBtnLabel(ageRange);
+    document.getElementById('start-hint').textContent='';
+    setNavProgressive(true);
+    document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('disabled'));
+  }
+  if(started){
+    document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('disabled'));
+    document.getElementById('prog-wrap').style.display='';
+    document.getElementById('iv-btn').style.display='';
+    document.getElementById('hdr-sub').textContent=`${childInfo.name||'Kind'} · ${rangeLabel(ageRange)}`;
+    updateProgress();
+    showView('setup');
+  }
+  saveSession();
 }
 
 init();
