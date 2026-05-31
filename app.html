@@ -292,6 +292,25 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
 
 /* Progressive Navigation */
 .nav-progressive-hidden { display: none !important; }
+
+/* Verlauf / Timeline */
+.verlauf-item{
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:.7rem 1rem;margin-bottom:.5rem;display:flex;
+  align-items:center;justify-content:space-between;gap:.8rem;
+  font-size:.84rem;
+}
+.verlauf-item-date{font-weight:600;color:var(--text);min-width:120px;}
+.verlauf-item-range{font-size:.75rem;color:var(--muted);}
+.verlauf-item-ages{display:flex;gap:.5rem;flex-wrap:wrap;}
+.verlauf-compare-box{
+  background:var(--accent-light);border:1px solid var(--accent);
+  border-radius:8px;padding:1rem 1.2rem;margin-top:.8rem;
+}
+.verlauf-delta{font-size:.8rem;font-weight:600;}
+.verlauf-delta.pos{color:#2d7a3d;}
+.verlauf-delta.neg{color:#b85050;}
+.verlauf-delta.neu{color:#7a6f60;}
 </style>
 </head>
 <body>
@@ -365,7 +384,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div id="nav-areas"></div>
     <div class="nav-sec" style="margin-top:.2rem" id="nav-sec-auswertung">Auswertung</div>
     <div class="nav-item disabled" id="nav-nach" data-view="nach" onclick="showView('nach')" style="display:none"><span>📝</span><span>Noch ausstehend</span><span class="nav-sc" id="nach-cnt"></span></div>
-    <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span>Entwicklungsprofil</span></div>
+    <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span id="nav-profile-label">Entwicklungsprofil(e)</span></div>
     <div class="nav-item disabled" id="nav-foerder" data-view="foerder" onclick="showView('foerder')"><span>💡</span><span>Fördermöglichkeiten</span></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
     <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.5.30 Beta</div>
@@ -1418,14 +1437,24 @@ function renderProfile(){
     `<canvas id="barChart" class="mychart"></canvas>`,false);
 
   // 4. Radialdiagramm
-  html+=collCard('radar','🎯','Radialdiagramm: Entwicklungsprofil',
+  html+=collCard('radar','',(L.card_radar||'🎯 Radialdiagramm: Entwicklungsprofil'),
     `<div style="max-width:700px;margin:0 auto"><canvas id="radarChart" class="mychart"></canvas></div>`,false);
+
+  // 5. Verlauf (nur wenn previousErhebungen vorhanden)
+  if(previousErhebungen&&previousErhebungen.length>0){
+    html+=collCard('verlauf','',(L.card_verlauf||'🔄 Verlauf'),
+      `<div id="verlauf-content"></div>`,true);
+  }
 
   // Fördermöglichkeiten: separate nav item
 
 
 
   document.getElementById('prof-content').innerHTML=html;
+
+  // Fill Verlauf
+  const verlaufEl=document.getElementById('verlauf-content');
+  if(verlaufEl) verlaufEl.innerHTML=renderVerlauf();
 
   // Fill table
   const tbody=document.getElementById('res-tbody');
@@ -1480,6 +1509,10 @@ function toggleColl(id){
   if(!open){
     const cm2=window._chartCm||parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
     const chartFns={bar:drawBar,linear:drawLinear,radar:drawRadar};
+    if(id==='verlauf'){
+      const vc=document.getElementById('verlauf-content');
+      if(vc&&!vc.innerHTML) vc.innerHTML=renderVerlauf();
+    }
     if(chartFns[id]){ requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ chartFns[id](cm2); }); }); }
   }
 }
@@ -2591,7 +2624,7 @@ const ELTERN_TEXTS = {
 // ═══════════════════════════════════════
 const APP_UI={
   de:{
-    nav_setup:'Stammdaten', nav_profile:'Entwicklungsprofil', nav_nach:'Noch ausstehend',
+    nav_setup:'Stammdaten', nav_profile:'Entwicklungsprofil(e)', nav_nach:'Noch ausstehend',
     nav_sec_start:'Start', nav_sec_erhebung:'Datenerhebung', nav_sec_auswertung:'Auswertung',
     nav_foerder:'Fördermöglichkeiten', nav_dokumente:'Dokumente',
     btn_start:'Erhebung starten →', btn_resume:'Erhebung fortsetzen →', btn_update:'Erhebung aktualisieren →',
@@ -2600,6 +2633,7 @@ const APP_UI={
     range_krippe:'Krippenbereich', range_kita:'Kitabereich', range_schule:'Grundschulbereich',
     hdr_sub:'8 Entwicklungsbereiche · Phasen 1–18',
     prof_chron:'Chron. Alter (Jahre)', prof_avg:'Ø Entwicklungsalter', prof_diff:'Differenz',
+    card_verlauf:'🔄 Verlauf',
     card_detail:'📋 Detailergebnisse',
     card_linear:'📈 Liniendiagramm: Entwicklungsprofil nach Beller',
     card_bar:'📊 Balkendiagramm: Entwicklungsalter je Bereich',
@@ -2630,6 +2664,7 @@ const APP_UI={
     range_krippe:"Nursery (0–3)", range_kita:"Kindergarten (3–6)", range_schule:"Primary school (6–9)",
     hdr_sub:"8 developmental areas · Phases 1–18",
     prof_chron:"Chron. age (years)", prof_avg:"Ø Dev. age", prof_diff:"Difference",
+    card_verlauf:"🔄 Timeline",
     card_detail:"📋 Detail results",
     card_linear:"📈 Line chart: Developmental profile (Beller)",
     card_bar:"📊 Bar chart: Developmental age per area",
@@ -2659,6 +2694,7 @@ const APP_UI={
     range_krippe:'Asilo nido (0–3)', range_kita:'Scuola materna (3–6)', range_schule:'Scuola primaria (6–9)',
     hdr_sub:'8 aree di sviluppo · Fasi 1–18',
     prof_chron:'Età cron. (anni)', prof_avg:'Ø Età di sviluppo', prof_diff:'Differenza',
+    card_verlauf:'🔄 Cronologia',
     card_detail:'📋 Risultati dettagliati',
     card_linear:'📈 Grafico a linee: Profilo di sviluppo (Beller)',
     card_bar:'📊 Grafico a barre: Età di sviluppo per area',
@@ -3333,6 +3369,126 @@ function _finishLoad(d, isNew){
     showView('setup');
   }
   saveSession();
+}
+
+
+// ═══════════════════════════════════════
+// VERLAUFSDOKUMENTATION
+// ═══════════════════════════════════════
+
+function rangeShort(r){
+  const m={krippe:'Krippe (0–3)',kita:'Kita (3–6)',schule:'Grundschule (6–9)'};
+  return m[r]||r;
+}
+
+function formatMonthYear(isoDate){
+  if(!isoDate) return '?';
+  const d=new Date(isoDate);
+  return d.toLocaleDateString('de',{month:'long',year:'numeric'});
+}
+
+function calcDevAgeFromAnswers(aid, answersObj){
+  const phases=Object.keys(DATA[aid].phases).map(Number).sort((a,b)=>a-b);
+  let highestPh=0;
+  phases.forEach(ph=>{
+    const items=DATA[aid].phases[String(ph)];
+    if(!items||items.length===0) return;
+    let sc=0;
+    items.forEach((_,i)=>{
+      const a=answersObj[`${aid}-${ph}-${i}`];
+      if(a==='yes') sc+=1; else if(a==='partial') sc+=0.5;
+    });
+    if(sc/items.length>=0.5) highestPh=ph;
+  });
+  return highestPh>0?(PHASE_MONTHS[highestPh]||0):null;
+}
+
+function renderVerlauf(){
+  const L=APP_UI[appLang]||APP_UI.de;
+
+  // All available erhebungen (oldest first)
+  const all=[...previousErhebungen].reverse();
+
+  if(all.length===0) return ''; // Nothing to show
+
+  let html='';
+
+  // ── Past erhebungen list ──
+  all.forEach((erh,i)=>{
+    const date=formatMonthYear(erh.savedAt||erh.created);
+    const range=rangeShort(erh.ageRange);
+    const ages=AREA_ORDER.map(aid=>{
+      const da=calcDevAgeFromAnswers(aid,erh.answers);
+      return da?(da/12).toFixed(1)+'J':'—';
+    });
+    const avgDa=AREA_ORDER.map(aid=>calcDevAgeFromAnswers(aid,erh.answers)).filter(Boolean);
+    const avgStr=avgDa.length?( avgDa.reduce((a,b)=>a+b,0)/avgDa.length/12).toFixed(1)+' J':'—';
+
+    html+=`<div class="verlauf-item">
+      <div>
+        <div class="verlauf-item-date">📅 ${date}</div>
+        <div class="verlauf-item-range">${range}</div>
+      </div>
+      <div style="font-size:.82rem;color:var(--muted)">Ø ${avgStr}</div>
+    </div>`;
+  });
+
+  // ── Comparison: last 2 erhebungen ──
+  if(all.length>=1){
+    // Compare current vs most recent previous
+    const prev=all[all.length-1]; // most recent old
+    const prevDate=formatMonthYear(prev.savedAt||prev.created);
+    const currDate=formatMonthYear(new Date().toISOString());
+
+    html+=`<div class="verlauf-compare-box">
+      <div style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:.8rem">
+        📊 Entwicklung – Vergleich
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.7rem;display:flex;gap:1rem">
+        <span>⬅ ${prevDate}</span>
+        <span>➡ Aktuelle Erhebung</span>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="text-align:left;padding:.3rem .5rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Bereich</th>
+            <th style="text-align:center;padding:.3rem .5rem;font-size:.7rem;color:var(--muted)">Vorher</th>
+            <th style="text-align:center;padding:.3rem .5rem;font-size:.7rem;color:var(--muted)">Jetzt</th>
+            <th style="text-align:center;padding:.3rem .5rem;font-size:.7rem;color:var(--muted)">Δ</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    AREA_ORDER.forEach(aid=>{
+      const areaName=(APP_UI[appLang]||APP_UI.de)['area_'+aid]||DATA[aid].name;
+      const prevDa=calcDevAgeFromAnswers(aid,prev.answers);
+      const currDa=calcDevAge(aid);
+      const prevStr=prevDa?(prevDa/12).toFixed(1)+' J':'—';
+      const currStr=currDa?(currDa/12).toFixed(1)+' J':'—';
+
+      let delta='—', deltaClass='neu', deltaIcon='→';
+      if(prevDa&&currDa){
+        const diff=(currDa-prevDa)/12;
+        const sign=diff>0?'+':'';
+        delta=sign+diff.toFixed(1)+' J';
+        deltaClass=diff>0?'pos':diff<0?'neg':'neu';
+        deltaIcon=diff>0?'↑':diff<0?'↓':'→';
+      }
+
+      html+=`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${areaName}</td>
+        <td style="text-align:center;padding:.35rem .5rem;color:var(--muted)">${prevStr}</td>
+        <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${currStr}</td>
+        <td style="text-align:center;padding:.35rem .5rem">
+          <span class="verlauf-delta ${deltaClass}">${deltaIcon} ${delta}</span>
+        </td>
+      </tr>`;
+    });
+
+    html+=`</tbody></table></div>`;
+  }
+
+  return html;
 }
 
 init();
