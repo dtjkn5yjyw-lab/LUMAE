@@ -384,10 +384,12 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div id="nav-areas"></div>
     <div class="nav-sec" style="margin-top:.2rem" id="nav-sec-auswertung">Auswertung</div>
     <div class="nav-item disabled" id="nav-nach" data-view="nach" onclick="showView('nach')" style="display:none"><span>📝</span><span>Noch ausstehend</span><span class="nav-sc" id="nach-cnt"></span></div>
-    <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span id="nav-profile-label">Entwicklungsprofil(e)</span></div>
+    <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span id="nav-profile-label">Entwicklungsprofil</span></div>
     <div class="nav-item disabled" id="nav-foerder" data-view="foerder" onclick="showView('foerder')"><span>💡</span><span>Fördermöglichkeiten</span></div>
+    <div class="nav-item disabled" id="nav-verlauf" data-view="verlauf" onclick="showView('verlauf')"><span>🔄</span><span>Verlauf</span></div>
+    <div id="nav-verlauf-sub" style="display:none"></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
-    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.5.30 Beta</div>
+    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.1 Beta</div>
   </nav>
 
   <main id="main">
@@ -538,6 +540,14 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
       </div>
     </div>
   </div>
+
+  <!-- VERLAUF VIEW -->
+  <div id="view-verlauf" style="display:none">
+    <h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)">🔄 Verlauf</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.2rem">Vergangene Erhebungen und Entwicklungsverläufe.</p>
+    <div id="verlauf-view-content"></div>
+  </div>
+
 </main>
 </div>
 
@@ -836,7 +846,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
           <h4 style="margin-top:1rem;margin-bottom:.5rem">Urheberrecht &amp; Lizenz</h4>
           <div class="help-box" style="font-size:.8rem;margin-bottom:.7rem">
             Inhalte: © Kuno Beller / Verlag das netz<br>
-            Digitale Umsetzung: © 2025 Jens Trost · Version 26.5.30 Beta<br>
+            Digitale Umsetzung: © 2025 Jens Trost · Version 26.6.1 Beta<br>
             Erstellt mit Unterstützung von Claude (Anthropic)
           </div>
           <h4 style="margin-bottom:.5rem">Lizenz anfragen</h4>
@@ -971,6 +981,18 @@ function getStartBtnLabel(range){
 let loadedAgeRange=null;
 
 function selectAge(range,el){
+  // Snapshot: if we have answers and range is changing → save snapshot
+  if(loadedAgeRange && range!==loadedAgeRange && Object.keys(answers).length>0){
+    const snap={
+      savedAt: new Date().toISOString(),
+      ageRange: loadedAgeRange,
+      childInfo: {...childInfo},
+      answers: {...answers},
+      erhebungen: [...previousErhebungen]
+    };
+    previousErhebungen=[snap, ...previousErhebungen].slice(0,5);
+    updateVerlaufNav(); // update sidebar
+  }
   ageRange=range;
   document.querySelectorAll('.age-card').forEach(c=>c.classList.remove('sel'));
   el.classList.add('sel');
@@ -1024,7 +1046,7 @@ function rangeLabel(r){
 // NAVIGATION
 // ═══════════════════════════════════════
 function showView(id){
-  ['setup','area','nach','profile','foerder','dokumente'].forEach(v=>{const el=document.getElementById('view-'+v);if(el)el.style.display='none';});
+  ['setup','area','nach','profile','foerder','verlauf','dokumente'].forEach(v=>{const el=document.getElementById('view-'+v);if(el)el.style.display='none';});
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const ne=document.querySelector(`[data-view="${id}"]`);
   if(ne) ne.classList.add('active');
@@ -1921,41 +1943,21 @@ function importKBD(evt){
   reader.onload=e=>{
     try{
       const d=JSON.parse(e.target.result);
-      if(d.format!=='kbd') throw new Error('Keine gültige .kbd-Datei');
-      answers=d.answers||{}; childInfo=d.childInfo||{}; ageRange=d.ageRange||null;
-      started=!!ageRange;
-      systemPrefilled=new Set();
-      loadChildUI();
-      if(ageRange){
-        document.querySelectorAll('.age-card').forEach(c=>c.classList.toggle('sel',c.dataset.range===ageRange));
-        loadedAgeRange=ageRange;
-        const importBtn=document.getElementById('start-btn');
-        importBtn.disabled=false;
-        importBtn.textContent=getStartBtnLabel(ageRange);
-        document.getElementById('start-hint').textContent='';
-        // Show full navigation immediately when loading a file
-        setNavProgressive(true);
-        document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('disabled'));
+      if(d.format!=='kbd') throw new Error('Keine gueltige .kbd-Datei');
+      _pendingLoad=d;
+      _pendingFile=file.name;
+      const result=handleThirtyDayRule(d);
+      if(result==='continue'){
+        _finishLoad(d, false);
+        showToast('Datei geladen: ' + file.name + ' OK');
+        _pendingLoad=null; _pendingFile=null;
       }
-      if(started){
-        document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('disabled'));
-        document.getElementById('prog-wrap').style.display='';
-        document.getElementById('iv-btn').style.display='';
-        document.getElementById('hdr-sub').textContent=`${childInfo.name||'Kind'} · ${rangeLabel(ageRange)}`;
-        updateProgress();
-        showView('setup'); // → Stammdaten first so user can check/change age range
-      }
-      saveSession();
-      showToast(`Datei geladen: „${file.name}“ ✓`);
+      // else: dialog shown, handleRuleAction() takes over
     }catch(err){ showToast('Fehler: '+err.message); }
   };
   reader.readAsText(file);
   evt.target.value='';
 }
-
-// ═══════════════════════════════════════
-// SESSION STORAGE
-// ═══════════════════════════════════════
 function saveSession(){
   try{ sessionStorage.setItem('kbd_v3',JSON.stringify({answers,childInfo,ageRange,started})); }catch(e){}
 }
@@ -2624,9 +2626,9 @@ const ELTERN_TEXTS = {
 // ═══════════════════════════════════════
 const APP_UI={
   de:{
-    nav_setup:'Stammdaten', nav_profile:'Entwicklungsprofil(e)', nav_nach:'Noch ausstehend',
+    nav_setup:'Stammdaten', nav_profile:'Entwicklungsprofil', nav_nach:'Noch ausstehend',
     nav_sec_start:'Start', nav_sec_erhebung:'Datenerhebung', nav_sec_auswertung:'Auswertung',
-    nav_foerder:'Fördermöglichkeiten', nav_dokumente:'Dokumente',
+    nav_foerder:'Fördermöglichkeiten', nav_verlauf:'Verlauf', nav_dokumente:'Dokumente',
     btn_start:'Erhebung starten →', btn_resume:'Erhebung fortsetzen →', btn_update:'Erhebung aktualisieren →',
     btn_save:'Speichern', btn_open:'Öffnen', btn_new:'Neu', btn_help:'Hilfe', btn_interview:'Interview',
     ans_yes:'✓ Tut es', ans_partial:'◑ Teilweise', ans_no:'✗ Tut es nicht', ans_unknown:'? Weiß nicht',
@@ -2657,7 +2659,7 @@ const APP_UI={
   en:{
     nav_setup:"Master data", nav_profile:"Developmental Profile", nav_nach:"Still pending",
     nav_sec_start:"Start", nav_sec_erhebung:"Data collection", nav_sec_auswertung:"Evaluation",
-    nav_foerder:"Support suggestions", nav_dokumente:"Documents",
+    nav_foerder:"Support suggestions", nav_verlauf:"Timeline", nav_dokumente:"Documents",
     btn_start:"Start observation →", btn_resume:"Continue observation →", btn_update:"Update observation →",
     btn_save:"Save", btn_open:"Open", btn_new:"New", btn_help:"Help", btn_interview:"Interview",
     ans_yes:"✓ Does it", ans_partial:"◑ Partly", ans_no:"✗ Does not", ans_unknown:"? Don't know",
@@ -2687,7 +2689,7 @@ const APP_UI={
   it:{
     nav_setup:'Dati anagrafici', nav_profile:'Profilo di sviluppo', nav_nach:'In sospeso',
     nav_sec_start:'Inizio', nav_sec_erhebung:'Raccolta dati', nav_sec_auswertung:'Valutazione',
-    nav_foerder:'Possibilità di sostegno', nav_dokumente:'Documenti',
+    nav_foerder:'Possibilità di sostegno', nav_verlauf:'Cronologia', nav_dokumente:'Documenti',
     btn_start:'Avvia osservazione →', btn_resume:'Continua osservazione →', btn_update:'Aggiorna osservazione →',
     btn_save:'Salva', btn_open:'Apri', btn_new:'Nuovo', btn_help:'Aiuto', btn_interview:'Intervista',
     ans_yes:'✓ Lo fa', ans_partial:'◑ In parte', ans_no:'✗ Non lo fa', ans_unknown:'? Non so',
@@ -2738,7 +2740,7 @@ function setAppLang(lang){
   // Nav sections
   document.querySelectorAll('.nav-sec').forEach((el,i)=>{ const labels=[L.nav_sec_start,L.nav_sec_erhebung,L.nav_sec_auswertung]; if(labels[i]!==undefined) el.textContent=labels[i]; });
   // Nav items (setup/profile/nach/foerder/dokumente)
-  const navMap={setup:L.nav_setup,profile:L.nav_profile,nach:L.nav_nach,foerder:L.nav_foerder,dokumente:L.nav_dokumente};
+  const navMap={setup:L.nav_setup,profile:L.nav_profile,nach:L.nav_nach,foerder:L.nav_foerder,verlauf:L.nav_verlauf,dokumente:L.nav_dokumente};
   Object.entries(navMap).forEach(([view,txt])=>{ const el=document.querySelector(`[data-view="${view}"] span:last-child`); if(el&&txt) el.textContent=txt; });
   // hdr-sub
   const hs=document.getElementById('hdr-sub'); if(hs&&!started) hs.textContent=L.hdr_sub;
@@ -3020,7 +3022,7 @@ function exportAuswahl(){
     body+=buildElternHTML(name,cm,lang);
   }
 
-  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.5.30 Beta</p></body></html>';
+  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.6.1 Beta</p></body></html>';
   w.document.write(body); w.document.close(); w.print();
 }
 
@@ -3102,7 +3104,7 @@ function setNavProgressive(showAll){
   const navFoerder = document.getElementById('nav-foerder');
   const navDok = document.getElementById('nav-dokumente');
 
-  const els = [secErh, secAus, navAreas, navProfile, navFoerder, navDok];
+  const els = [secErh, secAus, navAreas, navProfile, navFoerder, navVerlauf, navVerlaufSub, navDok];
   els.forEach(el=>{
     if(!el) return;
     if(showAll) el.classList.remove('nav-progressive-hidden');
@@ -3269,6 +3271,7 @@ function handleThirtyDayRule(d, file){
 
 // Pending loaded data for dialog actions
 let _pendingLoad=null;
+let _pendingFile=null;
 
 function showRuleDialog(title, body, buttons){
   const btnHtml=buttons.map(b=>`
@@ -3303,6 +3306,7 @@ function handleRuleAction(action){
       erhebungen: d.erhebungen||[]
     };
     previousErhebungen=[snapshot, ...(d.erhebungen||[])].slice(0,5); // max 5 Erhebungen
+    updateVerlaufNav();
     // Load child info but clear answers
     childInfo=d.childInfo||{};
     ageRange=d.ageRange;
@@ -3318,7 +3322,7 @@ function handleRuleAction(action){
     setNavProgressive(false); // Progressive: user must click Starten
     showView('setup');
     saveSession();
-    showToast('Neue Erhebung bereit – alte Erhebung als Vergleich gespeichert ✓');
+    showToast('Neue Erhebung bereit - alte Erhebung als Vergleich gespeichert');
 
   } else if(action==='new_only'){
     // ≥30 days, incomplete: discard old, fresh start with child info only
@@ -3348,6 +3352,7 @@ function _finishLoad(d, isNew){
   ageRange=d.ageRange||null;
   previousErhebungen=d.erhebungen||[];
   started=!!ageRange;
+  updateVerlaufNav();
   systemPrefilled=new Set();
   loadChildUI();
   if(ageRange){
@@ -3486,6 +3491,186 @@ function renderVerlauf(){
     });
 
     html+=`</tbody></table></div>`;
+  }
+
+  return html;
+}
+
+
+// ═══════════════════════════════════════
+// VERLAUF NAVIGATION + VIEW
+// ═══════════════════════════════════════
+
+function updateVerlaufNav(){
+  const sub=document.getElementById('nav-verlauf-sub');
+  const navVerlauf=document.getElementById('nav-verlauf');
+  if(!sub) return;
+
+  if(!previousErhebungen||previousErhebungen.length===0){
+    sub.style.display='none';
+    sub.innerHTML='';
+    return;
+  }
+
+  // Show verlauf nav and sub-items
+  sub.style.display='block';
+  sub.innerHTML='';
+
+  // Sub-item for each past erhebung
+  [...previousErhebungen].reverse().forEach((erh,i)=>{
+    const date=new Date(erh.savedAt||erh.created);
+    const label=date.toLocaleDateString('de',{month:'short',year:'numeric'});
+    const range={krippe:'Krippe',kita:'Kita',schule:'Grundschule'}[erh.ageRange]||erh.ageRange;
+    const div=document.createElement('div');
+    div.className='nav-item';
+    div.style.cssText='padding-left:2.2rem;font-size:.78rem;';
+    div.innerHTML=`<span style="color:var(--muted);margin-right:.4rem">📅</span><span>${label} · ${range}</span>`;
+    div.onclick=()=>showVerlaufDetail(i);
+    sub.appendChild(div);
+  });
+
+  // Sub-item for comparison (only if ≥2 erhebungen)
+  if(previousErhebungen.length>=1){
+    const div=document.createElement('div');
+    div.className='nav-item';
+    div.style.cssText='padding-left:2.2rem;font-size:.78rem;font-weight:600;';
+    div.innerHTML='<span style="margin-right:.4rem">📊</span><span>Entwicklung</span>';
+    div.onclick=()=>{ showView('verlauf'); };
+    sub.appendChild(div);
+  }
+}
+
+let _verlaufDetailIdx=-1;
+
+function showVerlaufDetail(idx){
+  _verlaufDetailIdx=idx;
+  showView('verlauf');
+}
+
+function renderVerlaufView(){
+  const el=document.getElementById('verlauf-view-content');
+  if(!el) return;
+
+  if(!previousErhebungen||previousErhebungen.length===0){
+    el.innerHTML=`<div style="color:var(--muted);font-size:.85rem;padding:1rem">
+      Noch keine vergangenen Erhebungen vorhanden.<br>
+      Vergangene Erhebungen erscheinen hier nach einem Altersbereichswechsel oder nach Ablauf von 30 Tagen.
+    </div>`;
+    return;
+  }
+
+  const all=[...previousErhebungen].reverse();
+
+  // If a specific detail is requested
+  if(_verlaufDetailIdx>=0 && _verlaufDetailIdx<all.length){
+    const erh=all[_verlaufDetailIdx];
+    el.innerHTML=renderErhebungDetail(erh);
+    return;
+  }
+
+  // Default: show comparison (last 2)
+  el.innerHTML=renderVerlaufVergleich();
+}
+
+function renderErhebungDetail(erh){
+  const date=new Date(erh.savedAt||erh.created);
+  const dateStr=date.toLocaleDateString('de',{day:'2-digit',month:'long',year:'numeric'});
+  const range={krippe:'Krippenbereich (0–3 J)',kita:'Kitabereich (3–6 J)',schule:'Grundschulbereich (6–9 J)'}[erh.ageRange]||erh.ageRange;
+  const cm=parseFloat(erh.childInfo?.months)||0;
+
+  let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:1rem">
+    <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem">📅 Erhebung vom</div>
+    <div style="font-weight:600;font-size:1rem">${dateStr}</div>
+    <div style="font-size:.82rem;color:var(--muted);margin-top:.2rem">${range}${cm?' · '+( cm/12).toFixed(1)+' Jahre':''}</div>
+  </div>`;
+
+  // Area results
+  html+='<table style="width:100%;border-collapse:collapse;font-size:.82rem">';
+  html+='<thead><tr style="border-bottom:2px solid var(--border)">';
+  html+='<th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;text-transform:uppercase;color:var(--muted)">Bereich</th>';
+  html+='<th style="text-align:center;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)">Entw.alter</th>';
+  html+='</tr></thead><tbody>';
+
+  AREA_ORDER.forEach(aid=>{
+    const da=calcDevAgeFromAnswers(aid, erh.answers||{});
+    const daStr=da?(da/12).toFixed(1)+' J':'—';
+    html+=`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${DATA[aid].name}</td>
+      <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${daStr}</td>
+    </tr>`;
+  });
+
+  html+='</tbody></table>';
+  html+=`<button class="btn btn-outline btn-sm" style="margin-top:1rem" onclick="_verlaufDetailIdx=-1;renderVerlaufView()">← Zurück zum Vergleich</button>`;
+  return html;
+}
+
+function renderVerlaufVergleich(){
+  if(!previousErhebungen||previousErhebungen.length===0) return '';
+
+  const all=[...previousErhebungen].reverse();
+  const prev=all[all.length-1]; // oldest available = most recent past
+  const prevDate=new Date(prev.savedAt||prev.created).toLocaleDateString('de',{month:'long',year:'numeric'});
+
+  let html=`<div style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.8rem">
+    📊 Vergleich – aktuelle vs. letzte Erhebung
+  </div>
+  <div style="font-size:.75rem;color:var(--muted);margin-bottom:.7rem;display:flex;gap:1.5rem">
+    <span>⬅ ${prevDate}</span>
+    <span>➡ Aktuelle Erhebung</span>
+  </div>`;
+
+  html+=`<table style="width:100%;border-collapse:collapse;font-size:.82rem">
+    <thead><tr style="border-bottom:2px solid var(--border)">
+      <th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;text-transform:uppercase;color:var(--muted)">Bereich</th>
+      <th style="text-align:center;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)">Vorher</th>
+      <th style="text-align:center;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)">Jetzt</th>
+      <th style="text-align:center;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)">Δ</th>
+    </tr></thead><tbody>`;
+
+  AREA_ORDER.forEach(aid=>{
+    const L=APP_UI[appLang]||APP_UI.de;
+    const areaName=L['area_'+aid]||DATA[aid].name;
+    const prevDa=calcDevAgeFromAnswers(aid, prev.answers||{});
+    const currDa=calcDevAge(aid);
+    const prevStr=prevDa?(prevDa/12).toFixed(1)+' J':'—';
+    const currStr=currDa?(currDa/12).toFixed(1)+' J':'—';
+
+    let delta='—', cls='neu', icon='→';
+    if(prevDa&&currDa){
+      const diff=(currDa-prevDa)/12;
+      delta=(diff>=0?'+':'')+diff.toFixed(1)+' J';
+      cls=diff>0.05?'pos':diff<-0.05?'neg':'neu';
+      icon=diff>0.05?'↑':diff<-0.05?'↓':'→';
+    }
+
+    html+=`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${areaName}</td>
+      <td style="text-align:center;padding:.35rem .5rem;color:var(--muted)">${prevStr}</td>
+      <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${currStr}</td>
+      <td style="text-align:center;padding:.35rem .5rem">
+        <span class="verlauf-delta ${cls}">${icon} ${delta}</span>
+      </td>
+    </tr>`;
+  });
+
+  html+='</tbody></table>';
+
+  // List all past erhebungen
+  if(all.length>1){
+    html+=`<div style="margin-top:1.2rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem">Alle Erhebungen</div>`;
+    all.forEach((erh,i)=>{
+      const d=new Date(erh.savedAt||erh.created);
+      const dStr=d.toLocaleDateString('de',{day:'2-digit',month:'long',year:'numeric'});
+      const range={krippe:'Krippe',kita:'Kita',schule:'Grundschule'}[erh.ageRange]||erh.ageRange;
+      html+=`<div class="verlauf-item" onclick="_verlaufDetailIdx=${i};renderVerlaufView()" style="cursor:pointer">
+        <div>
+          <div class="verlauf-item-date">📅 ${dStr}</div>
+          <div class="verlauf-item-range">${range}</div>
+        </div>
+        <span style="color:var(--accent);font-size:.8rem">Details →</span>
+      </div>`;
+    });
   }
 
   return html;
