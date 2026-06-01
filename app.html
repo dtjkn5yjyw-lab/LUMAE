@@ -3312,12 +3312,18 @@ function handleRuleAction(action){
     ageRange=d.ageRange;
     answers={};
     started=false;
-    loadedAgeRange=null;
+    loadedAgeRange=ageRange; // keep so getStartBtnLabel works correctly
+    systemPrefilled=new Set();
     loadChildUI();
     if(ageRange){
+      // Pre-select the age card visually
       document.querySelectorAll('.age-card').forEach(el=>el.classList.toggle('sel',el.dataset.range===ageRange));
-      document.getElementById('start-btn').disabled=false;
-      document.getElementById('start-btn').textContent=getStartBtnLabel(ageRange);
+      // Enable start button with correct label
+      const btn=document.getElementById('start-btn');
+      btn.disabled=false;
+      btn.textContent=getStartBtnLabel(ageRange);
+      // Show start hint cleared
+      document.getElementById('start-hint').textContent='';
     }
     setNavProgressive(false); // Progressive: user must click Starten
     showView('setup');
