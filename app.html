@@ -981,7 +981,7 @@ function getStartBtnLabel(range){
 let loadedAgeRange=null;
 
 function selectAge(range,el){
-  // Snapshot: if we have answers and range is changing → save snapshot
+  // Snapshot: if answers exist and range is changing → save snapshot + clear answers
   if(loadedAgeRange && range!==loadedAgeRange && Object.keys(answers).length>0){
     const snap={
       savedAt: new Date().toISOString(),
@@ -991,7 +991,11 @@ function selectAge(range,el){
       erhebungen: [...previousErhebungen]
     };
     previousErhebungen=[snap, ...previousErhebungen].slice(0,5);
-    updateVerlaufNav(); // update sidebar
+    updateVerlaufNav();
+    // Clear answers for the new range so user starts fresh
+    answers={};
+    systemPrefilled=new Set();
+    loadedAgeRange=range; // update so no double-snapshot
   }
   ageRange=range;
   document.querySelectorAll('.age-card').forEach(c=>c.classList.remove('sel'));
@@ -3192,7 +3196,7 @@ function handleThirtyDayRule(d, file){
       scen_c_title:'🔄 Neue Erhebung möglich',
       scen_c_body:'Die letzte Erhebung liegt <strong>DAYS Tage</strong> zurück und war vollständig. Sie können jetzt eine neue Erhebung starten.<br><br>Die alte Erhebung wird als Vergleichspunkt gespeichert und nach Abschluss der neuen Erhebung im Entwicklungsprofil sichtbar.',
       scen_c_btn_new:'Neue Erhebung starten',
-      scen_c_btn_cont:'Alte Erhebung ansehen',
+      scen_c_btn_cont:'Datensatz laden (kein Vergleich)',
       days_label:'Tag',
     },
     en:{
@@ -3206,7 +3210,7 @@ function handleThirtyDayRule(d, file){
       scen_c_title:'🔄 New observation possible',
       scen_c_body:'The last observation was <strong>DAYS days</strong> ago and was complete. You can now start a new observation.<br><br>The old observation will be saved as a comparison point and shown in the developmental profile after the new observation is complete.',
       scen_c_btn_new:'Start new observation',
-      scen_c_btn_cont:'View old observation',
+      scen_c_btn_cont:'Load data (no comparison)',
       days_label:'day',
     },
     it:{
@@ -3220,7 +3224,7 @@ function handleThirtyDayRule(d, file){
       scen_c_title:"🔄 Nuova osservazione possibile",
       scen_c_body:"L'ultima osservazione risale a <strong>DAYS giorni</strong> fa ed era completa. È ora possibile avviare una nuova osservazione.<br><br>La vecchia osservazione verrà salvata come punto di confronto e sarà visibile nel profilo di sviluppo dopo il completamento della nuova.",
       scen_c_btn_new:"Avvia nuova osservazione",
-      scen_c_btn_cont:"Visualizza vecchia osservazione",
+      scen_c_btn_cont:"Carica dati (nessun confronto)",
       days_label:"giorno",
     }
   };
@@ -3342,8 +3346,21 @@ function handleRuleAction(action){
     showToast('Ungültige Erhebung verworfen – neue Erhebung starten ✓');
 
   } else if(action==='info'){
-    // Show 30-day rule info, then re-show dialog
+    // Show 30-day rule info - after closing, re-show the original dialog
+    const savedPending=_pendingLoad; // keep pending
     showDayRuleInfo();
+    // Override the "Verstanden" button to re-show the rule dialog
+    setTimeout(()=>{
+      const closeBtn=document.querySelector('#alter-info-content .modal-close');
+      if(closeBtn){
+        closeBtn.onclick=()=>{
+          closeAlterInfo();
+          _pendingLoad=savedPending;
+          handleThirtyDayRule(savedPending); // re-show original dialog
+        };
+      }
+    },50);
+    return; // don't clear _pendingLoad
 
   } else if(action==='cancel'){
     _pendingLoad=null;
