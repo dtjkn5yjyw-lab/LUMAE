@@ -349,7 +349,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
   <div class="hdr-row">
     <div>
       <h1>Kuno Bellers Entwicklungstabelle 0–9</h1>
-      <div class="hdr-sub" id="hdr-sub">8 Entwicklungsbereiche · Phasen 1–18</div>
+      <div class="hdr-sub" id="hdr-sub">8 Entwicklungsbereiche · Phasen 1–18 · <span style="opacity:.6;font-size:.85em">v26.6.1</span></div>
     </div>
     <div class="prog-wrap" id="prog-wrap" style="display:none">
       <div class="prog-lbl">Fortschritt: <span id="prog-lbl">0%</span></div>
@@ -389,7 +389,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div class="nav-item disabled" id="nav-verlauf" data-view="verlauf" onclick="showView('verlauf')"><span>🔄</span><span>Verlauf</span></div>
     <div id="nav-verlauf-sub" style="display:none"></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
-    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.1 Beta</div>
+    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.1 Beta · 01.06.2026 15:39</div>
   </nav>
 
   <main id="main">
@@ -981,8 +981,8 @@ function getStartBtnLabel(range){
 let loadedAgeRange=null;
 
 function selectAge(range,el){
-  // Snapshot: if answers exist and range is changing → save snapshot + clear answers
-  if(loadedAgeRange && range!==loadedAgeRange && Object.keys(answers).length>0){
+  // Snapshot: only if answers have real content (>50 items) and range is changing
+  if(loadedAgeRange && range!==loadedAgeRange && Object.keys(answers).length>50){
     const snap={
       savedAt: new Date().toISOString(),
       ageRange: loadedAgeRange,
@@ -1012,7 +1012,10 @@ function selectAge(range,el){
 }
 
 function startErhebung(){
-  if(!ageRange) return;
+  if(!ageRange){
+    showToast('Bitte zuerst Altersbereich wählen');
+    return;
+  }
   const rp=RANGE_PHASES[ageRange];
   AREA_ORDER.forEach(aid=>{
     // Phases below range: prefill as 'yes' (competence assumed) but editable
