@@ -3348,13 +3348,17 @@ function handleRuleAction(action){
     setNavProgressive(false);
     showView('setup');
     saveSession();
-    // Trigger selectAge to properly activate the age card and start button
+    // Activate age card + start button WITHOUT calling saveChild()
+    // (saveChild would overwrite childInfo with empty form fields)
     if(ageRange){
-      const card=document.querySelector(`.age-card[data-range="${ageRange}"]`);
-      if(card) selectAge(ageRange, card);
+      document.querySelectorAll('.age-card').forEach(el=>el.classList.toggle('sel',el.dataset.range===ageRange));
+      const btn=document.getElementById('start-btn');
+      btn.disabled=false;
+      btn.textContent=getStartBtnLabel(ageRange);
+      document.getElementById('start-hint').textContent='';
+      AREA_ORDER.forEach(aid=>{ updateNavScore(aid); });
     }
     showToast('Neue Erhebung bereit - alte Erhebung als Vergleich gespeichert');
-    // Pulse the start button
     setTimeout(()=>{
       const sb=document.getElementById('start-btn');
       if(sb) sb.style.animation='pulse 1s ease 3';
