@@ -311,6 +311,11 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
 .verlauf-delta.pos{color:#2d7a3d;}
 .verlauf-delta.neg{color:#b85050;}
 .verlauf-delta.neu{color:#7a6f60;}
+
+@keyframes pulse {
+  0%,100%{ transform:scale(1); box-shadow:none; }
+  50%{ transform:scale(1.04); box-shadow:0 0 0 4px rgba(45,90,61,.25); }
+}
 </style>
 </head>
 <body>
@@ -1440,6 +1445,22 @@ function renderProfile(){
   const diffStr=diff!==null?(diff>=0?'+':'')+(diff/12).toFixed(1)+' J':'—';
   const diffColor=diff!==null&&diff<-6?'var(--danger)':'var(--accent)';
   document.getElementById('prof-sub').textContent=`${name}${cm?' · '+(cm/12).toFixed(1)+' Jahre':''} · ${rangeLabel(ageRange)}`;
+
+  // If no answers yet → show guidance
+  const activeAnswers=Object.keys(answers).filter(k=>{
+    const ph=parseInt(k.split('-')[1]);
+    return ageRange&&RANGE_PHASES[ageRange]&&RANGE_PHASES[ageRange].active.includes(ph);
+  });
+  if(activeAnswers.length===0){
+    document.getElementById('prof-content').innerHTML=`
+      <div style="text-align:center;padding:3rem 1rem;color:var(--muted)">
+        <div style="font-size:2.5rem;margin-bottom:.8rem">📋</div>
+        <div style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.4rem">Noch keine Erhebungsdaten</div>
+        <div style="font-size:.85rem">Bitte erst die Erhebung starten und die Items beantworten.</div>
+        <button class="btn btn-primary" style="margin-top:1.2rem" onclick="showView('setup')">→ Zu den Stammdaten</button>
+      </div>`;
+    return;
+  }
 
   function collCard(id,icon,title,inner,open){
     return `<div class="coll-card"><div class="coll-hdr" onclick="toggleColl('${id}')"><span>${icon} ${title}</span><span class="coll-chev" id="chev-${id}">${open?'▾':'▸'}</span></div><div class="coll-body" id="cb-${id}" style="display:${open?'block':'none'}">${inner}</div></div>`;
@@ -3336,6 +3357,11 @@ function handleRuleAction(action){
     showView('setup');
     saveSession();
     showToast('Neue Erhebung bereit - alte Erhebung als Vergleich gespeichert');
+    // Show a clear hint on the start button
+    document.getElementById('start-hint').textContent='';
+    // Highlight the start button
+    const sb=document.getElementById('start-btn');
+    if(sb){ sb.style.animation='pulse 1s ease 3'; }
 
   } else if(action==='new_only'){
     // ≥30 days, incomplete: discard old, fresh start with child info only
