@@ -354,7 +354,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
   <div class="hdr-row">
     <div>
       <h1>Kuno Bellers Entwicklungstabelle 0–9</h1>
-      <div class="hdr-sub" id="hdr-sub">8 Entwicklungsbereiche · Phasen 1–18 · <span style="opacity:.6;font-size:.85em">v26.6.1</span></div>
+      <div class="hdr-sub" id="hdr-sub">8 Entwicklungsbereiche · Phasen 1–18 · <span style="opacity:.7;font-size:.85em;font-weight:600">v26.6.1</span></div>
     </div>
     <div class="prog-wrap" id="prog-wrap" style="display:none">
       <div class="prog-lbl">Fortschritt: <span id="prog-lbl">0%</span></div>
@@ -394,7 +394,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div class="nav-item disabled" id="nav-verlauf" data-view="verlauf" onclick="showView('verlauf')"><span>🔄</span><span>Verlauf</span></div>
     <div id="nav-verlauf-sub" style="display:none"></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
-    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.1 Beta · 01.06.2026 15:39</div>
+    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.1 Beta · <span id="build-time"></span></div>
   </nav>
 
   <main id="main">
@@ -955,8 +955,10 @@ let ivItems=[], ivIndex=0;
 function init(){
   buildNav();
   document.getElementById('c-date').value=new Date().toISOString().split('T')[0];
+  // Show load time (helps verify latest version on GitHub)
+  const bt=document.getElementById('build-time');
+  if(bt) bt.textContent=new Date().toLocaleTimeString('de',{hour:'2-digit',minute:'2-digit'})+' Uhr';
   loadSession();
-  // Start with progressive navigation (only show Start section)
   setNavProgressive(false);
 }
 
@@ -1987,15 +1989,22 @@ function importKBD(evt){
   evt.target.value='';
 }
 function saveSession(){
-  try{ sessionStorage.setItem('kbd_v3',JSON.stringify({answers,childInfo,ageRange,started})); }catch(e){}
+  try{ sessionStorage.setItem('kbd_v3',JSON.stringify({answers,childInfo,ageRange,started,erhebungen:previousErhebungen})); }catch(e){}
 }
 function loadSession(){
   try{
     const s=sessionStorage.getItem('kbd_v3'); if(!s) return;
     const d=JSON.parse(s);
-    answers=d.answers||{}; childInfo=d.childInfo||{}; ageRange=d.ageRange||null; started=d.started||false;
+    answers=d.answers||{}; childInfo=d.childInfo||{}; ageRange=d.ageRange||null; started=d.started||false; previousErhebungen=d.erhebungen||[];
     loadChildUI();
-    if(ageRange){ document.querySelectorAll('.age-card').forEach(c=>c.classList.toggle('sel',c.dataset.range===ageRange)); document.getElementById('start-btn').disabled=false; document.getElementById('start-hint').textContent=''; }
+    if(ageRange){
+      document.querySelectorAll('.age-card').forEach(c=>c.classList.toggle('sel',c.dataset.range===ageRange));
+      const btn=document.getElementById('start-btn');
+      btn.disabled=false;
+      btn.textContent=getStartBtnLabel(ageRange);
+      document.getElementById('start-hint').textContent='';
+    }
+    updateVerlaufNav();
     if(started){
       document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('disabled'));
       document.getElementById('prog-wrap').style.display='';
@@ -3343,25 +3352,23 @@ function handleRuleAction(action){
     loadedAgeRange=ageRange; // keep so getStartBtnLabel works correctly
     systemPrefilled=new Set();
     loadChildUI();
+    setNavProgressive(false);
+    showView('setup');
+    // Activate age card + start button WITHOUT calling saveChild()
     if(ageRange){
-      // Pre-select the age card visually
       document.querySelectorAll('.age-card').forEach(el=>el.classList.toggle('sel',el.dataset.range===ageRange));
-      // Enable start button with correct label
       const btn=document.getElementById('start-btn');
       btn.disabled=false;
       btn.textContent=getStartBtnLabel(ageRange);
-      // Show start hint cleared
       document.getElementById('start-hint').textContent='';
+      AREA_ORDER.forEach(aid=>{ updateNavScore(aid); });
     }
-    setNavProgressive(false); // Progressive: user must click Starten
-    showView('setup');
-    saveSession();
+    saveSession(); // Save AFTER button setup
     showToast('Neue Erhebung bereit - alte Erhebung als Vergleich gespeichert');
-    // Show a clear hint on the start button
-    document.getElementById('start-hint').textContent='';
-    // Highlight the start button
-    const sb=document.getElementById('start-btn');
-    if(sb){ sb.style.animation='pulse 1s ease 3'; }
+    setTimeout(()=>{
+      const sb=document.getElementById('start-btn');
+      if(sb) sb.style.animation='pulse 1s ease 3';
+    }, 100);
 
   } else if(action==='new_only'){
     // ≥30 days, incomplete: discard old, fresh start with child info only
