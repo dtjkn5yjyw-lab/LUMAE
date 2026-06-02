@@ -1075,6 +1075,7 @@ function showView(id){
   else if(id==='profile'){ document.getElementById('view-profile').style.display=''; renderProfile(); }
   else if(id==='foerder'){ document.getElementById('view-foerder').style.display=''; document.getElementById('foerder-content').innerHTML=renderFoerder(); }
   else if(id==='dokumente'){ document.getElementById('view-dokumente').style.display=''; }
+  else if(id==='verlauf'){ document.getElementById('view-verlauf').style.display=''; _verlaufDetailIdx=-1; renderVerlaufView(); }
   else if(DATA[id]){ currentAreaId=id; document.getElementById('view-area').style.display=''; renderArea(id); }
 }
 
