@@ -1526,11 +1526,7 @@ function renderProfile(){
   html+=collCard('radar','',(L.card_radar||'🎯 Radialdiagramm: Entwicklungsprofil'),
     `<div style="max-width:700px;margin:0 auto"><canvas id="radarChart" class="mychart"></canvas></div>`,false);
 
-  // 5. Verlauf (nur wenn previousErhebungen vorhanden)
-  if(previousErhebungen&&previousErhebungen.length>0){
-    html+=collCard('verlauf','',(L.card_verlauf||'🔄 Verlauf'),
-      `<div id="verlauf-content"></div>`,true);
-  }
+  // Verlauf is a separate nav item - not shown in Entwicklungsprofil
 
   // Fördermöglichkeiten: separate nav item
 
@@ -1538,9 +1534,7 @@ function renderProfile(){
 
   document.getElementById('prof-content').innerHTML=html;
 
-  // Fill Verlauf
-  const verlaufEl=document.getElementById('verlauf-content');
-  if(verlaufEl) verlaufEl.innerHTML=renderVerlauf();
+
 
   // Fill table
   const tbody=document.getElementById('res-tbody');
@@ -1595,10 +1589,7 @@ function toggleColl(id){
   if(!open){
     const cm2=window._chartCm||parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
     const chartFns={bar:drawBar,linear:drawLinear,radar:drawRadar};
-    if(id==='verlauf'){
-      const vc=document.getElementById('verlauf-content');
-      if(vc&&!vc.innerHTML) vc.innerHTML=renderVerlauf();
-    }
+
     if(chartFns[id]){ requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ chartFns[id](cm2); }); }); }
   }
 }
