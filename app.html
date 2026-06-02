@@ -959,7 +959,8 @@ function init(){
   const bt=document.getElementById('build-time');
   if(bt) bt.textContent=new Date().toLocaleTimeString('de',{hour:'2-digit',minute:'2-digit'})+' Uhr';
   loadSession();
-  setNavProgressive(false);
+  // Only hide nav if not already started (loadSession may have restored started=true)
+  if(!started) setNavProgressive(false);
 }
 
 function buildNav(){
@@ -1024,6 +1025,11 @@ function startErhebung(){
     return;
   }
   const rp=RANGE_PHASES[ageRange];
+  if(!rp){
+    showToast('Fehler: Altersbereich nicht erkannt. Bitte neu wählen.');
+    ageRange=null;
+    return;
+  }
   AREA_ORDER.forEach(aid=>{
     // Phases below range: prefill as 'yes' (competence assumed) but editable
     rp.prefilled.forEach(ph=>{
@@ -3139,6 +3145,8 @@ function setNavProgressive(showAll){
   const navNach = document.getElementById('nav-nach');
   const navProfile = document.getElementById('nav-profile');
   const navFoerder = document.getElementById('nav-foerder');
+  const navVerlauf = document.getElementById('nav-verlauf');
+  const navVerlaufSub = document.getElementById('nav-verlauf-sub');
   const navDok = document.getElementById('nav-dokumente');
 
   const els = [secErh, secAus, navAreas, navProfile, navFoerder, navVerlauf, navVerlaufSub, navDok];
