@@ -1085,7 +1085,21 @@ function showView(id){
   else if(id==='profile'){ document.getElementById('view-profile').style.display=''; renderProfile(); }
   else if(id==='foerder'){ document.getElementById('view-foerder').style.display=''; document.getElementById('foerder-content').innerHTML=renderFoerder(); }
   else if(id==='dokumente'){ document.getElementById('view-dokumente').style.display=''; }
-  else if(id==='verlauf'){ document.getElementById('view-verlauf').style.display=''; _verlaufDetailIdx=-1; renderVerlaufView(); }
+  else if(id==='verlauf'){
+    document.getElementById('view-verlauf').style.display='';
+    _verlaufDetailIdx=-1;
+    window._vergleichIdx=0; // reset to most recent comparison
+    renderVerlaufView();
+    // Draw radar after render
+    setTimeout(()=>{
+      if(previousErhebungen&&previousErhebungen.length>0){
+        const all=[...previousErhebungen].reverse();
+        const prev=all[0];
+        const prevDate=new Date(prev.savedAt||prev.created).toLocaleDateString('de',{month:'short',year:'numeric'});
+        drawVergleichRadar(prev.answers, prevDate);
+      }
+    },50);
+  }
   else if(DATA[id]){ currentAreaId=id; document.getElementById('view-area').style.display=''; renderArea(id); }
 }
 
@@ -3592,7 +3606,6 @@ function renderVerlauf(){
 
 function updateVerlaufNav(){
   const sub=document.getElementById('nav-verlauf-sub');
-  const navVerlauf=document.getElementById('nav-verlauf');
   if(!sub) return;
 
   if(!previousErhebungen||previousErhebungen.length===0){
@@ -3601,31 +3614,54 @@ function updateVerlaufNav(){
     return;
   }
 
-  // Show verlauf nav and sub-items
   sub.style.display='block';
   sub.innerHTML='';
 
-  // Sub-item for each past erhebung
+  // 1. Vergleich first
+  const divVergleich=document.createElement('div');
+  divVergleich.className='nav-item';
+  divVergleich.id='nav-verlauf-vergleich';
+  divVergleich.style.cssText='padding-left:2.2rem;font-size:.78rem;font-weight:600;';
+  divVergleich.innerHTML='<span style="margin-right:.4rem">📊</span><span>Vergleich</span>';
+  divVergleich.onclick=()=>{ _verlaufDetailIdx=-1; showView('verlauf'); };
+  sub.appendChild(divVergleich);
+
+  // 2. Individual erhebungen: newest first (reverse = newest at index 0)
   [...previousErhebungen].reverse().forEach((erh,i)=>{
     const date=new Date(erh.savedAt||erh.created);
     const label=date.toLocaleDateString('de',{month:'short',year:'numeric'});
     const range={krippe:'Krippe',kita:'Kita',schule:'Grundschule'}[erh.ageRange]||erh.ageRange;
     const div=document.createElement('div');
     div.className='nav-item';
+    div.dataset.verlaufIdx=i;
     div.style.cssText='padding-left:2.2rem;font-size:.78rem;';
     div.innerHTML=`<span style="color:var(--muted);margin-right:.4rem">📅</span><span>${label} · ${range}</span>`;
     div.onclick=()=>showVerlaufDetail(i);
     sub.appendChild(div);
   });
-
-  // No "Entwicklung" sub-item - comparison happens inline in Verlauf view
 }
 
 let _verlaufDetailIdx=-1;
 
 function showVerlaufDetail(idx){
   _verlaufDetailIdx=idx;
-  showView('verlauf');
+  // Update nav active state
+  document.querySelectorAll('[data-verlauf-idx]').forEach(el=>{
+    el.classList.toggle('active', parseInt(el.dataset.verlaufIdx)===idx);
+  });
+  const vc=document.getElementById('nav-verlauf-vergleich');
+  if(vc) vc.classList.remove('active');
+  // Re-render view
+  const el=document.getElementById('verlauf-view-content');
+  if(el){
+    const all=[...previousErhebungen].reverse();
+    if(idx>=0&&idx<all.length) el.innerHTML=renderErhebungFull(all[idx],idx,all.length);
+  }
+  // Make sure view-verlauf is visible
+  document.getElementById('view-verlauf').style.display='';
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const navV=document.querySelector('[data-verlauf-idx="'+idx+'"]');
+  if(navV) navV.classList.add('active');
 }
 
 function renderVerlaufView(){
@@ -3784,14 +3820,33 @@ function renderErhebungDetail(erh){
 function renderVerlaufVergleich(){
   if(!previousErhebungen||previousErhebungen.length===0) return '';
 
-  const all=[...previousErhebungen].reverse();
-  const prev=all[all.length-1]; // oldest available = most recent past
+  const all=[...previousErhebungen].reverse(); // newest first
+  const L=APP_UI[appLang]||APP_UI.de;
+
+  // Selector: which two to compare (default: most recent prev vs current)
+  // Build selector if >1 previous erhebung
+  let selHtml='';
+  if(all.length>1){
+    selHtml=`<div style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+      <span style="font-weight:600">Vergleiche:</span>`;
+    all.forEach((erh,i)=>{
+      const d=new Date(erh.savedAt||erh.created);
+      const lbl=d.toLocaleDateString('de',{month:'short',year:'numeric'});
+      const range={krippe:'Krippe',kita:'Kita',schule:'Grundschule'}[erh.ageRange]||erh.ageRange;
+      const sel=(window._vergleichIdx===undefined&&i===0)||window._vergleichIdx===i;
+      selHtml+=`<button class="${sel?'btn btn-primary':'btn btn-outline'}"
+        style="font-size:.72rem;padding:.25rem .6rem"
+        onclick="window._vergleichIdx=${i};document.getElementById('verlauf-view-content').innerHTML=renderVerlaufVergleich();setTimeout(()=>{ const all=[...previousErhebungen].reverse(); const prev=all[Math.min(${i},all.length-1)]; const pd=new Date(prev.savedAt||prev.created).toLocaleDateString('de',{month:'short',year:'numeric'}); drawVergleichRadar(prev.answers,pd); },50);" >
+        📅 ${lbl} · ${range}</button>`;
+    });
+    selHtml+=`<span style="opacity:.5">vs. aktuelle Erhebung</span></div>`;
+  }
+
+  const prevIdx=(window._vergleichIdx!==undefined)?window._vergleichIdx:0;
+  const prev=all[Math.min(prevIdx,all.length-1)];
   const prevDate=new Date(prev.savedAt||prev.created).toLocaleDateString('de',{month:'long',year:'numeric'});
 
-  let html=`<div style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.8rem">
-    📊 Vergleich – aktuelle vs. letzte Erhebung
-  </div>
-  <div style="font-size:.75rem;color:var(--muted);margin-bottom:.7rem;display:flex;gap:1.5rem">
+  let html=selHtml+`<div style="font-size:.75rem;color:var(--muted);margin-bottom:.7rem;display:flex;gap:1.5rem;flex-wrap:wrap">
     <span>⬅ ${prevDate}</span>
     <span>➡ Aktuelle Erhebung</span>
   </div>`;
@@ -3832,24 +3887,89 @@ function renderVerlaufVergleich(){
 
   html+='</tbody></table>';
 
-  // List all past erhebungen
-  if(all.length>1){
-    html+=`<div style="margin-top:1.2rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem">Alle Erhebungen</div>`;
-    all.forEach((erh,i)=>{
-      const d=new Date(erh.savedAt||erh.created);
-      const dStr=d.toLocaleDateString('de',{day:'2-digit',month:'long',year:'numeric'});
-      const range={krippe:'Krippe',kita:'Kita',schule:'Grundschule'}[erh.ageRange]||erh.ageRange;
-      html+=`<div class="verlauf-item" onclick="_verlaufDetailIdx=${i};renderVerlaufView()" style="cursor:pointer">
-        <div>
-          <div class="verlauf-item-date">📅 ${dStr}</div>
-          <div class="verlauf-item-range">${range}</div>
-        </div>
-        <span style="color:var(--accent);font-size:.8rem">Details →</span>
-      </div>`;
-    });
-  }
+  // Add chart canvas for visual comparison
+  html+=`<div style="margin-top:1.5rem">
+    <canvas id="vergleichRadar" style="max-width:500px;margin:0 auto;display:block"></canvas>
+  </div>`;
 
   return html;
+}
+
+
+function drawVergleichRadar(prevAnswers, prevLabel){
+  const canvas=document.getElementById('vergleichRadar');
+  if(!canvas) return;
+  const size=Math.min(480, canvas.parentElement?.offsetWidth||480);
+  canvas.width=size; canvas.height=size;
+  const ctx=canvas.getContext('2d');
+  const cx=size/2, cy=size/2, r=size*0.32;
+  const n=AREA_ORDER.length;
+  const ang=i=>-Math.PI/2+(2*Math.PI/n)*i;
+
+  // Grid
+  [0.25,0.5,0.75,1].forEach(frac=>{
+    ctx.beginPath();
+    AREA_ORDER.forEach((aid,i)=>{
+      const a=ang(i), x=cx+r*frac*Math.cos(a), y=cy+r*frac*Math.sin(a);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    ctx.strokeStyle='#e0d8cc'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Spokes
+  AREA_ORDER.forEach((_,i)=>{
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+r*Math.cos(ang(i)), cy+r*Math.sin(ang(i)));
+    ctx.strokeStyle='#e0d8cc'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Max dev age for scaling
+  const maxM=114; // Phase 18
+
+  // Draw previous erhebung polygon (grey)
+  if(prevAnswers){
+    ctx.beginPath();
+    AREA_ORDER.forEach((aid,i)=>{
+      const da=calcDevAgeFromAnswers(aid,prevAnswers)||0;
+      const frac=Math.min(da/maxM,1);
+      const x=cx+r*frac*Math.cos(ang(i)), y=cy+r*frac*Math.sin(ang(i));
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.closePath();
+    ctx.fillStyle='rgba(150,150,150,0.2)'; ctx.fill();
+    ctx.strokeStyle='rgba(120,120,120,0.7)'; ctx.lineWidth=2; ctx.stroke();
+  }
+
+  // Draw current erhebung polygon (accent color)
+  ctx.beginPath();
+  AREA_ORDER.forEach((aid,i)=>{
+    const da=calcDevAge(aid)||0;
+    const frac=Math.min(da/maxM,1);
+    const x=cx+r*frac*Math.cos(ang(i)), y=cy+r*frac*Math.sin(ang(i));
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.closePath();
+  ctx.fillStyle='rgba(61,107,82,0.2)'; ctx.fill();
+  ctx.strokeStyle='rgba(61,107,82,0.8)'; ctx.lineWidth=2.5; ctx.stroke();
+
+  // Emoji labels
+  AREA_ORDER.forEach((aid,i)=>{
+    const lx=cx+(r+22)*Math.cos(ang(i)), ly=cy+(r+22)*Math.sin(ang(i));
+    ctx.font='18px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(DATA[aid].emoji, lx, ly);
+  });
+
+  // Legend
+  const ly=size-28;
+  ctx.beginPath(); ctx.moveTo(cx-80,ly); ctx.lineTo(cx-60,ly);
+  ctx.strokeStyle='rgba(120,120,120,0.7)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.font='11px DM Sans,sans-serif'; ctx.fillStyle='#666'; ctx.textAlign='left'; ctx.textBaseline='middle';
+  ctx.fillText(prevLabel||'Vorherige', cx-56, ly);
+
+  ctx.beginPath(); ctx.moveTo(cx+20,ly); ctx.lineTo(cx+40,ly);
+  ctx.strokeStyle='rgba(61,107,82,0.8)'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.fillStyle='#2d5a3d'; ctx.fillText('Aktuell', cx+44, ly);
 }
 
 init();
