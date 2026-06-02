@@ -103,6 +103,7 @@ main{padding:1.4rem 1.8rem;overflow-y:auto;margin-left:330px;min-height:calc(100
 
 /* ITEM ROW */
 .item-row{display:grid;grid-template-columns:1.4rem 1fr auto auto;align-items:center;gap:.6rem;padding:.65rem 1rem;border-bottom:1px solid var(--border);transition:background .1s}
+.item-row:nth-child(even){background:rgba(0,0,0,.025)}
 .item-row:last-child{border-bottom:none}
 .item-row:hover{background:#faf8f3}
 .item-row.pre{opacity:.65}
@@ -239,6 +240,9 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
   nav{display:none}
   main{margin-left:0}
 }
+.age-card.locked{opacity:.5;pointer-events:none;cursor:not-allowed;}
+.age-card.locked::after{content:'🔒';position:absolute;top:.5rem;right:.5rem;font-size:.8rem;}
+.age-card{position:relative;}
 @media(max-width:600px){
   .help-body{flex-direction:column}
   .help-toc{width:100%;flex-direction:row;flex-wrap:wrap;border-right:none;border-bottom:1px solid var(--border);max-height:none}
@@ -959,8 +963,14 @@ function init(){
   const bt=document.getElementById('build-time');
   if(bt) bt.textContent=new Date().toLocaleTimeString('de',{hour:'2-digit',minute:'2-digit'})+' Uhr';
   loadSession();
-  // Only hide nav if not already started (loadSession may have restored started=true)
   if(!started) setNavProgressive(false);
+  // Warn before tab close/reload if unsaved answers
+  window.addEventListener('beforeunload', e=>{
+    if(started && Object.keys(answers).length>0){
+      e.preventDefault();
+      e.returnValue='';
+    }
+  });
 }
 
 function buildNav(){
@@ -3284,7 +3294,7 @@ function handleThirtyDayRule(d, file){
       T.scen_b_title,
       T.scen_b_body.replace('DAYS', days),
       [{label:T.scen_b_btn_cont, action:'continue', primary:true},
-       {label:'ℹ', action:'info', primary:false}]
+       {label:'ℹ', action:'info', primary:false, info:true}]
     );
     return 'dialog';
   }
@@ -3296,7 +3306,7 @@ function handleThirtyDayRule(d, file){
       T.scen_c_body.replace('DAYS', days),
       [{label:T.scen_c_btn_new, action:'new_erhebung', primary:true},
        {label:T.scen_c_btn_cont, action:'continue', primary:false},
-       {label:'ℹ', action:'info', primary:false}]
+       {label:'ℹ', action:'info', primary:false, info:true}]
     );
     return 'dialog';
   }
@@ -3320,16 +3330,24 @@ let _pendingLoad=null;
 let _pendingFile=null;
 
 function showRuleDialog(title, body, buttons){
-  const btnHtml=buttons.map(b=>`
+  const mainBtns=buttons.filter(b=>!b.info);
+  const infoBtns=buttons.filter(b=>b.info);
+  const mainHtml=mainBtns.map(b=>`
     <button class="${b.primary?'btn btn-primary':'btn btn-outline'}" 
-      style="margin:.25rem;${b.label==='ℹ'?'padding:.4rem .7rem;':'padding:.6rem 1.2rem;'}"
+      style="margin:.25rem;padding:.6rem 1.2rem;"
       onclick="handleRuleAction('${b.action}')">${b.label}</button>`).join('');
+  const infoHtml=infoBtns.map(b=>`
+    <button style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--muted);padding:.3rem .5rem;border-radius:50%;opacity:.7"
+      onclick="handleRuleAction('${b.action}')" title="Mehr erfahren">${b.label}</button>`).join('');
   document.getElementById('alter-info-content').innerHTML=`
     <h4 style="color:var(--accent)">${title}</h4>
     <div style="font-size:.85rem;line-height:1.7;color:var(--muted);margin:.7rem 0">
       <p>${body}</p>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:1rem">${btnHtml}</div>`;
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem;flex-wrap:wrap;gap:.3rem">
+      <div>${mainHtml}</div>
+      <div>${infoHtml}</div>
+    </div>`;
   document.getElementById('alter-info-modal').classList.add('open');
 }
 
@@ -3356,7 +3374,7 @@ function handleRuleAction(action){
     // Load child info but clear answers
     childInfo=d.childInfo||{};
     ageRange=d.ageRange;
-    answers={};
+    answers={...d.answers}; // Pre-fill with previous answers for comparison
     started=false;
     loadedAgeRange=ageRange; // keep so getStartBtnLabel works correctly
     systemPrefilled=new Set();
@@ -3365,7 +3383,10 @@ function handleRuleAction(action){
     showView('setup');
     // Activate age card + start button WITHOUT calling saveChild()
     if(ageRange){
-      document.querySelectorAll('.age-card').forEach(el=>el.classList.toggle('sel',el.dataset.range===ageRange));
+      document.querySelectorAll('.age-card').forEach(el=>{
+        el.classList.toggle('sel',el.dataset.range===ageRange);
+        el.classList.toggle('locked',el.dataset.range!==ageRange);
+      });
       const btn=document.getElementById('start-btn');
       btn.disabled=false;
       btn.textContent=getStartBtnLabel(ageRange);
@@ -3597,15 +3618,7 @@ function updateVerlaufNav(){
     sub.appendChild(div);
   });
 
-  // Sub-item for comparison (only if ≥2 erhebungen)
-  if(previousErhebungen.length>=1){
-    const div=document.createElement('div');
-    div.className='nav-item';
-    div.style.cssText='padding-left:2.2rem;font-size:.78rem;font-weight:600;';
-    div.innerHTML='<span style="margin-right:.4rem">📊</span><span>Entwicklung</span>';
-    div.onclick=()=>{ showView('verlauf'); };
-    sub.appendChild(div);
-  }
+  // No "Entwicklung" sub-item - comparison happens inline in Verlauf view
 }
 
 let _verlaufDetailIdx=-1;
@@ -3629,15 +3642,110 @@ function renderVerlaufView(){
 
   const all=[...previousErhebungen].reverse();
 
-  // If a specific detail is requested
-  if(_verlaufDetailIdx>=0 && _verlaufDetailIdx<all.length){
-    const erh=all[_verlaufDetailIdx];
-    el.innerHTML=renderErhebungDetail(erh);
-    return;
+  // Show selected erhebung (or first by default)
+  const idx=(_verlaufDetailIdx>=0&&_verlaufDetailIdx<all.length)?_verlaufDetailIdx:0;
+  const erh=all[idx];
+  el.innerHTML=renderErhebungFull(erh, idx, all.length);
+}
+
+function renderErhebungFull(erh, idx, total){
+  const date=new Date(erh.savedAt||erh.created);
+  const dateStr=date.toLocaleDateString('de',{day:'2-digit',month:'long',year:'numeric'});
+  const range={krippe:'Krippenbereich (0–3 J)',kita:'Kitabereich (3–6 J)',schule:'Grundschulbereich (6–9 J)'}[erh.ageRange]||erh.ageRange;
+  const cm=parseFloat(erh.childInfo?.months)||0;
+  const L=APP_UI[appLang]||APP_UI.de;
+
+  // Navigation between erhebungen
+  let navHtml='';
+  if(total>1){
+    navHtml=`<div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">`;
+    for(let i=0;i<total;i++){
+      const e2=([...previousErhebungen].reverse())[i];
+      const d2=new Date(e2.savedAt||e2.created);
+      const lbl=d2.toLocaleDateString('de',{month:'short',year:'numeric'});
+      navHtml+=`<button class="${i===idx?'btn btn-primary':'btn btn-outline'}" 
+        style="font-size:.75rem;padding:.3rem .7rem" 
+        onclick="_verlaufDetailIdx=${i};renderVerlaufView()">
+        📅 ${lbl}
+      </button>`;
+    }
+    navHtml+='</div>';
   }
 
-  // Default: show comparison (last 2)
-  el.innerHTML=renderVerlaufVergleich();
+  // Header
+  let html=navHtml+`
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:1rem">
+    <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem">📅 Erhebung vom</div>
+    <div style="font-weight:600;font-size:1rem">${dateStr}</div>
+    <div style="font-size:.82rem;color:var(--muted);margin-top:.2rem">${range}${cm?' · '+(cm/12).toFixed(1)+' Jahre':''}</div>
+  </div>`;
+
+  // Avg dev age
+  const devAges=AREA_ORDER.map(aid=>calcDevAgeFromAnswers(aid,erh.answers||{})).filter(Boolean);
+  const avg=devAges.length?(devAges.reduce((a,b)=>a+b,0)/devAges.length/12).toFixed(1):'—';
+
+  // Sum box
+  html+=`<div class="sum-box" style="margin-bottom:1rem">
+    <div><div class="sum-n">${cm?(cm/12).toFixed(1):'—'}</div><div class="sum-l">${L.prof_chron||'Chron. Alter (Jahre)'}</div></div>
+    <div><div class="sum-n">${avg}</div><div class="sum-l">${L.prof_avg||'Ø Entwicklungsalter'}</div></div>
+  </div>`;
+
+  // Detail table
+  html+=`<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:1.2rem">
+    <thead><tr style="border-bottom:2px solid var(--border)">
+      <th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;text-transform:uppercase;color:var(--muted)">${L.tbl_bereich||'Bereich'}</th>
+      <th style="text-align:center;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)">${L.tbl_alter||'Entw.alter'}</th>
+      <th style="text-align:center;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)">Phase</th>
+    </tr></thead><tbody>`;
+
+  AREA_ORDER.forEach(aid=>{
+    const areaName=L['area_'+aid]||DATA[aid].name;
+    const da=calcDevAgeFromAnswers(aid,erh.answers||{});
+    const daStr=da?(da/12).toFixed(1)+' J':'—';
+    const ph=da?Object.entries(PHASE_MONTHS).reduce((best,[p,mo])=>mo<=da?+p:best,0):null;
+    html+=`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${areaName}</td>
+      <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${daStr}</td>
+      <td style="text-align:center;padding:.35rem .5rem;color:var(--muted)">${ph!==null?'Ph.'+ph:'—'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+
+  // Comparison with current if available
+  if(Object.keys(answers).length>0&&started){
+    html+=`<div style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.6rem">📊 Vergleich mit aktueller Erhebung</div>`;
+    html+=`<table style="width:100%;border-collapse:collapse;font-size:.82rem">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;text-transform:uppercase;color:var(--muted)">${L.tbl_bereich||'Bereich'}</th>
+        <th style="text-align:center;padding:.4rem;font-size:.7rem;color:var(--muted)">📅 ${date.toLocaleDateString('de',{month:'short',year:'numeric'})}</th>
+        <th style="text-align:center;padding:.4rem;font-size:.7rem;color:var(--muted)">Aktuell</th>
+        <th style="text-align:center;padding:.4rem;font-size:.7rem;color:var(--muted)">Δ</th>
+      </tr></thead><tbody>`;
+
+    AREA_ORDER.forEach(aid=>{
+      const areaName=L['area_'+aid]||DATA[aid].name;
+      const prevDa=calcDevAgeFromAnswers(aid,erh.answers||{});
+      const currDa=calcDevAge(aid);
+      const prevStr=prevDa?(prevDa/12).toFixed(1)+' J':'—';
+      const currStr=currDa?(currDa/12).toFixed(1)+' J':'—';
+      let delta='—',cls='neu',icon='→';
+      if(prevDa&&currDa){
+        const diff=(currDa-prevDa)/12;
+        delta=(diff>=0?'+':'')+diff.toFixed(1)+' J';
+        cls=diff>0.05?'pos':diff<-0.05?'neg':'neu';
+        icon=diff>0.05?'↑':diff<-0.05?'↓':'→';
+      }
+      html+=`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${areaName}</td>
+        <td style="text-align:center;padding:.35rem .5rem;color:var(--muted)">${prevStr}</td>
+        <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${currStr}</td>
+        <td style="text-align:center;padding:.35rem .5rem"><span class="verlauf-delta ${cls}">${icon} ${delta}</span></td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+  }
+
+  return html;
 }
 
 function renderErhebungDetail(erh){
