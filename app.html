@@ -1607,7 +1607,7 @@ function toggleColl(id){
 
 
 function drawRadar(childMonths){
-  const canvas=document.getElementById('verlaufRadarChart')||document.getElementById('radarChart');
+  const canvas=document.getElementById('radarChart');
   if(!canvas) return;
   const ctx=canvas.getContext('2d');
   let W=0;
@@ -2279,7 +2279,7 @@ function closeAlterInfo(){
 
 // ── Pure Canvas Linear (Beller Profil) ──
 function drawLinear(childMonths){
-  const canvas=document.getElementById('verlaufLinearChart')||document.getElementById('linearChart');
+  const canvas=document.getElementById('linearChart');
   if(!canvas) return;
   // Get real display width
   let W=0;
@@ -2375,7 +2375,7 @@ function drawLinear(childMonths){
 }
 
 function drawBar(childMonths){
-  const canvas=document.getElementById('verlaufBarChart')||document.getElementById('barChart');
+  const canvas=document.getElementById('barChart');
   if(!canvas) return;
   let W=0;
   const cb=document.getElementById('cb-bar');
@@ -2388,7 +2388,7 @@ function drawBar(childMonths){
   canvas.width=W; canvas.height=H;
   canvas.style.width=W+'px';
   const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
-  const pad={l:56,r:92,t:28,b:8};
+  const pad={l:56,r:110,t:28,b:8};
   const chartH=H-legendH;
   const cw=W-pad.l-pad.r, ch=chartH-pad.t-pad.b, maxM=120;
   const devAges=AREA_ORDER.map(id=>calcDevAge(id)||0);
@@ -3958,31 +3958,26 @@ function drawVergleichRadar(prevAnswers, prevLabel){
 
 
 function drawVerlaufCharts(erh){
-  // Temporarily swap global state with historical data
+  // Save globals
   const _savedAnswers=answers;
   const _savedAgeRange=ageRange;
   const _savedChildInfo=childInfo;
 
+  // Swap globals with historical data
   answers=erh.answers||{};
-  ageRange=erh.ageRange||ageRange;
-  childInfo=erh.childInfo||childInfo;
+  ageRange=erh.ageRange||_savedAgeRange;
+  childInfo=erh.childInfo||_savedChildInfo;
 
-  // Draw using the same functions as Entwicklungsprofil
-  // Bar chart
-  const barCanvas=document.getElementById('verlaufBarChart');
-  if(barCanvas){
-    const cm=parseFloat(erh.childInfo?.months)||0;
-    drawBar(cm);
-  }
-  // Linear chart
-  const linCanvas=document.getElementById('verlaufLinearChart');
-  if(linCanvas){
-    const cm=parseFloat(erh.childInfo?.months)||0;
-    drawLinear(cm);
-  }
-  // Radar chart
-  const radCanvas=document.getElementById('verlaufRadarChart');
-  if(radCanvas) drawRadar();
+  const cm=parseFloat(erh.childInfo?.months)||0;
+
+  // Temporarily rename verlauf canvases to main IDs so draw functions find them
+  const vBar=document.getElementById('verlaufBarChart');
+  const vLin=document.getElementById('verlaufLinearChart');
+  const vRad=document.getElementById('verlaufRadarChart');
+
+  if(vBar){ vBar.id='barChart'; drawBar(cm); vBar.id='verlaufBarChart'; }
+  if(vLin){ vLin.id='linearChart'; drawLinear(cm); vLin.id='verlaufLinearChart'; }
+  if(vRad){ vRad.id='radarChart'; drawRadar(); vRad.id='verlaufRadarChart'; }
 
   // Restore globals
   answers=_savedAnswers;
