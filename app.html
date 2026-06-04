@@ -1592,6 +1592,14 @@ function toggleColl(id){
   if(!open){
     const cm2=window._chartCm||parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
     const chartFns={bar:drawBar,linear:drawLinear,radar:drawRadar};
+    // Historical erhebung charts
+    const verlaufChartIds=['erh-bar','erh-linear','erh-radar'];
+    if(verlaufChartIds.includes(id)){
+      // Find which erhebung is currently shown
+      const all=[...previousErhebungen].reverse();
+      const erhIdx=(_verlaufDetailIdx>=0&&_verlaufDetailIdx<all.length)?_verlaufDetailIdx:0;
+      if(all[erhIdx]) setTimeout(()=>drawVerlaufCharts(all[erhIdx]),50);
+    }
 
     if(chartFns[id]){ requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ chartFns[id](cm2); }); }); }
   }
@@ -1599,7 +1607,7 @@ function toggleColl(id){
 
 
 function drawRadar(childMonths){
-  const canvas=document.getElementById('radarChart');
+  const canvas=document.getElementById('verlaufRadarChart')||document.getElementById('radarChart');
   if(!canvas) return;
   const ctx=canvas.getContext('2d');
   let W=0;
@@ -2271,7 +2279,7 @@ function closeAlterInfo(){
 
 // ── Pure Canvas Linear (Beller Profil) ──
 function drawLinear(childMonths){
-  const canvas=document.getElementById('linearChart');
+  const canvas=document.getElementById('verlaufLinearChart')||document.getElementById('linearChart');
   if(!canvas) return;
   // Get real display width
   let W=0;
@@ -2367,7 +2375,7 @@ function drawLinear(childMonths){
 }
 
 function drawBar(childMonths){
-  const canvas=document.getElementById('barChart');
+  const canvas=document.getElementById('verlaufBarChart')||document.getElementById('barChart');
   if(!canvas) return;
   let W=0;
   const cb=document.getElementById('cb-bar');
@@ -3623,7 +3631,8 @@ function updateVerlaufNav(){
     div.className='nav-item';
     div.dataset.verlaufIdx=i;
     div.style.cssText='padding-left:2.2rem;font-size:.75rem;';
-    div.innerHTML=`<span style="margin-right:.3rem">📊</span><span>Profil: ${mm}/${yyyy}</span>`;
+    const rangeShortLabel={krippe:'Krippe',kita:'Kita',schule:'GS'}[erh.ageRange]||'';
+    div.innerHTML=`<span style="margin-right:.3rem">📊</span><span>Profil: ${mm}/${yyyy}${rangeShortLabel?' ('+rangeShortLabel+')':''}</span>`;
     div.onclick=()=>showVerlaufDetail(i);
     sub.appendChild(div);
   });
@@ -3710,7 +3719,7 @@ function renderErhebungFull(erh, idx, total){
       navHtml+=`<button class="${i===idx?'btn btn-primary':'btn btn-outline'}" 
         style="font-size:.75rem;padding:.3rem .7rem" 
         onclick="_verlaufDetailIdx=${i};renderVerlaufView()">
-        📊 Entwicklungsprofil: ${mm}/${yyyy}
+        📊 Profil: ${mm}/${yyyy} (${({krippe:'Krippe',kita:'Kita',schule:'GS'})[e2.ageRange]||''})
       </button>`;
     }
     navHtml+='</div>';
@@ -3749,10 +3758,12 @@ function renderErhebungFull(erh, idx, total){
   // Build collCards like Entwicklungsprofil
   let html=navHtml+sumBox;
   html+=collCardStatic('erh-detail', L.card_detail||'📋 Detailergebnisse', tableHtml, true);
+  html+=collCardStatic('erh-linear', '📈 Entwicklungsprofil nach Beller (Liniendiagramm)',
+    '<div style="position:relative"><canvas id="verlaufLinearChart" class="mychart"></canvas></div>', false);
   html+=collCardStatic('erh-bar', '📊 Entwicklungsprofil nach Trost (Balkendiagramm)',
-    '<canvas id="verlaufBarChart" style="width:100%"></canvas>', false);
+    '<canvas id="verlaufBarChart" class="mychart"></canvas>', false);
   html+=collCardStatic('erh-radar', '🎯 Entwicklungsprofil (Radialdiagramm)',
-    '<div style="max-width:400px;margin:0 auto"><canvas id="verlaufRadarChart"></canvas></div>', false);
+    '<div style="max-width:700px;margin:0 auto"><canvas id="verlaufRadarChart" class="mychart"></canvas></div>', false);
 
   return html;
 }
@@ -3947,12 +3958,36 @@ function drawVergleichRadar(prevAnswers, prevLabel){
 
 
 function drawVerlaufCharts(erh){
-  // Draw bar chart
-  const canvas=document.getElementById('verlaufBarChart');
-  if(canvas) _drawVerlaufBar(canvas, erh);
-  // Draw radar
-  const radarCanvas=document.getElementById('verlaufRadarChart');
-  if(radarCanvas) _drawVerlaufRadar(radarCanvas, erh);
+  // Temporarily swap global state with historical data
+  const _savedAnswers=answers;
+  const _savedAgeRange=ageRange;
+  const _savedChildInfo=childInfo;
+
+  answers=erh.answers||{};
+  ageRange=erh.ageRange||ageRange;
+  childInfo=erh.childInfo||childInfo;
+
+  // Draw using the same functions as Entwicklungsprofil
+  // Bar chart
+  const barCanvas=document.getElementById('verlaufBarChart');
+  if(barCanvas){
+    const cm=parseFloat(erh.childInfo?.months)||0;
+    drawBar(cm);
+  }
+  // Linear chart
+  const linCanvas=document.getElementById('verlaufLinearChart');
+  if(linCanvas){
+    const cm=parseFloat(erh.childInfo?.months)||0;
+    drawLinear(cm);
+  }
+  // Radar chart
+  const radCanvas=document.getElementById('verlaufRadarChart');
+  if(radCanvas) drawRadar();
+
+  // Restore globals
+  answers=_savedAnswers;
+  ageRange=_savedAgeRange;
+  childInfo=_savedChildInfo;
 }
 
 function _drawVerlaufBar(canvas, erh){
