@@ -401,7 +401,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div class="nav-item disabled" id="nav-verlauf" data-view="verlauf" onclick="showView('verlauf')"><span>🔄</span><span>Verlauf</span></div>
     <div id="nav-verlauf-sub" style="display:none"></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
-    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.1 Beta · <span id="build-time"></span></div>
+    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.4 Beta · <span id="build-time"></span></div>
   </nav>
 
   <main id="main">
@@ -858,7 +858,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
           <h4 style="margin-top:1rem;margin-bottom:.5rem">Urheberrecht &amp; Lizenz</h4>
           <div class="help-box" style="font-size:.8rem;margin-bottom:.7rem">
             Inhalte: © Kuno Beller / Verlag das netz<br>
-            Digitale Umsetzung: © 2025 Jens Trost · Version 26.6.1 Beta<br>
+            Digitale Umsetzung: © 2025 Jens Trost · Version 26.6.4 Beta<br>
             Erstellt mit Unterstützung von Claude (Anthropic)
           </div>
           <h4 style="margin-bottom:.5rem">Lizenz anfragen</h4>
@@ -2380,7 +2380,7 @@ function drawBar(childMonths){
   canvas.width=W; canvas.height=H;
   canvas.style.width=W+'px';
   const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
-  const pad={l:56,r:76,t:28,b:8};
+  const pad={l:56,r:92,t:28,b:8};
   const chartH=H-legendH;
   const cw=W-pad.l-pad.r, ch=chartH-pad.t-pad.b, maxM=120;
   const devAges=AREA_ORDER.map(id=>calcDevAge(id)||0);
@@ -2702,9 +2702,9 @@ const APP_UI={
     prof_chron:'Chron. Alter (Jahre)', prof_avg:'Ø Entwicklungsalter', prof_diff:'Differenz',
     card_verlauf:'🔄 Verlauf',
     card_detail:'📋 Detailergebnisse',
-    card_linear:'📈 Liniendiagramm: Entwicklungsprofil nach Beller',
-    card_bar:'📊 Balkendiagramm: Entwicklungsalter je Bereich',
-    card_radar:'🎯 Radialdiagramm: Entwicklungsprofil',
+    card_linear:'📈 Entwicklungsprofil nach Beller (Liniendiagramm)',
+    card_bar:'📊 Entwicklungsprofil nach Trost (Balkendiagramm)',
+    card_radar:'🎯 Entwicklungsprofil (Radialdiagramm)',
     foerder_title:'💡 Fördermöglichkeiten',
     dok_title:'📄 Dokumente',
     tbl_bereich:'Bereich', tbl_alter:'Entw.alter', tbl_diff:'Differenz',
@@ -2733,9 +2733,9 @@ const APP_UI={
     prof_chron:"Chron. age (years)", prof_avg:"Ø Dev. age", prof_diff:"Difference",
     card_verlauf:"🔄 Timeline",
     card_detail:"📋 Detail results",
-    card_linear:"📈 Line chart: Developmental profile (Beller)",
-    card_bar:"📊 Bar chart: Developmental age per area",
-    card_radar:"🎯 Radar chart: Developmental profile",
+    card_linear:"📈 Developmental profile acc. Beller (line chart)",
+    card_bar:"📊 Developmental profile acc. Trost (bar chart)",
+    card_radar:"🎯 Developmental profile (radar chart)",
     foerder_title:"💡 Support suggestions",
     dok_title:"📄 Documents",
     tbl_bereich:"Area", tbl_alter:"Dev. age", tbl_diff2:"Difference",
@@ -2763,9 +2763,9 @@ const APP_UI={
     prof_chron:'Età cron. (anni)', prof_avg:'Ø Età di sviluppo', prof_diff:'Differenza',
     card_verlauf:'🔄 Cronologia',
     card_detail:'📋 Risultati dettagliati',
-    card_linear:'📈 Grafico a linee: Profilo di sviluppo (Beller)',
-    card_bar:'📊 Grafico a barre: Età di sviluppo per area',
-    card_radar:'🎯 Grafico radar: Profilo di sviluppo',
+    card_linear:'📈 Profilo di sviluppo sec. Beller (grafico a linee)',
+    card_bar:'📊 Profilo di sviluppo sec. Trost (grafico a barre)',
+    card_radar:'🎯 Profilo di sviluppo (grafico radar)',
     foerder_title:'💡 Possibilità di sostegno',
     dok_title:'📄 Documenti',
     tbl_bereich:'Area', tbl_alter:'Età di sviluppo', tbl_diff2:'Differenza',
@@ -3087,7 +3087,7 @@ function exportAuswahl(){
     body+=buildElternHTML(name,cm,lang);
   }
 
-  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.6.1 Beta</p></body></html>';
+  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.6.4 Beta</p></body></html>';
   w.document.write(body); w.document.close(); w.print();
 }
 
@@ -3617,13 +3617,13 @@ function updateVerlaufNav(){
   // Erhebungen: newest first (reverse = newest at index 0)
   [...previousErhebungen].reverse().forEach((erh,i)=>{
     const date=new Date(erh.savedAt||erh.created);
-    const label=date.toLocaleDateString('de',{month:'short',year:'numeric'});
-    const range={krippe:'Krippe',kita:'Kita',schule:'Grundschule'}[erh.ageRange]||erh.ageRange;
+    const mm=String(date.getMonth()+1).padStart(2,'0');
+    const yyyy=date.getFullYear();
     const div=document.createElement('div');
     div.className='nav-item';
     div.dataset.verlaufIdx=i;
-    div.style.cssText='padding-left:2.2rem;font-size:.78rem;';
-    div.innerHTML=`<span style="color:var(--muted);margin-right:.4rem">📅</span><span>${label} · ${range}</span>`;
+    div.style.cssText='padding-left:2.2rem;font-size:.75rem;';
+    div.innerHTML=`<span style="margin-right:.3rem">📊</span><span>Profil: ${mm}/${yyyy}</span>`;
     div.onclick=()=>showVerlaufDetail(i);
     sub.appendChild(div);
   });
@@ -3680,6 +3680,17 @@ function renderVerlaufView(){
   }
 }
 
+function collCardStatic(id,title,inner,open){
+  const openAttr=open?'open':'';
+  return `<div class="coll-card">
+    <div class="coll-hdr" onclick="toggleColl('${id}')">
+      <span>${title}</span>
+      <span class="coll-arrow">${open?'▾':'▸'}</span>
+    </div>
+    <div class="coll-body" id="cb-${id}" ${open?'':'style="display:none"'}>${inner}</div>
+  </div>`;
+}
+
 function renderErhebungFull(erh, idx, total){
   const date=new Date(erh.savedAt||erh.created);
   const dateStr=date.toLocaleDateString('de',{day:'2-digit',month:'long',year:'numeric'});
@@ -3694,36 +3705,28 @@ function renderErhebungFull(erh, idx, total){
     for(let i=0;i<total;i++){
       const e2=([...previousErhebungen].reverse())[i];
       const d2=new Date(e2.savedAt||e2.created);
-      const lbl=d2.toLocaleDateString('de',{month:'short',year:'numeric'});
+      const mm=String(d2.getMonth()+1).padStart(2,'0');
+      const yyyy=d2.getFullYear();
       navHtml+=`<button class="${i===idx?'btn btn-primary':'btn btn-outline'}" 
         style="font-size:.75rem;padding:.3rem .7rem" 
         onclick="_verlaufDetailIdx=${i};renderVerlaufView()">
-        📅 ${lbl}
+        📊 Entwicklungsprofil: ${mm}/${yyyy}
       </button>`;
     }
     navHtml+='</div>';
   }
 
-  // Header
-  let html=navHtml+`
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:1rem">
-    <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem">📅 Erhebung vom</div>
-    <div style="font-weight:600;font-size:1rem">${dateStr}</div>
-    <div style="font-size:.82rem;color:var(--muted);margin-top:.2rem">${range}${cm?' · '+(cm/12).toFixed(1)+' Jahre':''}</div>
-  </div>`;
-
-  // Avg dev age
+  // Sum box
   const devAges=AREA_ORDER.map(aid=>calcDevAgeFromAnswers(aid,erh.answers||{})).filter(Boolean);
   const avg=devAges.length?(devAges.reduce((a,b)=>a+b,0)/devAges.length/12).toFixed(1):'—';
 
-  // Sum box
-  html+=`<div class="sum-box" style="margin-bottom:1rem">
+  const sumBox=`<div class="sum-box">
     <div><div class="sum-n">${cm?(cm/12).toFixed(1):'—'}</div><div class="sum-l">${L.prof_chron||'Chron. Alter (Jahre)'}</div></div>
     <div><div class="sum-n">${avg}</div><div class="sum-l">${L.prof_avg||'Ø Entwicklungsalter'}</div></div>
   </div>`;
 
   // Detail table
-  html+=`<table style="width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:1.2rem">
+  let tableHtml=`<table style="width:100%;border-collapse:collapse;font-size:.82rem">
     <thead><tr style="border-bottom:2px solid var(--border)">
       <th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;text-transform:uppercase;color:var(--muted)">${L.tbl_bereich||'Bereich'}</th>
       <th style="text-align:center;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)">${L.tbl_alter||'Entw.alter'}</th>
@@ -3735,25 +3738,21 @@ function renderErhebungFull(erh, idx, total){
     const da=calcDevAgeFromAnswers(aid,erh.answers||{});
     const daStr=da?(da/12).toFixed(1)+' J':'—';
     const ph=da?Object.entries(PHASE_MONTHS).reduce((best,[p,mo])=>mo<=da?+p:best,0):null;
-    html+=`<tr style="border-bottom:1px solid var(--border)">
+    tableHtml+=`<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${areaName}</td>
       <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${daStr}</td>
       <td style="text-align:center;padding:.35rem .5rem;color:var(--muted)">${ph!==null?'Ph.'+ph:'—'}</td>
     </tr>`;
   });
-  html+='</tbody></table>';
+  tableHtml+='</tbody></table>';
 
-  // Comparison handled separately in Vergleich view
-
-  // Charts: Bar + Radar
-  html+=`<div style="margin-top:1.2rem">
-    <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem">📊 Balkendiagramm</div>
-    <canvas id="verlaufBarChart" style="width:100%;max-width:700px"></canvas>
-  </div>
-  <div style="margin-top:1.2rem">
-    <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.5rem">🎯 Radialdiagramm</div>
-    <div style="max-width:400px;margin:0 auto"><canvas id="verlaufRadarChart"></canvas></div>
-  </div>`;
+  // Build collCards like Entwicklungsprofil
+  let html=navHtml+sumBox;
+  html+=collCardStatic('erh-detail', L.card_detail||'📋 Detailergebnisse', tableHtml, true);
+  html+=collCardStatic('erh-bar', '📊 Entwicklungsprofil nach Trost (Balkendiagramm)',
+    '<canvas id="verlaufBarChart" style="width:100%"></canvas>', false);
+  html+=collCardStatic('erh-radar', '🎯 Entwicklungsprofil (Radialdiagramm)',
+    '<div style="max-width:400px;margin:0 auto"><canvas id="verlaufRadarChart"></canvas></div>', false);
 
   return html;
 }
