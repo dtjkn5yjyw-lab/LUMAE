@@ -2336,7 +2336,7 @@ function closeAlterInfo(){
 }
 
 // ── Pure Canvas Linear (Beller Profil) ──
-function drawLinear(childMonths){
+function drawLinear(childMonths, canvasOverride){
   const canvas=document.getElementById('linearChart');
   if(!canvas) return;
   // Get real display width
@@ -2432,12 +2432,11 @@ function drawLinear(childMonths){
   ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,PAD.t+ch); ctx.lineTo(PAD.l+cw,PAD.t+ch); ctx.stroke();
 }
 
-function drawBar(childMonths){
-  const canvas=document.getElementById('barChart');
+function drawBar(childMonths, canvasOverride){
+  const canvas=canvasOverride||document.getElementById('barChart');
   if(!canvas) return;
   let W=0;
-  const cb=document.getElementById('cb-bar');
-  if(cb&&cb.offsetWidth>0) W=cb.offsetWidth-32;
+  if(canvas.parentElement&&canvas.parentElement.offsetWidth>0) W=canvas.parentElement.offsetWidth-32;
   if(!W){ let el=canvas.parentElement; while(el&&!W){W=el.offsetWidth;el=el.parentElement;} W=W>40?W-32:W; }
   if(!W){ const main=document.getElementById('main'); if(main) W=main.offsetWidth-72; }
   W=Math.max(W,480);
