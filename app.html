@@ -500,7 +500,13 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div id="foerder-content"></div>
   </div>
 
-  <div id="view-dokumente" style="display:none">
+  <div id="view-verlauf" style="display:none">
+    <h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)">🔄 Verlauf</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem">Vergangene Erhebungen und Entwicklungsverläufe.</p>
+    <div id="verlauf-view-content"></div>
+  </div>
+
+    <div id="view-dokumente" style="display:none">
     <h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)">📄 Entwicklungsbericht</h2>
     <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.2rem">Bericht zusammenstellen und als PDF exportieren.</p>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:1rem">
@@ -1097,7 +1103,7 @@ function showView(id){
     renderVerlaufView();
     setTimeout(()=>{
       if(previousErhebungen&&previousErhebungen.length>0){
-        const all=[...previousErhebungen].reverse();
+        const all=previousErhebungen; // newest first (index 0)
         const prev=all[0];
         const prevDate=new Date(prev.savedAt||prev.created).toLocaleDateString('de',{month:'short',year:'numeric'});
         drawVergleichRadar(prev.answers, prevDate);
@@ -3579,7 +3585,7 @@ function updateVerlaufNav(){
     return;
   }
 
-  sub.style.display='block';
+  // Keep collapsed state - only update content
   sub.innerHTML='';
 
   // Erhebungen: neueste zuerst (index 0 = neueste)
@@ -3630,7 +3636,7 @@ function renderVerlaufView(){
     return;
   }
 
-  const all=[...previousErhebungen].reverse();
+  const all=previousErhebungen; // newest first (index 0)
 
   if(_verlaufDetailIdx>=0&&_verlaufDetailIdx<all.length){
     // Show specific erhebung as full profile with charts
@@ -3755,7 +3761,7 @@ function renderErhebungFull(erh, idx, total){
 function renderVerlaufVergleich(){
   if(!previousErhebungen||previousErhebungen.length===0) return '';
 
-  const all=[...previousErhebungen].reverse(); // newest first
+  const all=previousErhebungen; // newest first (index 0) // newest first
   const L=APP_UI[appLang]||APP_UI.de;
 
   // Selector: which two to compare (default: most recent prev vs current)
@@ -4027,7 +4033,7 @@ function exportBericht(){
     p.push('<\/div><\/div>');
   }
   if(opt.zusammen){
-    var sumTxt=diffN>0.3?name+' zeigt ein Entwicklungsalter ueber dem chronologischen Alter.':diffN<-0.3?'In einigen Bereichen besteht gezielter Foerderbedarf.':'Die Entwicklung verlaeuft altersgemass.';
+    var sumTxt=diffN>0.3?name+' zeigt ein Entwicklungsalter über dem chronologischen Alter.':diffN<-0.3?'In einigen Bereichen besteht gezielter Förderbedarf.':'Die Entwicklung verlaeuft altersgemäß.';
     p.push('<h2>Zusammenfassung<\/h2>');
     p.push('<div class="sg">');
     p.push('<div class="si"><div class="sn">'+years+'<\/div><div class="sl">Chron. Alter<\/div><\/div>');
@@ -4050,13 +4056,13 @@ function exportBericht(){
     var above=AREA_ORDER.filter(function(aid){var da=calcDevAge(aid);return da&&(da/12)>(cm/12)+0.2;});
     var ontr=AREA_ORDER.filter(function(aid){var da=calcDevAge(aid);return da&&Math.abs((da/12)-(cm/12))<=0.2;});
     if(above.length||ontr.length){
-      p.push('<h2>Staerken<\/h2>');
-      if(above.length){var an2=above.map(function(a){return DATA[a].emoji+' '+(L['area_'+a]||DATA[a].name);}).join(', ');p.push('<p style="font-size:.88rem;line-height:1.6"><strong>'+name+'<\/strong> zeigt besondere Staerken in: <strong>'+an2+'<\/strong>.<\/p>');}
-      if(ontr.length){var on2=ontr.map(function(a){return DATA[a].emoji+' '+(L['area_'+a]||DATA[a].name);}).join(', ');p.push('<p style="font-size:.88rem;line-height:1.6">Altersgemass entwickelt: <strong>'+on2+'<\/strong>.<\/p>');}
+      p.push('<h2>Stärken<\/h2>');
+      if(above.length){var an2=above.map(function(a){return DATA[a].emoji+' '+(L['area_'+a]||DATA[a].name);}).join(', ');p.push('<p style="font-size:.88rem;line-height:1.6"><strong>'+name+'<\/strong> zeigt besondere Stärken in: <strong>'+an2+'<\/strong>.<\/p>');}
+      if(ontr.length){var on2=ontr.map(function(a){return DATA[a].emoji+' '+(L['area_'+a]||DATA[a].name);}).join(', ');p.push('<p style="font-size:.88rem;line-height:1.6">Altersgemäß entwickelt: <strong>'+on2+'<\/strong>.<\/p>');}
     }
   }
   if(opt.foerder){
-    p.push('<h2>Foerdermoeglichkeiten<\/h2>');
+    p.push('<h2>Fördermöglichkeiten<\/h2>');
     for(var j=0;j<AREA_ORDER.length;j++){
       var faid=AREA_ORDER[j];var fda=calcDevAge(faid);if(!fda)continue;
       var fyr=Math.min(9,Math.floor(fda/12));var fd2=FOERDER[String(fyr)];var afd=fd2?fd2[faid]:null;if(!afd)continue;
@@ -4073,8 +4079,8 @@ function exportBericht(){
   if(opt.notizen&&notizText){p.push('<h2>Notizen<\/h2><div class="nb">'+notizText+'<\/div>');}
   if(opt.ausblick){
     p.push('<h2>Ausblick<\/h2><div class="ag">');
-    if(datErhebung){var de=new Date(datErhebung).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">Naechste Erhebung<\/div><strong>'+de+'<\/strong><\/div>');}
-    if(datGespraech){var dg=new Date(datGespraech).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">Naechstes Gespraech<\/div><strong>'+dg+'<\/strong><\/div>');}
+    if(datErhebung){var de=new Date(datErhebung).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">Nächste Erhebung<\/div><strong>'+de+'<\/strong><\/div>');}
+    if(datGespraech){var dg=new Date(datGespraech).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">Nächstes Gespräch<\/div><strong>'+dg+'<\/strong><\/div>');}
     if(!datErhebung&&!datGespraech){p.push('<div class="ai" style="grid-column:1\/-1;color:#9a8f7a;font-size:.85rem">Noch keine Termine vereinbart.<\/div>');}
     p.push('<\/div>');
   }
