@@ -4107,10 +4107,7 @@ function exportBericht(){
       p.push('<\/div>');
     }
   }
-  if(opt.linear&&li){p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" alt="Liniendiagramm">');}
-  if(opt.bar&&bi){p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" alt="Balkendiagramm">');}
-  if(opt.radar&&ri){p.push('<h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" alt="Radialdiagramm">');}
-  if(opt.notizen&&notizText){p.push('<h2>Notizen<\/h2><div class="nb">'+notizText+'<\/div>');}
+    if(opt.notizen&&notizText){p.push('<h2>Notizen<\/h2><div class="nb">'+notizText+'<\/div>');}
   if(opt.ausblick){
     p.push('<h2>Ausblick<\/h2><div class="ag">');
     if(datErhebung){var de=new Date(datErhebung).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">Nächste Erhebung<\/div><strong>'+de+'<\/strong><\/div>');}
@@ -4119,6 +4116,11 @@ function exportBericht(){
     p.push('<\/div>');
   }
   p.push('<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'<\/div>');
+  // Add chart images to report
+  if(opt.linear&&li){p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" alt="Liniendiagramm" style="max-width:100%">');}
+  if(opt.bar&&bi){p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" alt="Balkendiagramm" style="max-width:100%">');}
+  if(opt.radar&&ri){p.push('<h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" alt="Radialdiagramm" style="max-width:100%">');}
+
   var w=window.open('','_blank');
   if(!w){alert('Pop-up-Blocker aktiv.');return;}
   var d=w.document;
@@ -4128,9 +4130,10 @@ function exportBericht(){
   d.write('<title>Bericht '+name+'</title>');
   d.write('<style>'+css+'<\/style><\/head><body><div class="pg">');
   d.write(p.join(''));
+  d.write('<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'<\/div>');
   d.write('<\/div><\/body><\/html>');
   d.close();
-  setTimeout(function(){w.print();},500);
+  setTimeout(function(){w.print();},600);
 }
 </script>
 </body>
