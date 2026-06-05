@@ -3693,8 +3693,8 @@ function updateVerlaufNav(){
   sub.style.display='block';
   sub.innerHTML='';
 
-  // Erhebungen: newest first (reverse = newest at index 0)
-  [...previousErhebungen].reverse().forEach((erh,i)=>{
+  // Erhebungen: neueste zuerst (index 0 = neueste)
+  previousErhebungen.forEach((erh,i)=>{
     const date=new Date(erh.savedAt||erh.created);
     const mm=String(date.getMonth()+1).padStart(2,'0');
     const yyyy=date.getFullYear();
