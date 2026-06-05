@@ -4156,11 +4156,14 @@ function exportBericht(){
     p.push('<\/div>');
   }
 
-  // Open window BEFORE async operations (Safari blocks window.open in setTimeout)
+  // Open window immediately (Safari blocks window.open in setTimeout)
   var w=window.open('','_blank');
-  if(!w){alert('Pop-up-Blocker aktiv. Bitte in den Einstellungen erlauben.');return;}
+  if(!w){alert('Pop-up-Blocker aktiv. Bitte erlauben.');return;}
+  // Write loading placeholder immediately to keep window alive
+  w.document.open();
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Wird erstellt...</title><style>body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8f5ef;color:#2d5a3d}h2{font-size:1.5rem}</style></head><body><h2>&#x23F3; Bericht wird erstellt...</h2></body></html>');
+  w.document.close();
 
-  // CAPTURE CHARTS then populate window
   var vp=g('view-profile');
   var vpWas=vp?vp.style.display:'';
   if(vp){vp.style.position='fixed';vp.style.top='-9999px';vp.style.left='0';vp.style.width='900px';vp.style.display='block';vp.style.zIndex='-999';}
@@ -4180,15 +4183,12 @@ function exportBericht(){
       if(opt.linear&&li)p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" style="max-width:100%" alt="Liniendiagramm">');
       if(opt.bar&&bi)p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" style="max-width:100%" alt="Balkendiagramm">');
       if(opt.radar&&ri)p.push('<h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" style="max-width:100%" alt="Radialdiagramm">');
-      var d=w.document;d.open();
-      d.write('<!DOCTYPE html>');
-      d.write('<html lang="de"><head><meta charset="UTF-8"><title>Entwicklungsbericht '+name+'<\/title>');
-      d.write('<style>'+css+'<\/style><\/head><body><div class="pg">');
-      d.write(p.join(''));
-      d.write('<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'<\/div>');
-      d.write('<\/div><\/body><\/html>');
-      d.close();
-      setTimeout(function(){w.print();},600);
+      // Replace loading page with actual content
+      var html='<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Entwicklungsbericht '+name+'</title><style>'+css+'</style></head><body><div class="pg">'+p.join('')+'<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'</div></div></body></html>';
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+      setTimeout(function(){w.print();},800);
     });
   },400);
 }
