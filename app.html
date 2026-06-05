@@ -1564,17 +1564,15 @@ function renderProfile(){
   // Draw charts: force-open collapsible bodies temporarily to get real dimensions
   const cm3=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
   function forceDrawAll(){
-    // Temporarily show all coll-bodies to get correct canvas sizes
+    // Only draw if verlauf is not currently swapping canvas IDs
+    if(window._verlaufDrawing) return;
     const chartIds=['linear','bar','radar'];
     const bodies=chartIds.map(id=>document.getElementById('cb-'+id)).filter(Boolean);
     const wasHidden=bodies.map(b=>b.style.display==='none');
-    // Briefly show all
     bodies.forEach(b=>b.style.display='block');
-    // Draw
     drawLinear(cm3);
     drawBar(cm3);
     drawRadar(cm3);
-    // Restore hidden state
     bodies.forEach((b,i)=>{ if(wasHidden[i]) b.style.display='none'; });
   }
   setTimeout(forceDrawAll,80);
@@ -2923,17 +2921,25 @@ function setAppLang(lang){
   const ds=document.querySelector('#view-dokumente > p');
   if(dh&&L.dok_title) dh.textContent=L.dok_title;
   if(ds&&L.dok_sub) ds.textContent=L.dok_sub;
-  // Update profile collCard titles when profile is open
-  document.querySelectorAll('.coll-hdr').forEach(hdr=>{
-    const body=hdr.nextElementSibling;
+  // Update profile collCard titles - only exact IDs, never fallback to German
+  const titleMap={
+    'detail': L.card_detail,
+    'linear': L.card_linear,
+    'bar':    L.card_bar,
+    'radar':  L.card_radar,
+    'erh-detail': L.card_detail,
+    'erh-linear': L.card_linear,
+    'erh-bar':    L.card_bar,
+    'erh-radar':  L.card_radar,
+  };
+  Object.entries(titleMap).forEach(([cbId, title])=>{
+    if(!title) return;
+    const body=document.getElementById('cb-'+cbId);
     if(!body) return;
-    const id=body.id?body.id.replace('cb-',''):'';
+    const hdr=body.previousElementSibling;
+    if(!hdr) return;
     const titleEl=hdr.querySelector('span:first-child');
-    if(!titleEl) return;
-    if(id==='detail'&&L.card_detail) titleEl.textContent=L.card_detail;
-    else if(id==='linear'&&L.card_linear) titleEl.textContent=L.card_linear;
-    else if(id==='bar'&&L.card_bar) titleEl.textContent=L.card_bar;
-    else if(id==='radar'&&L.card_radar) titleEl.textContent=L.card_radar;
+    if(titleEl) titleEl.textContent=title;
   });
   // Area names in sidebar
   const areaKeys={kup:'area_kup',ub:'area_ub',se:'area_se',st:'area_st',sl:'area_sl',kog:'area_kog',gm:'area_gm',fm:'area_fm'};
@@ -4080,18 +4086,19 @@ function drawVerlaufCharts(erh){
   const vLin=document.getElementById('verlaufLinearChart');
   const vRad=document.getElementById('verlaufRadarChart');
 
+  window._verlaufDrawing=true;
   try {
     if(vBar){ vBar.id='barChart'; drawBar(cm); }
     if(vLin){ vLin.id='linearChart'; drawLinear(cm); }
     if(vRad){ vRad.id='radarChart'; drawRadar(); }
   } finally {
-    // ALWAYS restore IDs and globals, even if drawing fails
     if(vBar) vBar.id='verlaufBarChart';
     if(vLin) vLin.id='verlaufLinearChart';
     if(vRad) vRad.id='verlaufRadarChart';
     answers=_savedAnswers;
     ageRange=_savedAgeRange;
     childInfo=_savedChildInfo;
+    window._verlaufDrawing=false;
   }
 }
 
