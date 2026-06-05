@@ -1590,15 +1590,15 @@ function toggleColl(id){
   if(!open){
     const cm2=window._chartCm||parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
     const chartFns={bar:drawBar,linear:drawLinear,radar:drawRadar};
-    // Historical erhebung charts - redraw when user opens a chart card
+    // Historical erhebung charts - draw when user opens a chart card
     const verlaufChartIds=['erh-bar','erh-linear','erh-radar'];
     if(verlaufChartIds.includes(id)){
-      const all=[...previousErhebungen].reverse();
-      const erhIdx=(_verlaufDetailIdx>=0&&_verlaufDetailIdx<all.length)?_verlaufDetailIdx:0;
-      if(all[erhIdx]){
+      const erhIdx=(_verlaufDetailIdx>=0&&_verlaufDetailIdx<previousErhebungen.length)?_verlaufDetailIdx:0;
+      const erh=previousErhebungen[erhIdx];
+      if(erh){
         setTimeout(()=>{
           requestAnimationFrame(()=>{
-            requestAnimationFrame(()=>drawVerlaufCharts(all[erhIdx]));
+            requestAnimationFrame(()=>drawVerlaufCharts(erh));
           });
         },80);
       }
