@@ -2907,6 +2907,19 @@ function setAppLang(lang){
   const ds=document.querySelector('#view-dokumente > p');
   if(dh&&L.dok_title) dh.textContent=L.dok_title;
   if(ds&&L.dok_sub) ds.textContent=L.dok_sub;
+  // Update static view titles
+  const viewTitleMap={
+    'view-setup':   L.nav_setup||'Profildaten',
+    'view-verlauf': L.nav_verlauf||'🔄 Verlauf',
+    'view-dokumente': L.nav_dokumente||'📄 Entwicklungsbericht',
+  };
+  Object.entries(viewTitleMap).forEach(function(entry){
+    var viewEl=document.getElementById(entry[0]);
+    if(!viewEl) return;
+    var h2=viewEl.querySelector('h2');
+    if(h2) h2.textContent=entry[1];
+  });
+
   // Update profile collCard titles - only exact IDs, never fallback to German
   const titleMap={
     'detail': L.card_detail,
