@@ -2059,7 +2059,7 @@ function importKBD(evt){
   reader.onload=e=>{
     try{
       const d=JSON.parse(e.target.result);
-      if(d.format!=='kbd') throw new Error('Nicht unterstütztes Dateiformat. Bitte eine .kbd-Datei öffnen.');
+      if(!d||d.format!=='kbd') throw new Error('Nicht unterstütztes Dateiformat. Nur .kbd-Dateien können geöffnet werden.');
       _pendingLoad=d;
       _pendingFile=file.name;
       const result=handleThirtyDayRule(d);
@@ -2069,7 +2069,7 @@ function importKBD(evt){
         _pendingLoad=null; _pendingFile=null;
       }
       // else: dialog shown, handleRuleAction() takes over
-    }catch(err){ showToast('Fehler: '+err.message); }
+    }catch(err){ showToast('Fehler: '+(err.message||'Datei konnte nicht geladen werden.')); }
   };
   reader.readAsText(file);
   evt.target.value='';
@@ -4026,67 +4026,161 @@ function exportBericht(){
   var range={krippe:'Krippenbereich (0-3 J)',kita:'Kitabereich (3-6 J)',schule:'Grundschulbereich (6-9 J)'}[ageRange]||ageRange;
   var g=function(id){return document.getElementById(id);};
   var opt={
-    deckblatt:g('dok-deckblatt')&&g('dok-deckblatt').checked,
-    zusammen:g('dok-zusammenfassung')&&g('dok-zusammenfassung').checked,
-    detail:g('dok-detail')&&g('dok-detail').checked,
-    staerken:g('dok-staerken')&&g('dok-staerken').checked,
-    foerder:g('dok-foerder')&&g('dok-foerder').checked,
-    linear:g('dok-linear')&&g('dok-linear').checked,
-    bar:g('dok-bar')&&g('dok-bar').checked,
-    radar:g('dok-radar')&&g('dok-radar').checked,
-    notizen:g('dok-notizen')&&g('dok-notizen').checked,
-    ausblick:g('dok-ausblick')&&g('dok-ausblick').checked,
-    eltern:g('dok-eltern')&&g('dok-eltern').checked
+    deckblatt: g('dok-deckblatt')&&g('dok-deckblatt').checked,
+    zusammen:  g('dok-zusammenfassung')&&g('dok-zusammenfassung').checked,
+    detail:    g('dok-detail')&&g('dok-detail').checked,
+    staerken:  g('dok-staerken')&&g('dok-staerken').checked,
+    foerder:   g('dok-foerder')&&g('dok-foerder').checked,
+    linear:    g('dok-linear')&&g('dok-linear').checked,
+    bar:       g('dok-bar')&&g('dok-bar').checked,
+    radar:     g('dok-radar')&&g('dok-radar').checked,
+    notizen:   g('dok-notizen')&&g('dok-notizen').checked,
+    ausblick:  g('dok-ausblick')&&g('dok-ausblick').checked,
+    eltern:    g('dok-eltern')&&g('dok-eltern').checked
   };
   var notizText=g('dok-notizen-text')?g('dok-notizen-text').value:'';
   var datErhebung=g('dok-datum-erhebung')?g('dok-datum-erhebung').value:'';
   var datGespraech=g('dok-datum-gespraech')?g('dok-datum-gespraech').value:'';
   if(opt.eltern){druckElternInfo();return;}
-  // Show view-profile temporarily to get chart canvas with proper dimensions
-  // Position view-profile off-screen with explicit width for Safari canvas rendering
+
+  // Build CSS
+  var css='body{font-family:Arial,sans-serif;color:#2d2a22;margin:0;padding:0;font-size:14px}';
+  css+='.pg{max-width:740px;margin:0 auto;padding:2rem}';
+  css+='h1{font-size:1.5rem;color:#2d5a3d;margin-bottom:.3rem}';
+  css+='h2{font-size:1.05rem;color:#2d5a3d;border-bottom:2px solid #e0d8cc;padding-bottom:.3rem;margin-top:1.8rem;margin-bottom:.8rem}';
+  css+='.hdr{background:#f0f7f4;border-left:4px solid #2d5a3d;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin-bottom:1.5rem}';
+  css+='.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0}';
+  css+='.si{text-align:center;background:#f8f5ef;border-radius:8px;padding:.8rem}';
+  css+='.sn{font-size:1.5rem;font-weight:700;color:#2d5a3d}.sl{font-size:.65rem;text-transform:uppercase;color:#7a6f5a}';
+  css+='table{width:100%;border-collapse:collapse;font-size:.85rem;margin:.5rem 0}';
+  css+='th{text-align:left;padding:.4rem .6rem;font-size:.7rem;text-transform:uppercase;color:#7a6f5a;border-bottom:2px solid #e0d8cc}';
+  css+='td{padding:.35rem .6rem;border-bottom:1px solid #f0ebe0}';
+  css+='.badge{border-radius:6px;padding:.15rem .5rem;color:#fff;font-size:.8rem;font-weight:600}';
+  css+='.fi{margin-bottom:1rem;padding:.8rem;background:#f8f5ef;border-radius:8px;border-left:3px solid #2d5a3d}';
+  css+='.fl{font-size:.65rem;text-transform:uppercase;color:#7a6f5a;margin-bottom:.3rem}';
+  css+='.ag{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:.5rem 0}';
+  css+='.ai{background:#f8f5ef;border-radius:8px;padding:.8rem}';
+  css+='.al{font-size:.65rem;text-transform:uppercase;color:#7a6f5a;margin-bottom:.3rem}';
+  css+='.nb{background:#fffef5;border:1px solid #e8e0cc;border-radius:8px;padding:1rem;white-space:pre-wrap;font-size:.85rem}';
+  css+='img{max-width:100%;height:auto;border-radius:8px;margin:.5rem 0}';
+  css+='.ft{margin-top:2rem;padding-top:1rem;border-top:1px solid #e0d8cc;font-size:.72rem;color:#9a8f7a;text-align:center}';
+  css+='@media print{.pg{padding:1rem}}';
+
+  // Build content array
+  var p=[];
+  var COLORS={kup:'#e8b84b',ub:'#e8922a',se:'#d95f45',st:'#cc4488',sl:'#8e5aad',kog:'#5a7cc9',gm:'#4a90d9',fm:'#35a8b8'};
+
+  // DECKBLATT
+  if(opt.deckblatt){
+    var logoEl=document.querySelector('header img');
+    var logoSrc=logoEl?logoEl.src:'';
+    p.push('<div class="hdr">');
+    p.push('<div style="display:flex;align-items:center;gap:1rem;margin-bottom:.8rem">');
+    if(logoSrc)p.push('<img src="'+logoSrc+'" style="width:52px;height:52px;border-radius:10px;object-fit:cover" alt="Logo">');
+    p.push('<div><div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#5a7a68">Kuno Bellers Entwicklungstabelle 0\u20139<\/div>');
+    p.push('<h1 style="margin:0">Entwicklungsbericht<\/h1><\/div><\/div>');
+    p.push('<div style="font-size:.88rem;color:#5a4f45;border-top:1px solid #c8ddd5;padding-top:.7rem">');
+    p.push('<strong>'+name+'<\/strong> \u00b7 '+years+' Jahre \u00b7 '+range+'<br>');
+    p.push('<span style="font-size:.8rem">Erhebung: '+erhDatum+' \u00b7 Erstellt: '+today+'<\/span>');
+    if(childInfo.beobachter)p.push('<br><span style="font-size:.8rem">Beobachter:in: '+childInfo.beobachter+'<\/span>');
+    if(childInfo.institution)p.push('<br><span style="font-size:.8rem">Einrichtung: '+childInfo.institution+'<\/span>');
+    p.push('<\/div><\/div>');
+  }
+
+  // ZUSAMMENFASSUNG
+  if(opt.zusammen){
+    var devAges=AREA_ORDER.map(function(aid){return calcDevAge(aid);}).filter(Boolean);
+    var avgDev=devAges.length?(devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12).toFixed(1):'---';
+    var diffN=devAges.length?((devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12)-(cm/12)):0;
+    var diff=(diffN>=0?'+':'')+diffN.toFixed(1);
+    var sumTxt=diffN>0.3?name+' zeigt ein Entwicklungsalter \u00fcber dem chronologischen Alter.':diffN<-0.3?'In einigen Bereichen besteht gezielter F\u00f6rderbedarf.':'Die Entwicklung verl\u00e4uft altersgerecht.';
+    p.push('<h2>Zusammenfassung<\/h2>');
+    p.push('<div class="sg">');
+    p.push('<div class="si"><div class="sn">'+years+'<\/div><div class="sl">Chron. Alter<\/div><\/div>');
+    p.push('<div class="si"><div class="sn">'+avgDev+'<\/div><div class="sl">Entw. Alter<\/div><\/div>');
+    p.push('<div class="si"><div class="sn">'+diff+'<\/div><div class="sl">Differenz<\/div><\/div>');
+    p.push('<\/div><p style="font-size:.88rem;line-height:1.6">'+sumTxt+'<\/p>');
+  }
+
+  // DETAILERGEBNISSE
+  if(opt.detail){
+    p.push('<h2>Detailergebnisse<\/h2>');
+    p.push('<table><thead><tr><th>Bereich<\/th><th>Entw.alter<\/th><th>Phase<\/th><\/tr><\/thead><tbody>');
+    for(var i=0;i<AREA_ORDER.length;i++){
+      var aid=AREA_ORDER[i];var da=calcDevAge(aid);
+      var daStr=da?(da/12).toFixed(1)+' J':'---';
+      var ph=da?Object.entries(PHASE_MONTHS).reduce(function(b,kv){return +kv[1]<=da?+kv[0]:b;},0):null;
+      var col=COLORS[aid]||'#888';var an=L['area_'+aid]||DATA[aid].name;
+      p.push('<tr><td>'+DATA[aid].emoji+' '+an+'<\/td>');
+      p.push('<td><span class="badge" style="background:'+col+'">'+daStr+'<\/span><\/td>');
+      p.push('<td style="color:#7a6f5a">'+(ph!==null?'Ph.'+ph:'---')+'<\/td><\/tr>');
+    }
+    p.push('<\/tbody><\/table>');
+  }
+
+  // STAERKEN
+  if(opt.staerken){
+    var above=AREA_ORDER.filter(function(aid){var da=calcDevAge(aid);return da&&(da/12)>(cm/12)+0.2;});
+    var ontr=AREA_ORDER.filter(function(aid){var da=calcDevAge(aid);return da&&Math.abs((da/12)-(cm/12))<=0.2;});
+    if(above.length||ontr.length){
+      p.push('<h2>St\u00e4rken<\/h2>');
+      if(above.length){var an2=above.map(function(a){return DATA[a].emoji+' '+(L['area_'+a]||DATA[a].name);}).join(', ');p.push('<p style="font-size:.88rem;line-height:1.6"><strong>'+name+'<\/strong> zeigt besondere St\u00e4rken in: <strong>'+an2+'<\/strong>.<\/p>');}
+      if(ontr.length){var on2=ontr.map(function(a){return DATA[a].emoji+' '+(L['area_'+a]||DATA[a].name);}).join(', ');p.push('<p style="font-size:.88rem;line-height:1.6">Altersgerecht entwickelt: <strong>'+on2+'<\/strong>.<\/p>');}
+    }
+  }
+
+  // FOERDERMOEGLICHKEITEN
+  if(opt.foerder){
+    p.push('<h2>F\u00f6rderm\u00f6glichkeiten<\/h2>');
+    for(var j=0;j<AREA_ORDER.length;j++){
+      var faid=AREA_ORDER[j];var fda=calcDevAge(faid);if(!fda)continue;
+      var fyr=Math.min(9,Math.floor(fda/12));var fd2=FOERDER[String(fyr)];var afd=fd2?fd2[faid]:null;if(!afd)continue;
+      var fan=L['area_'+faid]||DATA[faid].name;
+      var fcol=COLORS[faid]||'#888';
+      p.push('<div class="fi" style="border-left:3px solid '+fcol+'"><div style="font-weight:600;margin-bottom:.5rem">'+DATA[faid].emoji+' '+fan+' <span class="badge" style="background:'+fcol+'">'+(fda/12).toFixed(1)+' J<\/span><\/div>');
+      if(afd.home)p.push('<div class="fl">Zuhause<\/div><div style="font-size:.85rem">'+afd.home+'<\/div>');
+      if(afd.inst)p.push('<div class="fl" style="margin-top:.5rem">Einrichtung<\/div><div style="font-size:.85rem">'+afd.inst+'<\/div>');
+      p.push('<\/div>');
+    }
+  }
+
+  // NOTIZEN
+  if(opt.notizen&&notizText)p.push('<h2>Notizen<\/h2><div class="nb">'+notizText+'<\/div>');
+
+  // AUSBLICK
+  if(opt.ausblick){
+    p.push('<h2>Ausblick<\/h2><div class="ag">');
+    if(datErhebung){var de2=new Date(datErhebung).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">N\u00e4chste Erhebung<\/div><strong>'+de2+'<\/strong><\/div>');}
+    if(datGespraech){var dg=new Date(datGespraech).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">N\u00e4chstes Gespr\u00e4ch<\/div><strong>'+dg+'<\/strong><\/div>');}
+    if(!datErhebung&&!datGespraech)p.push('<div class="ai" style="grid-column:1\/-1;color:#9a8f7a;font-size:.85rem">Noch keine Termine vereinbart.<\/div>');
+    p.push('<\/div>');
+  }
+
+  // CAPTURE CHARTS then open window
   var vp=g('view-profile');
   var vpWas=vp?vp.style.display:'';
-  if(vp){
-    vp.style.position='fixed';
-    vp.style.top='-9999px';
-    vp.style.left='0';
-    vp.style.width='900px';
-    vp.style.display='block';
-    vp.style.zIndex='-999';
-  }
+  if(vp){vp.style.position='fixed';vp.style.top='-9999px';vp.style.left='0';vp.style.width='900px';vp.style.display='block';vp.style.zIndex='-999';}
   ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='block';});
 
-  // Wait for browser layout, then draw and capture
   setTimeout(function(){
     var cm3=parseFloat(childInfo.months)||0;
-    if(g('linearChart')) drawLinear(cm3);
-    if(g('barChart')) drawBar(cm3);
-    if(g('radarChart')) drawRadar();
-
+    if(g('linearChart'))drawLinear(cm3);
+    if(g('barChart'))drawBar(cm3);
+    if(g('radarChart'))drawRadar();
     requestAnimationFrame(function(){
-      var li=g('linearChart')&&g('linearChart').width>10?g('linearChart').toDataURL('image/png',0.95):'';
-      var bi=g('barChart')&&g('barChart').width>10?g('barChart').toDataURL('image/png',0.95):'';
-      var ri=g('radarChart')&&g('radarChart').width>10?g('radarChart').toDataURL('image/png',0.95):'';
-
-      // Restore view-profile
+      var li=g('linearChart')&&g('linearChart').width>10?g('linearChart').toDataURL('image/png',0.9):'';
+      var bi=g('barChart')&&g('barChart').width>10?g('barChart').toDataURL('image/png',0.9):'';
+      var ri=g('radarChart')&&g('radarChart').width>10?g('radarChart').toDataURL('image/png',0.9):'';
       ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='none';});
-      if(vp){
-        vp.style.position='';
-        vp.style.top='';
-        vp.style.left='';
-        vp.style.width='';
-        vp.style.zIndex='';
-        vp.style.display=vpWas;
-      }
-
-      if(opt.linear&&li){p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" style="max-width:100%" alt="Linie">');}
-      if(opt.bar&&bi){p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" style="max-width:100%" alt="Balken">');}
-      if(opt.radar&&ri){p.push('<h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" style="max-width:100%" alt="Radar">');}
+      if(vp){vp.style.position='';vp.style.top='';vp.style.left='';vp.style.width='';vp.style.zIndex='';vp.style.display=vpWas;}
+      if(opt.linear&&li)p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" style="max-width:100%" alt="Liniendiagramm">');
+      if(opt.bar&&bi)p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" style="max-width:100%" alt="Balkendiagramm">');
+      if(opt.radar&&ri)p.push('<h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" style="max-width:100%" alt="Radialdiagramm">');
       var w=window.open('','_blank');
-      if(!w){alert('Pop-up-Blocker aktiv. Bitte erlauben.');return;}
+      if(!w){alert('Pop-up-Blocker aktiv. Bitte in den Einstellungen erlauben.');return;}
       var d=w.document;d.open();
       d.write('<!DOCTYPE html>');
-      d.write('<html lang="de"><head><meta charset="UTF-8"><title>Bericht '+name+'<\/title>');
+      d.write('<html lang="de"><head><meta charset="UTF-8"><title>Entwicklungsbericht '+name+'<\/title>');
       d.write('<style>'+css+'<\/style><\/head><body><div class="pg">');
       d.write(p.join(''));
       d.write('<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'<\/div>');
@@ -4094,7 +4188,7 @@ function exportBericht(){
       d.close();
       setTimeout(function(){w.print();},600);
     });
-  }, 400);
+  },400);
 }
 
 
