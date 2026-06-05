@@ -388,14 +388,14 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
 </header>
 <nav id="sidebar">
     <div class="nav-sec">Start</div>
-    <div class="nav-item active" data-view="setup" onclick="showView('setup')"><span>📋</span><span>Stammdaten</span></div>
+    <div class="nav-item active" data-view="setup" onclick="showView('setup')"><span>📋</span><span>Profildaten</span></div>
     <div class="nav-sec" style="margin-top:.2rem" id="nav-sec-erhebung">Datenerhebung</div>
     <div id="nav-areas"></div>
     <div class="nav-sec" style="margin-top:.2rem" id="nav-sec-auswertung">Auswertung</div>
     <div class="nav-item disabled" id="nav-nach" data-view="nach" onclick="showView('nach')" style="display:none"><span>📝</span><span>Noch ausstehend</span><span class="nav-sc" id="nach-cnt"></span></div>
     <div class="nav-item disabled" id="nav-profile" data-view="profile" onclick="showView('profile')"><span>📊</span><span id="nav-profile-label">Entwicklungsprofil</span></div>
     <div class="nav-item disabled" id="nav-foerder" data-view="foerder" onclick="showView('foerder')"><span>💡</span><span>Fördermöglichkeiten</span></div>
-    <div class="nav-item disabled" id="nav-verlauf" data-view="verlauf" onclick="showView('verlauf')"><span>🔄</span><span>Verlauf</span></div>
+    <div class="nav-item disabled" id="nav-verlauf" data-view="verlauf" onclick="showView('verlauf')"><span>🔄</span><span>Verlauf</span><span id="nav-verlauf-chev" style="margin-left:auto;font-size:.7rem" onclick="event.stopPropagation();const s=document.getElementById('nav-verlauf-sub');const ch=document.getElementById('nav-verlauf-chev');if(s){const o=s.style.display!=='none';s.style.display=o?'none':'block';ch.textContent=o?'▸':'▾';}">▾</span></div>
     <div id="nav-verlauf-sub" style="display:none"></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
     <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.5 Beta · <span id="build-time"></span></div>
@@ -407,7 +407,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div id="view-setup">
       <div class="setup-wrap">
         <div class="setup-big">📊</div>
-        <h2 class="setup-h">Stammdaten</h2>
+        <h2 class="setup-h">Profildaten</h2>
         <p class="setup-p">Bitte wählen Sie den Altersbereich des Kindes, um die Datenerfassung zu starten.</p>
 
         <div class="age-grid">
@@ -1129,7 +1129,7 @@ function renderArea(aid){
   renderAreaStats(aid,s);
   const rp=RANGE_PHASES[ageRange]||{active:[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18],prefilled:[],locked:[]};
   const aidIdx=AREA_ORDER.indexOf(aid);
-  const prevLbl=aidIdx===0?'← Zu den Stammdaten':'← Vorheriger Bereich';
+  const prevLbl=aidIdx===0?'← Zu den Profildaten':'← Vorheriger Bereich';
   const nextLbl=aidIdx===AREA_ORDER.length-1?'Zur Auswertung →':'Nächster Bereich →';
   ['prev-area-btn','prev-area-btn2'].forEach(bid=>{const el=document.getElementById(bid);if(el)el.textContent=prevLbl;});
   ['next-area-btn','next-area-btn2'].forEach(bid=>{const el=document.getElementById(bid);if(el)el.textContent=nextLbl;});
@@ -1493,7 +1493,7 @@ function renderProfile(){
         <div style="font-size:2.5rem;margin-bottom:.8rem">📋</div>
         <div style="font-size:1rem;font-weight:600;color:var(--text);margin-bottom:.4rem">Noch keine Erhebungsdaten</div>
         <div style="font-size:.85rem">Bitte erst die Erhebung starten und die Items beantworten.</div>
-        <button class="btn btn-primary" style="margin-top:1.2rem" onclick="showView('setup')">→ Zu den Stammdaten</button>
+        <button class="btn btn-primary" style="margin-top:1.2rem" onclick="showView('setup')">→ Zu den Profildaten</button>
       </div>`;
     return;
   }
@@ -1716,7 +1716,7 @@ function renderFoerder(){
     return `<h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)" id="foerder-view-h">${L.foerder_title||'💡 Fördermöglichkeiten'}</h2>
       <div style="color:var(--muted);font-size:.85rem;padding:1rem 0">
         <p>Noch keine Erhebungsdaten vorhanden.</p>
-        <button class="btn btn-outline" onclick="showView('setup')">→ Zu den Stammdaten</button>
+        <button class="btn btn-outline" onclick="showView('setup')">→ Zu den Profildaten</button>
       </div>`;
   }
 
@@ -2755,7 +2755,7 @@ const ELTERN_TEXTS = {
 // ═══════════════════════════════════════
 const APP_UI={
   de:{
-    nav_setup:'Stammdaten', nav_profile:'Entwicklungsprofil', nav_nach:'Noch ausstehend',
+    nav_setup:'Profildaten', nav_profile:'Entwicklungsprofil', nav_nach:'Noch ausstehend',
     nav_sec_start:'Start', nav_sec_erhebung:'Datenerhebung', nav_sec_auswertung:'Auswertung',
     nav_foerder:'Fördermöglichkeiten', nav_verlauf:'Verlauf', nav_dokumente:'Dokumente',
     btn_start:'Erhebung starten →', btn_resume:'Erhebung fortsetzen →', btn_update:'Erhebung aktualisieren →',
@@ -2786,7 +2786,7 @@ const APP_UI={
     area_sl:'Sprache & Literacy', area_kog:'Kognition', area_gm:'Grobmotorik', area_fm:'Feinmotorik',
   },
   en:{
-    nav_setup:"Master data", nav_profile:"Developmental Profile", nav_nach:"Still pending",
+    nav_setup:"Profile data", nav_profile:"Developmental Profile", nav_nach:"Still pending",
     nav_sec_start:"Start", nav_sec_erhebung:"Data collection", nav_sec_auswertung:"Evaluation",
     nav_foerder:"Support suggestions", nav_verlauf:"Timeline", nav_dokumente:"Documents",
     btn_start:"Start observation →", btn_resume:"Continue observation →", btn_update:"Update observation →",
@@ -2816,7 +2816,7 @@ const APP_UI={
     area_sl:"Language & Literacy", area_kog:"Cognition", area_gm:"Gross motor skills", area_fm:"Fine motor skills",
   },
   it:{
-    nav_setup:'Dati anagrafici', nav_profile:'Profilo di sviluppo', nav_nach:'In sospeso',
+    nav_setup:'Dati del profilo', nav_profile:'Profilo di sviluppo', nav_nach:'In sospeso',
     nav_sec_start:'Inizio', nav_sec_erhebung:'Raccolta dati', nav_sec_auswertung:'Valutazione',
     nav_foerder:'Possibilità di sostegno', nav_verlauf:'Cronologia', nav_dokumente:'Documenti',
     btn_start:'Avvia osservazione →', btn_resume:'Continua osservazione →', btn_update:'Aggiorna osservazione →',
@@ -3827,8 +3827,12 @@ function renderVerlaufVergleich(){
 
     html+=`<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${areaName}</td>
-      <td style="text-align:center;padding:.35rem .5rem;color:var(--muted)">${prevStr}</td>
-      <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${currStr}</td>
+      <td style="text-align:center;padding:.35rem .5rem">
+        <span style="background:${AREA_COLORS[aid]||'#888'};color:#fff;border-radius:6px;padding:.15rem .5rem;font-size:.8rem;opacity:.6">${prevStr}</span>
+      </td>
+      <td style="text-align:center;padding:.35rem .5rem">
+        <span class="dev-badge" style="background:${AREA_COLORS[aid]||'#888'}">${currStr}</span>
+      </td>
       <td style="text-align:center;padding:.35rem .5rem">
         <span class="verlauf-delta ${cls}">${icon} ${delta}</span>
       </td>
