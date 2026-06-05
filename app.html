@@ -3993,11 +3993,21 @@ function exportBericht(){
   var datErhebung=g('dok-datum-erhebung')?g('dok-datum-erhebung').value:'';
   var datGespraech=g('dok-datum-gespraech')?g('dok-datum-gespraech').value:'';
   if(opt.eltern){druckElternInfo();return;}
+  // Show view-profile temporarily to get chart canvas with proper dimensions
+  var vp=g('view-profile');
+  var vpWas=vp?vp.style.display:'';
+  if(vp) vp.style.display='block';
   ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='block';});
+  // Force redraw with current dimensions
+  var cm3=parseFloat(childInfo.months)||0;
+  if(g('linearChart')) drawLinear(cm3);
+  if(g('barChart')) drawBar(cm3);
+  if(g('radarChart')) drawRadar();
   var li=g('linearChart')?g('linearChart').toDataURL('image/png',1):'';
   var bi=g('barChart')?g('barChart').toDataURL('image/png',1):'';
   var ri=g('radarChart')?g('radarChart').toDataURL('image/png',1):'';
   ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='none';});
+  if(vp) vp.style.display=vpWas;
   var devAges=AREA_ORDER.map(function(aid){return calcDevAge(aid);}).filter(Boolean);
   var avgDev=devAges.length?(devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12).toFixed(1):'---';
   var diffN=devAges.length?((devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12)-(cm/12)):0;
