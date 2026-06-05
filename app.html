@@ -1591,11 +1591,14 @@ function toggleColl(id){
       const erhIdx=(_verlaufDetailIdx>=0&&_verlaufDetailIdx<previousErhebungen.length)?_verlaufDetailIdx:0;
       const erh=previousErhebungen[erhIdx];
       if(erh){
+        // Triple rAF ensures layout is fully stable before drawing
         setTimeout(()=>{
           requestAnimationFrame(()=>{
-            requestAnimationFrame(()=>drawVerlaufCharts(erh));
+            requestAnimationFrame(()=>{
+              requestAnimationFrame(()=>drawVerlaufCharts(erh));
+            });
           });
-        },80);
+        },50);
       }
     }
 
@@ -3942,6 +3945,11 @@ function drawVerlaufCharts(erh){
   const vRad=document.getElementById('verlaufRadarChart');
 
   window._verlaufDrawing=true;
+  // Set container hint so drawBar/Linear use correct width
+  const cbBar=document.getElementById('cb-erh-bar');
+  const cbLin=document.getElementById('cb-erh-linear');
+  if(cbBar) window._verlaufBarContainer=cbBar;
+  if(cbLin) window._verlaufLinContainer=cbLin;
   try {
     if(vBar){ vBar.id='barChart'; drawBar(cm); }
     if(vLin){ vLin.id='linearChart'; drawLinear(cm); }
@@ -3954,6 +3962,8 @@ function drawVerlaufCharts(erh){
     ageRange=_savedAgeRange;
     childInfo=_savedChildInfo;
     window._verlaufDrawing=false;
+    window._verlaufBarContainer=null;
+    window._verlaufLinContainer=null;
   }
 }
 
