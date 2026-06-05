@@ -4050,7 +4050,7 @@ function exportBericht(){
 }
 
 function _finishExport(opt,p,css,li,bi,ri,notizText,datErhebung,datGespraech,today,name){
-  var g=function(id){return document.getElementById(id);}
+  var g=function(id){return document.getElementById(id);};
   var devAges=AREA_ORDER.map(function(aid){return calcDevAge(aid);}).filter(Boolean);
   var avgDev=devAges.length?(devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12).toFixed(1):'---';
   var diffN=devAges.length?((devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12)-(cm/12)):0;
