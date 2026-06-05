@@ -3825,9 +3825,12 @@ function renderErhebungFull(erh, idx, total){
     const da=calcDevAgeFromAnswers(aid,erh.answers||{});
     const daStr=da?(da/12).toFixed(1)+' J':'—';
     const ph=da?Object.entries(PHASE_MONTHS).reduce((best,[p,mo])=>mo<=da?+p:best,0):null;
+    const aColor=AREA_COLORS[aid]||'#888';
     tableHtml+=`<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${areaName}</td>
-      <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${daStr}</td>
+      <td style="text-align:center;padding:.35rem .5rem">
+        <span class="dev-badge" style="background:${da?aColor:'#bbb'}">${daStr}</span>
+      </td>
       <td style="text-align:center;padding:.35rem .5rem;color:var(--muted)">${ph!==null?'Ph.'+ph:'—'}</td>
     </tr>`;
   });
@@ -3835,18 +3838,16 @@ function renderErhebungFull(erh, idx, total){
 
   // Build collCards like Entwicklungsprofil
   // Use area colors from the erhebung's dominant area for styling
-  const erhColor={krippe:'#e8922a',kita:'#4a90d9',schule:'#35a8b8'}[erh.ageRange]||'var(--accent)';
-
   let html=navHtml+sumBox;
-  html+=`<div class="coll-card" style="border-left:3px solid ${erhColor}">
+  html+=`<div class="coll-card">
     <div class="coll-hdr" onclick="toggleColl('erh-detail')">
       <span>${L.card_detail||'📋 Detailergebnisse'}</span>
       <span class="coll-chev" id="chev-erh-detail">▸</span>
     </div>
     <div class="coll-body" id="cb-erh-detail" style="display:none">${tableHtml}</div>
   </div>`;
-  html+=`<div class="coll-card" style="border-left:3px solid ${erhColor}">
-    <div class="coll-hdr" onclick="toggleColl('erh-linear')">
+  html+=`<div class="coll-card">
+    <div class="coll-hdr" onclick="toggleColl('erh-linear'">
       <span>${L.card_linear||'📈 Entwicklungsprofil nach Beller (Liniendiagramm)'}</span>
       <span class="coll-chev" id="chev-erh-linear">▸</span>
     </div>
@@ -3854,8 +3855,8 @@ function renderErhebungFull(erh, idx, total){
       <div style="position:relative"><canvas id="verlaufLinearChart" class="mychart"></canvas></div>
     </div>
   </div>`;
-  html+=`<div class="coll-card" style="border-left:3px solid ${erhColor}">
-    <div class="coll-hdr" onclick="toggleColl('erh-bar')">
+  html+=`<div class="coll-card">
+    <div class="coll-hdr" onclick="toggleColl('erh-bar'">
       <span>${L.card_bar||'📊 Entwicklungsprofil nach Trost (Balkendiagramm)'}</span>
       <span class="coll-chev" id="chev-erh-bar">▸</span>
     </div>
@@ -3863,8 +3864,8 @@ function renderErhebungFull(erh, idx, total){
       <canvas id="verlaufBarChart" class="mychart"></canvas>
     </div>
   </div>`;
-  html+=`<div class="coll-card" style="border-left:3px solid ${erhColor}">
-    <div class="coll-hdr" onclick="toggleColl('erh-radar')">
+  html+=`<div class="coll-card">
+    <div class="coll-hdr" onclick="toggleColl('erh-radar'">
       <span>${L.card_radar||'🎯 Entwicklungsprofil (Radialdiagramm)'}</span>
       <span class="coll-chev" id="chev-erh-radar">▸</span>
     </div>
@@ -4083,14 +4084,19 @@ function drawVerlaufCharts(erh){
   const vLin=document.getElementById('verlaufLinearChart');
   const vRad=document.getElementById('verlaufRadarChart');
 
-  if(vBar){ vBar.id='barChart'; drawBar(cm); vBar.id='verlaufBarChart'; }
-  if(vLin){ vLin.id='linearChart'; drawLinear(cm); vLin.id='verlaufLinearChart'; }
-  if(vRad){ vRad.id='radarChart'; drawRadar(); vRad.id='verlaufRadarChart'; }
-
-  // Restore globals
-  answers=_savedAnswers;
-  ageRange=_savedAgeRange;
-  childInfo=_savedChildInfo;
+  try {
+    if(vBar){ vBar.id='barChart'; drawBar(cm); }
+    if(vLin){ vLin.id='linearChart'; drawLinear(cm); }
+    if(vRad){ vRad.id='radarChart'; drawRadar(); }
+  } finally {
+    // ALWAYS restore IDs and globals, even if drawing fails
+    if(vBar) vBar.id='verlaufBarChart';
+    if(vLin) vLin.id='verlaufLinearChart';
+    if(vRad) vRad.id='verlaufRadarChart';
+    answers=_savedAnswers;
+    ageRange=_savedAgeRange;
+    childInfo=_savedChildInfo;
+  }
 }
 
 function _drawVerlaufBar(canvas, erh){
