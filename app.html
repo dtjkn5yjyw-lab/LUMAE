@@ -401,7 +401,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div class="nav-item disabled" id="nav-verlauf" data-view="verlauf" onclick="showView('verlauf')"><span>🔄</span><span>Verlauf</span></div>
     <div id="nav-verlauf-sub" style="display:none"></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Dokumente</span></div>
-    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.4 Beta · <span id="build-time"></span></div>
+    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.5 Beta · <span id="build-time"></span></div>
   </nav>
 
   <main id="main">
@@ -858,7 +858,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
           <h4 style="margin-top:1rem;margin-bottom:.5rem">Urheberrecht &amp; Lizenz</h4>
           <div class="help-box" style="font-size:.8rem;margin-bottom:.7rem">
             Inhalte: © Kuno Beller / Verlag das netz<br>
-            Digitale Umsetzung: © 2025 Jens Trost · Version 26.6.4 Beta<br>
+            Digitale Umsetzung: © 2025 Jens Trost · Version 26.6.5 Beta<br>
             Erstellt mit Unterstützung von Claude (Anthropic)
           </div>
           <h4 style="margin-bottom:.5rem">Lizenz anfragen</h4>
@@ -1713,34 +1713,97 @@ function drawRadar(childMonths){
 }
 
 function renderFoerder(){
-  const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  const year=Math.min(9,Math.floor(cm/12));
-  const fd=FOERDER[String(year)];
-  if(!fd) return '<p style="color:var(--muted);font-size:.85rem">Bitte zuerst das Geburtsdatum eingeben.</p>';
-  const areaNames={kup:'Körperbewusstsein & Pflege',ub:'Umgebungsbewusstsein',se:'Sozial-emotionale Entwicklung',st:'Spieltätigkeit',sl:'Sprache & Literacy',kog:'Kognition',gm:'Grobmotorik',fm:'Feinmotorik'};
-  const areaEmoji={kup:'🧼',ub:'🏘️',se:'❤️',st:'🧸',sl:'🗣️',kog:'🧠',gm:'🔨',fm:'🪶'};
-  let html=`<div style="background:var(--accent-light);border:1px solid #b8d4c8;border-radius:8px;padding:.8rem 1.1rem;margin-bottom:1rem;font-size:.82rem;color:var(--accent)"><strong>Fördermöglichkeiten für das ${year}. Lebensjahr</strong><br><span style="font-size:.75rem;opacity:.8">Entwicklungsbegleitend – stärkenorientiert</span></div>`;
+  const L=APP_UI[appLang]||APP_UI.de;
+  const el=document.getElementById('view-foerder');
+  if(!el) return;
+
+  // Check if we have data
+  const hasData=AREA_ORDER.some(aid=>calcDevAge(aid)!==null);
+  if(!hasData){
+    el.innerHTML=`<h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)" id="foerder-view-h">${L.foerder_title||'💡 Fördermöglichkeiten'}</h2>
+      <div style="color:var(--muted);font-size:.85rem;padding:1rem 0">
+        <p>Noch keine Erhebungsdaten vorhanden.</p>
+        <button class="btn btn-outline" onclick="showView('setup')">→ Zu den Stammdaten</button>
+      </div>`;
+    return;
+  }
+
+  let html=`<h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)" id="foerder-view-h">${L.foerder_title||'💡 Fördermöglichkeiten'}</h2>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.2rem" id="foerder-view-sub">${L.foerder_sub||'Bereichsspezifische Fördermöglichkeiten passend zum Entwicklungsalter.'}</p>`;
+
+  // One collCard per area
   AREA_ORDER.forEach(aid=>{
-    const f=fd[aid]; if(!f) return;
-    html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;margin-bottom:.7rem">
-      <div style="font-weight:500;margin-bottom:.5rem;font-size:.88rem">${areaEmoji[aid]} ${areaNames[aid]}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">🏠 Zuhause</div><div style="font-size:.81rem;line-height:1.6">${f.home}</div></div>
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">🏫 Einrichtung</div><div style="font-size:.81rem;line-height:1.6">${f.inst}</div></div>
-      </div></div>`;
+    const da=calcDevAge(aid);
+    if(da===null) return;
+
+    const areaName=L['area_'+aid]||DATA[aid].name;
+    const daYears=(da/12).toFixed(1);
+    const foerderYear=Math.min(9,Math.floor(da/12));
+    const fd=FOERDER[String(foerderYear)];
+    const areaFd=fd?fd[aid]:null;
+
+    // Phase info
+    const ph=Object.entries(PHASE_MONTHS).reduce((best,[p,mo])=>mo<=da?+p:best,0);
+
+    // Build inner content
+    let inner=`<div style="font-size:.78rem;color:var(--muted);margin-bottom:.8rem">
+      ${L.tbl_alter||'Entwicklungsalter'}: <strong style="color:var(--text)">${daYears} J</strong>
+      &nbsp;·&nbsp; Phase <strong style="color:var(--text)">${ph}</strong>
+      &nbsp;·&nbsp; Förderung für das <strong style="color:var(--text)">${foerderYear}. Lebensjahr</strong>
+    </div>`;
+
+    if(areaFd){
+      if(areaFd.home){
+        inner+=`<div style="margin-bottom:.9rem">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.3rem">🏠 Zuhause</div>
+          <div style="font-size:.83rem;line-height:1.6">${areaFd.home}</div>
+        </div>`;
+      }
+      if(areaFd.inst){
+        inner+=`<div style="margin-bottom:.9rem">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.3rem">🏫 Einrichtung</div>
+          <div style="font-size:.83rem;line-height:1.6">${areaFd.inst}</div>
+        </div>`;
+      }
+    } else {
+      inner+=`<div style="font-size:.82rem;color:var(--muted)">Keine spezifischen Fördermöglichkeiten für diesen Bereich verfügbar.</div>`;
+    }
+
+    // Special areas: sl_quer and medien
+    if(aid==='sl'){
+      const fdQuer=fd?fd['sl_quer']:null;
+      const fdMedien=fd?fd['medien']:null;
+      if(fdQuer){
+        inner+=`<div style="margin-bottom:.9rem;margin-top:.4rem">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.3rem">🌍 Mehrsprachigkeit</div>
+          <div style="font-size:.83rem;line-height:1.6">${fdQuer}</div>
+        </div>`;
+      }
+      if(fdMedien){
+        inner+=`<div style="margin-bottom:.9rem">
+          <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.3rem">💻 Medien & Digital</div>
+          <div style="font-size:.83rem;line-height:1.6">${fdMedien}</div>
+        </div>`;
+      }
+    }
+
+    // Color accent matching area color
+    const areaColor=AREA_COLORS[aid]||'var(--accent)';
+    html+=`<div class="coll-card" style="border-left:3px solid ${areaColor}">
+      <div class="coll-hdr" onclick="toggleColl('foerder-${aid}')">
+        <span>${DATA[aid].emoji} ${areaName}</span>
+        <span style="display:flex;align-items:center;gap:.5rem">
+          <span style="font-size:.72rem;font-weight:400;color:var(--muted)">${daYears} J · Ph.${ph}</span>
+          <span class="coll-arrow">▸</span>
+        </span>
+      </div>
+      <div class="coll-body" id="cb-foerder-${aid}" style="display:none">${inner}</div>
+    </div>`;
   });
-  ['sl_quer','medien'].forEach(k=>{
-    if(!fd[k]) return;
-    const lbl=k==='sl_quer'?'🌍 Mehrsprachigkeit (Querschnittsthema)':'💻 Medien & Digitales';
-    html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;margin-bottom:.7rem">
-      <div style="font-weight:500;margin-bottom:.5rem;font-size:.88rem">${lbl}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem">
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">🏠 Zuhause</div><div style="font-size:.81rem;line-height:1.6">${fd[k].home}</div></div>
-        <div><div style="font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.25rem">🏫 Einrichtung</div><div style="font-size:.81rem;line-height:1.6">${fd[k].inst}</div></div>
-      </div></div>`;
-  });
-  return html;
+
+  el.innerHTML=html;
 }
+
 
 function exportFoerderPDF(){
   const name=childInfo.name||'Kind';
@@ -3099,7 +3162,7 @@ function exportAuswahl(){
     body+=buildElternHTML(name,cm,lang);
   }
 
-  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.6.4 Beta</p></body></html>';
+  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.6.5 Beta</p></body></html>';
   w.document.write(body); w.document.close(); w.print();
 }
 
@@ -3775,7 +3838,7 @@ function renderErhebungFull(erh, idx, total){
 
   // Build collCards like Entwicklungsprofil
   let html=navHtml+sumBox;
-  html+=collCardStatic('erh-detail', L.card_detail||'📋 Detailergebnisse', tableHtml, true);
+  html+=collCardStatic('erh-detail', L.card_detail||'📋 Detailergebnisse', tableHtml, false);
   html+=collCardStatic('erh-linear', '📈 Entwicklungsprofil nach Beller (Liniendiagramm)',
     '<div style="position:relative"><canvas id="verlaufLinearChart" class="mychart"></canvas></div>', false);
   html+=collCardStatic('erh-bar', '📊 Entwicklungsprofil nach Trost (Balkendiagramm)',
