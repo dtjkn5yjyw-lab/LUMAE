@@ -4101,8 +4101,7 @@ function exportBericht(){
       var faid=AREA_ORDER[j];var fda=calcDevAge(faid);if(!fda)continue;
       var fyr=Math.min(9,Math.floor(fda/12));var fd2=FOERDER[String(fyr)];var afd=fd2?fd2[faid]:null;if(!afd)continue;
       var fan=L['area_'+faid]||DATA[faid].name;
-      var fcol=({kup:'#e8b84b',ub:'#e8922a',se:'#d95f45',st:'#cc4488',sl:'#8e5aad',kog:'#5a7cc9',gm:'#4a90d9',fm:'#35a8b8'})[faid]||'#888';
-      p.push('<div class="fi" style="border-left:3px solid '+fcol+'"><div style="font-weight:600;margin-bottom:.5rem">'+DATA[faid].emoji+' '+fan+' <span style="background:'+fcol+';color:#fff;border-radius:6px;padding:.1rem .45rem;font-size:.78rem">'+(fda/12).toFixed(1)+' J<\/span><\/div>');
+      p.push('<div class="fi"><div style="font-weight:600;margin-bottom:.5rem">'+DATA[faid].emoji+' '+fan+' · '+(fda/12).toFixed(1)+' J<\/div>');
       if(afd.home)p.push('<div class="fl">Zuhause<\/div><div style="font-size:.85rem">'+afd.home+'<\/div>');
       if(afd.inst)p.push('<div class="fl" style="margin-top:.5rem">Einrichtung<\/div><div style="font-size:.85rem">'+afd.inst+'<\/div>');
       p.push('<\/div>');
@@ -4116,6 +4115,7 @@ function exportBericht(){
     if(!datErhebung&&!datGespraech){p.push('<div class="ai" style="grid-column:1\/-1;color:#9a8f7a;font-size:.85rem">Noch keine Termine vereinbart.<\/div>');}
     p.push('<\/div>');
   }
+  p.push('<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'<\/div>');
   // Add chart images to report
   if(opt.linear&&li){p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" alt="Liniendiagramm" style="max-width:100%">');}
   if(opt.bar&&bi){p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" alt="Balkendiagramm" style="max-width:100%">');}
