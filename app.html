@@ -1091,10 +1091,11 @@ function showView(id){
   else if(id==='verlauf'){
     const vv=document.getElementById('view-verlauf');
     vv.style.display='';
-    // Re-render - preserve _verlaufDetailIdx so selected profile stays selected
     const vc=document.getElementById('verlauf-view-content');
     if(vc) vc.innerHTML='';
-    // Don't reset _verlaufDetailIdx here - keep last selection
+    // Only keep detail index if coming from showVerlaufDetail, otherwise show comparison
+    if(!window._verlaufFromDetail) _verlaufDetailIdx=-1;
+    window._verlaufFromDetail=false;
     renderVerlaufView();
     setTimeout(()=>{
       if(previousErhebungen&&previousErhebungen.length>0){
@@ -3711,6 +3712,7 @@ let _verlaufDetailIdx=-1;
 
 function showVerlaufDetail(idx){
   _verlaufDetailIdx=idx;
+  window._verlaufFromDetail=true; // flag: keep idx when showView runs
   // Make sure view-verlauf is visible
   const views=['setup','area','nach','profile','foerder','dokumente'];
   views.forEach(v=>{ const el=document.getElementById('view-'+v); if(el) el.style.display='none'; });
@@ -3722,6 +3724,7 @@ function showVerlaufDetail(idx){
   // Clear and render
   const el=document.getElementById('verlauf-view-content');
   if(el) el.innerHTML='';
+  window._verlaufFromDetail=false; // reset after render starts
   renderVerlaufView();
 }
 
