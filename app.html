@@ -1091,11 +1091,10 @@ function showView(id){
   else if(id==='verlauf'){
     const vv=document.getElementById('view-verlauf');
     vv.style.display='';
-    // Clear content to avoid stale content from previous views
+    // Re-render - preserve _verlaufDetailIdx so selected profile stays selected
     const vc=document.getElementById('verlauf-view-content');
     if(vc) vc.innerHTML='';
-    _verlaufDetailIdx=-1;
-    window._vergleichIdx=0;
+    // Don't reset _verlaufDetailIdx here - keep last selection
     renderVerlaufView();
     setTimeout(()=>{
       if(previousErhebungen&&previousErhebungen.length>0){
@@ -1514,8 +1513,8 @@ function renderProfile(){
   </div>`;
 
   // 1. Detailergebnisse
-  html+=collCard('detail','📋','Detailergebnisse',
-    `<table class="res-tbl"><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Kompetenz</th><th>Basis</th><th>Decke</th></tr></thead><tbody id="res-tbody"></tbody></table>`,false);
+  html+=collCard('detail','',(L.card_detail||'📋 Detailergebnisse'),
+    `<table class="res-tbl"><thead><tr><th>${L.tbl_bereich||'Bereich'}</th><th>${L.tbl_alter||'Entw.alter'}</th><th>${L.tbl_diff||'Differenz'}</th><th>${L.tbl_kompetenz||'Kompetenz'}</th><th>${L.tbl_basis||'Basis'}</th><th>${L.tbl_decke||'Decke'}</th></tr></thead><tbody id="res-tbody"></tbody></table>`,false);
 
   // 2. Liniendiagramm
   html+=collCard('linear','',(L.card_linear||'📈 Entwicklungsprofil nach Beller (Liniendiagramm)'),
@@ -1714,18 +1713,15 @@ function drawRadar(childMonths){
 
 function renderFoerder(){
   const L=APP_UI[appLang]||APP_UI.de;
-  const el=document.getElementById('view-foerder');
-  if(!el) return;
 
   // Check if we have data
   const hasData=AREA_ORDER.some(aid=>calcDevAge(aid)!==null);
   if(!hasData){
-    el.innerHTML=`<h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)" id="foerder-view-h">${L.foerder_title||'💡 Fördermöglichkeiten'}</h2>
+    return `<h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)" id="foerder-view-h">${L.foerder_title||'💡 Fördermöglichkeiten'}</h2>
       <div style="color:var(--muted);font-size:.85rem;padding:1rem 0">
         <p>Noch keine Erhebungsdaten vorhanden.</p>
         <button class="btn btn-outline" onclick="showView('setup')">→ Zu den Stammdaten</button>
       </div>`;
-    return;
   }
 
   let html=`<h2 style="font-size:1.2rem;margin-bottom:.3rem;color:var(--text)" id="foerder-view-h">${L.foerder_title||'💡 Fördermöglichkeiten'}</h2>
@@ -1801,7 +1797,7 @@ function renderFoerder(){
     </div>`;
   });
 
-  el.innerHTML=html;
+  return html;
 }
 
 
