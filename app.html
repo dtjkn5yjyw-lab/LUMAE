@@ -1517,16 +1517,16 @@ function renderProfile(){
   html+=collCard('detail','📋','Detailergebnisse',
     `<table class="res-tbl"><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Kompetenz</th><th>Basis</th><th>Decke</th></tr></thead><tbody id="res-tbody"></tbody></table>`,false);
 
-  // 2. Lineardiagramm (Beller-Profil)
-  html+=collCard('linear','📈','Liniendiagramm: Entwicklungsprofil nach Beller',
+  // 2. Liniendiagramm
+  html+=collCard('linear','',(L.card_linear||'📈 Entwicklungsprofil nach Beller (Liniendiagramm)'),
     `<div style="position:relative"><canvas id="linearChart" class="mychart"></canvas></div>`,false);
 
   // 3. Balkendiagramm
-  html+=collCard('bar','📊','Balkendiagramm: Entwicklungsalter je Bereich',
+  html+=collCard('bar','',(L.card_bar||'📊 Entwicklungsprofil nach Trost (Balkendiagramm)'),
     `<canvas id="barChart" class="mychart"></canvas>`,false);
 
   // 4. Radialdiagramm
-  html+=collCard('radar','',(L.card_radar||'🎯 Radialdiagramm: Entwicklungsprofil'),
+  html+=collCard('radar','',(L.card_radar||'🎯 Entwicklungsprofil (Radialdiagramm)'),
     `<div style="max-width:700px;margin:0 auto"><canvas id="radarChart" class="mychart"></canvas></div>`,false);
 
   // Verlauf is a separate nav item - not shown in Entwicklungsprofil
@@ -1794,7 +1794,7 @@ function renderFoerder(){
         <span>${DATA[aid].emoji} ${areaName}</span>
         <span style="display:flex;align-items:center;gap:.5rem">
           <span style="font-size:.72rem;font-weight:400;color:var(--muted)">${daYears} J · Ph.${ph}</span>
-          <span class="coll-arrow">▸</span>
+          <span class="coll-chev" id="chev-foerder-${aid}">▸</span>
         </span>
       </div>
       <div class="coll-body" id="cb-foerder-${aid}" style="display:none">${inner}</div>
@@ -3746,13 +3746,10 @@ function renderVerlaufView(){
       // Open the chart collCards so canvas has proper dimensions
       ['erh-bar','erh-linear','erh-radar'].forEach(cid=>{
         const cb=document.getElementById('cb-'+cid);
-        const hdr=cb?cb.previousElementSibling:null;
+        const chev=document.getElementById('chev-'+cid);
         if(cb&&cb.style.display==='none'){
-          cb.style.display='';
-          if(hdr){
-            const arrow=hdr.querySelector('.coll-arrow');
-            if(arrow) arrow.textContent='▾';
-          }
+          cb.style.display='block';
+          if(chev) chev.textContent='▾';
         }
       });
       requestAnimationFrame(()=>drawVerlaufCharts(erh));
@@ -3837,14 +3834,44 @@ function renderErhebungFull(erh, idx, total){
   tableHtml+='</tbody></table>';
 
   // Build collCards like Entwicklungsprofil
+  // Use area colors from the erhebung's dominant area for styling
+  const erhColor={krippe:'#e8922a',kita:'#4a90d9',schule:'#35a8b8'}[erh.ageRange]||'var(--accent)';
+
   let html=navHtml+sumBox;
-  html+=collCardStatic('erh-detail', L.card_detail||'📋 Detailergebnisse', tableHtml, false);
-  html+=collCardStatic('erh-linear', '📈 Entwicklungsprofil nach Beller (Liniendiagramm)',
-    '<div style="position:relative"><canvas id="verlaufLinearChart" class="mychart"></canvas></div>', false);
-  html+=collCardStatic('erh-bar', '📊 Entwicklungsprofil nach Trost (Balkendiagramm)',
-    '<canvas id="verlaufBarChart" class="mychart"></canvas>', false);
-  html+=collCardStatic('erh-radar', '🎯 Entwicklungsprofil (Radialdiagramm)',
-    '<div style="max-width:700px;margin:0 auto"><canvas id="verlaufRadarChart" class="mychart"></canvas></div>', false);
+  html+=`<div class="coll-card" style="border-left:3px solid ${erhColor}">
+    <div class="coll-hdr" onclick="toggleColl('erh-detail')">
+      <span>${L.card_detail||'📋 Detailergebnisse'}</span>
+      <span class="coll-chev" id="chev-erh-detail">▸</span>
+    </div>
+    <div class="coll-body" id="cb-erh-detail" style="display:none">${tableHtml}</div>
+  </div>`;
+  html+=`<div class="coll-card" style="border-left:3px solid ${erhColor}">
+    <div class="coll-hdr" onclick="toggleColl('erh-linear')">
+      <span>${L.card_linear||'📈 Entwicklungsprofil nach Beller (Liniendiagramm)'}</span>
+      <span class="coll-chev" id="chev-erh-linear">▸</span>
+    </div>
+    <div class="coll-body" id="cb-erh-linear" style="display:none">
+      <div style="position:relative"><canvas id="verlaufLinearChart" class="mychart"></canvas></div>
+    </div>
+  </div>`;
+  html+=`<div class="coll-card" style="border-left:3px solid ${erhColor}">
+    <div class="coll-hdr" onclick="toggleColl('erh-bar')">
+      <span>${L.card_bar||'📊 Entwicklungsprofil nach Trost (Balkendiagramm)'}</span>
+      <span class="coll-chev" id="chev-erh-bar">▸</span>
+    </div>
+    <div class="coll-body" id="cb-erh-bar" style="display:none">
+      <canvas id="verlaufBarChart" class="mychart"></canvas>
+    </div>
+  </div>`;
+  html+=`<div class="coll-card" style="border-left:3px solid ${erhColor}">
+    <div class="coll-hdr" onclick="toggleColl('erh-radar')">
+      <span>${L.card_radar||'🎯 Entwicklungsprofil (Radialdiagramm)'}</span>
+      <span class="coll-chev" id="chev-erh-radar">▸</span>
+    </div>
+    <div class="coll-body" id="cb-erh-radar" style="display:none">
+      <div style="max-width:700px;margin:0 auto"><canvas id="verlaufRadarChart" class="mychart"></canvas></div>
+    </div>
+  </div>`;
 
   return html;
 }
