@@ -1560,8 +1560,6 @@ function renderProfile(){
   // Draw charts: force-open collapsible bodies temporarily to get real dimensions
   const cm3=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
   function forceDrawAll(){
-    // Only draw if verlauf is not currently swapping canvas IDs
-    if(window._verlaufDrawing) return;
     const chartIds=['linear','bar','radar'];
     const bodies=chartIds.map(id=>document.getElementById('cb-'+id)).filter(Boolean);
     const wasHidden=bodies.map(b=>b.style.display==='none');
@@ -1607,8 +1605,8 @@ function toggleColl(id){
 }
 
 
-function drawRadar(childMonths){
-  const canvas=document.getElementById('radarChart');
+function drawRadar(childMonths, canvasOverride){
+  const canvas=canvasOverride||document.getElementById('radarChart');
   if(!canvas) return;
   const ctx=canvas.getContext('2d');
   let W=0;
@@ -3927,43 +3925,28 @@ function drawVergleichRadar(prevAnswers, prevLabel){
 
 
 function drawVerlaufCharts(erh){
-  // Save globals
-  const _savedAnswers=answers;
-  const _savedAgeRange=ageRange;
-  const _savedChildInfo=childInfo;
-
-  // Swap globals with historical data
-  answers=erh.answers||{};
-  ageRange=erh.ageRange||_savedAgeRange;
-  childInfo=erh.childInfo||_savedChildInfo;
-
-  const cm=parseFloat(erh.childInfo?.months)||0;
-
-  // Temporarily rename verlauf canvases to main IDs so draw functions find them
+  // Get canvases BEFORE swapping globals
   const vBar=document.getElementById('verlaufBarChart');
   const vLin=document.getElementById('verlaufLinearChart');
   const vRad=document.getElementById('verlaufRadarChart');
+  if(!vBar&&!vLin&&!vRad) return; // nothing to draw
 
-  window._verlaufDrawing=true;
-  // Set container hint so drawBar/Linear use correct width
-  const cbBar=document.getElementById('cb-erh-bar');
-  const cbLin=document.getElementById('cb-erh-linear');
-  if(cbBar) window._verlaufBarContainer=cbBar;
-  if(cbLin) window._verlaufLinContainer=cbLin;
+  // Save and swap globals
+  const _savedAnswers=answers, _savedAgeRange=ageRange, _savedChildInfo=childInfo;
+  answers=erh.answers||{};
+  ageRange=erh.ageRange||_savedAgeRange;
+  childInfo=erh.childInfo||_savedChildInfo;
+  const cm=parseFloat(erh.childInfo?.months)||0;
+
   try {
-    if(vBar){ vBar.id='barChart'; drawBar(cm); }
-    if(vLin){ vLin.id='linearChart'; drawLinear(cm); }
-    if(vRad){ vRad.id='radarChart'; drawRadar(); }
+    // Pass canvas directly - NO ID swap needed
+    if(vBar) drawBar(cm, vBar);
+    if(vLin) drawLinear(cm, vLin);
+    if(vRad) drawRadar(cm, vRad);
   } finally {
-    if(vBar) vBar.id='verlaufBarChart';
-    if(vLin) vLin.id='verlaufLinearChart';
-    if(vRad) vRad.id='verlaufRadarChart';
     answers=_savedAnswers;
     ageRange=_savedAgeRange;
     childInfo=_savedChildInfo;
-    window._verlaufDrawing=false;
-    window._verlaufBarContainer=null;
-    window._verlaufLinContainer=null;
   }
 }
 
