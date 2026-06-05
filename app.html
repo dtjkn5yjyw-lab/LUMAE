@@ -70,7 +70,7 @@ main{padding:1.4rem 1.8rem;overflow-y:auto;margin-left:330px;min-height:calc(100
 .field input:focus,.field select:focus{outline:2px solid var(--accent);outline-offset:1px}
 .field input[readonly]{background:#f0ece4;color:var(--muted);cursor:default}
 .field.full{grid-column:1/-1}
-/* .age-edit-link removed */.REMOVED{margin-left:.4rem;text-decoration:underline}
+
 
 .setup-actions{text-align:center;margin-top:1rem}
 .start-hint{font-size:.72rem;color:var(--muted);margin-top:.4rem}
@@ -148,7 +148,6 @@ main{padding:1.4rem 1.8rem;overflow-y:auto;margin-left:330px;min-height:calc(100
 .iv-footer{display:flex;align-items:center;justify-content:center;gap:1rem;flex-wrap:wrap}
 .iv-nav{display:flex;gap:.5rem;align-items:center}
 .iv-counter{font-size:.78rem;color:var(--muted)}
-.iv-finish{background:var(--accent);color:white;border:none;border-radius:8px;padding:.6rem 1.4rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:500}
 .iv-close{background:transparent;border:1.5px solid rgba(255,255,255,.4);color:#f5f0e8;border-radius:6px;padding:.3rem .7rem;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.72rem}
 
 /* MODAL */
@@ -181,9 +180,7 @@ main{padding:1.4rem 1.8rem;overflow-y:auto;margin-left:330px;min-height:calc(100
 .sum-box{background:var(--accent-light);border:1px solid #b8d4c8;border-radius:var(--r);padding:1rem 1.4rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:2rem;flex-wrap:wrap}
 .sum-n{font-family:'DM Sans',sans-serif;font-size:1.9rem;font-weight:300;color:var(--accent);line-height:1}
 .sum-l{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:.15rem}
-.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.3rem;margin-bottom:1rem}
 .chart-card h3{font-family:'DM Sans',sans-serif;font-weight:300;font-size:1rem;margin-bottom:.9rem}
-.chart-actions{margin-top:.7rem;display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap}
 canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
 .res-tbl{width:100%;border-collapse:collapse;font-size:.79rem}
 .res-tbl th{text-align:left;padding:.45rem .7rem;background:var(--bg);border-bottom:2px solid var(--border);font-size:.67rem;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
@@ -1534,9 +1531,7 @@ function renderProfile(){
   // Fördermöglichkeiten: separate nav item
 
 
-
   document.getElementById('prof-content').innerHTML=html;
-
 
 
   // Fill table
@@ -2180,7 +2175,6 @@ function showToast(msg){
 }
 
 
-
 // ═══════════════════════════════════════
 // ELTERN-PDF
 // ═══════════════════════════════════════
@@ -2756,7 +2750,6 @@ const ELTERN_TEXTS = {
 };
 
 
-
 // ═══════════════════════════════════════
 // APP SPRACHE (DE / EN / IT)
 // ═══════════════════════════════════════
@@ -3235,7 +3228,6 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 
 
-
 // ═══════════════════════════════════════
 // PROGRESSIVE NAVIGATION
 // ═══════════════════════════════════════
@@ -3587,94 +3579,6 @@ function calcDevAgeFromAnswers(aid, answersObj){
   return highestPh>0?(PHASE_MONTHS[highestPh]||0):null;
 }
 
-function renderVerlauf(){
-  const L=APP_UI[appLang]||APP_UI.de;
-
-  // All available erhebungen (oldest first)
-  const all=[...previousErhebungen].reverse();
-
-  if(all.length===0) return ''; // Nothing to show
-
-  let html='';
-
-  // ── Past erhebungen list ──
-  all.forEach((erh,i)=>{
-    const date=formatMonthYear(erh.savedAt||erh.created);
-    const range=rangeShort(erh.ageRange);
-    const ages=AREA_ORDER.map(aid=>{
-      const da=calcDevAgeFromAnswers(aid,erh.answers);
-      return da?(da/12).toFixed(1)+'J':'—';
-    });
-    const avgDa=AREA_ORDER.map(aid=>calcDevAgeFromAnswers(aid,erh.answers)).filter(Boolean);
-    const avgStr=avgDa.length?( avgDa.reduce((a,b)=>a+b,0)/avgDa.length/12).toFixed(1)+' J':'—';
-
-    html+=`<div class="verlauf-item">
-      <div>
-        <div class="verlauf-item-date">📅 ${date}</div>
-        <div class="verlauf-item-range">${range}</div>
-      </div>
-      <div style="font-size:.82rem;color:var(--muted)">Ø ${avgStr}</div>
-    </div>`;
-  });
-
-  // ── Comparison: last 2 erhebungen ──
-  if(all.length>=1){
-    // Compare current vs most recent previous
-    const prev=all[all.length-1]; // most recent old
-    const prevDate=formatMonthYear(prev.savedAt||prev.created);
-    const currDate=formatMonthYear(new Date().toISOString());
-
-    html+=`<div class="verlauf-compare-box">
-      <div style="font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:.8rem">
-        📊 Entwicklung – Vergleich
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-bottom:.7rem;display:flex;gap:1rem">
-        <span>⬅ ${prevDate}</span>
-        <span>➡ Aktuelle Erhebung</span>
-      </div>
-      <table style="width:100%;border-collapse:collapse;font-size:.8rem">
-        <thead>
-          <tr style="border-bottom:2px solid var(--border)">
-            <th style="text-align:left;padding:.3rem .5rem;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Bereich</th>
-            <th style="text-align:center;padding:.3rem .5rem;font-size:.7rem;color:var(--muted)">Vorher</th>
-            <th style="text-align:center;padding:.3rem .5rem;font-size:.7rem;color:var(--muted)">Jetzt</th>
-            <th style="text-align:center;padding:.3rem .5rem;font-size:.7rem;color:var(--muted)">Δ</th>
-          </tr>
-        </thead>
-        <tbody>`;
-
-    AREA_ORDER.forEach(aid=>{
-      const areaName=(APP_UI[appLang]||APP_UI.de)['area_'+aid]||DATA[aid].name;
-      const prevDa=calcDevAgeFromAnswers(aid,prev.answers);
-      const currDa=calcDevAge(aid);
-      const prevStr=prevDa?(prevDa/12).toFixed(1)+' J':'—';
-      const currStr=currDa?(currDa/12).toFixed(1)+' J':'—';
-
-      let delta='—', deltaClass='neu', deltaIcon='→';
-      if(prevDa&&currDa){
-        const diff=(currDa-prevDa)/12;
-        const sign=diff>0?'+':'';
-        delta=sign+diff.toFixed(1)+' J';
-        deltaClass=diff>0?'pos':diff<0?'neg':'neu';
-        deltaIcon=diff>0?'↑':diff<0?'↓':'→';
-      }
-
-      html+=`<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${areaName}</td>
-        <td style="text-align:center;padding:.35rem .5rem;color:var(--muted)">${prevStr}</td>
-        <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${currStr}</td>
-        <td style="text-align:center;padding:.35rem .5rem">
-          <span class="verlauf-delta ${deltaClass}">${deltaIcon} ${delta}</span>
-        </td>
-      </tr>`;
-    });
-
-    html+=`</tbody></table></div>`;
-  }
-
-  return html;
-}
-
 
 // ═══════════════════════════════════════
 // VERLAUF NAVIGATION + VIEW
@@ -3747,19 +3651,7 @@ function renderVerlaufView(){
     // Show specific erhebung as full profile with charts
     const erh=all[_verlaufDetailIdx];
     el.innerHTML=renderErhebungFull(erh, _verlaufDetailIdx, all.length);
-    // Draw charts after DOM settles - open all chart collCards first
-    setTimeout(()=>{
-      // Open the chart collCards so canvas has proper dimensions
-      ['erh-bar','erh-linear','erh-radar'].forEach(cid=>{
-        const cb=document.getElementById('cb-'+cid);
-        const chev=document.getElementById('chev-'+cid);
-        if(cb&&cb.style.display==='none'){
-          cb.style.display='block';
-          if(chev) chev.textContent='▾';
-        }
-      });
-      requestAnimationFrame(()=>drawVerlaufCharts(erh));
-    },150);
+    // Charts drawn lazily when user opens each CollCard
   } else {
     // Default: show comparison view
     el.innerHTML=renderVerlaufVergleich();
@@ -3773,16 +3665,6 @@ function renderVerlaufView(){
   }
 }
 
-function collCardStatic(id,title,inner,open){
-  const openAttr=open?'open':'';
-  return `<div class="coll-card">
-    <div class="coll-hdr" onclick="toggleColl('${id}')">
-      <span>${title}</span>
-      <span class="coll-arrow">${open?'▾':'▸'}</span>
-    </div>
-    <div class="coll-body" id="cb-${id}" ${open?'':'style="display:none"'}>${inner}</div>
-  </div>`;
-}
 
 function renderErhebungFull(erh, idx, total){
   const date=new Date(erh.savedAt||erh.created);
@@ -3883,38 +3765,7 @@ function renderErhebungFull(erh, idx, total){
   return html;
 }
 
-function renderErhebungDetail(erh){
-  const date=new Date(erh.savedAt||erh.created);
-  const dateStr=date.toLocaleDateString('de',{day:'2-digit',month:'long',year:'numeric'});
-  const range={krippe:'Krippenbereich (0–3 J)',kita:'Kitabereich (3–6 J)',schule:'Grundschulbereich (6–9 J)'}[erh.ageRange]||erh.ageRange;
-  const cm=parseFloat(erh.childInfo?.months)||0;
-
-  let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem;margin-bottom:1rem">
-    <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem">📅 Erhebung vom</div>
-    <div style="font-weight:600;font-size:1rem">${dateStr}</div>
-    <div style="font-size:.82rem;color:var(--muted);margin-top:.2rem">${range}${cm?' · '+( cm/12).toFixed(1)+' Jahre':''}</div>
-  </div>`;
-
-  // Area results
-  html+='<table style="width:100%;border-collapse:collapse;font-size:.82rem">';
-  html+='<thead><tr style="border-bottom:2px solid var(--border)">';
-  html+='<th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;text-transform:uppercase;color:var(--muted)">Bereich</th>';
-  html+='<th style="text-align:center;padding:.4rem .5rem;font-size:.7rem;color:var(--muted)">Entw.alter</th>';
-  html+='</tr></thead><tbody>';
-
-  AREA_ORDER.forEach(aid=>{
-    const da=calcDevAgeFromAnswers(aid, erh.answers||{});
-    const daStr=da?(da/12).toFixed(1)+' J':'—';
-    html+=`<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:.35rem .5rem">${DATA[aid].emoji} ${DATA[aid].name}</td>
-      <td style="text-align:center;padding:.35rem .5rem;font-weight:600">${daStr}</td>
-    </tr>`;
-  });
-
-  html+='</tbody></table>';
-  html+=`<button class="btn btn-outline btn-sm" style="margin-top:1rem" onclick="_verlaufDetailIdx=-1;renderVerlaufView()">← Zurück zum Vergleich</button>`;
-  return html;
-}
+// renderErhebungDetail removed
 
 function renderVerlaufVergleich(){
   if(!previousErhebungen||previousErhebungen.length===0) return '';
@@ -4106,94 +3957,6 @@ function drawVerlaufCharts(erh){
   }
 }
 
-function _drawVerlaufBar(canvas, erh){
-
-  const PM=PHASE_MONTHS;
-  let W=0;
-  const cb=canvas.parentElement;
-  if(cb&&cb.offsetWidth>0) W=cb.offsetWidth-32;
-  W=Math.max(W,400);
-  const legendH=60, H=400+legendH;
-  canvas.width=W; canvas.height=H;
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-  const pad={l:48,r:56,t:24,b:8};
-  const cw=W-pad.l-pad.r, ch=H-legendH-pad.t-pad.b, maxM=120;
-  const bw=cw/AREA_ORDER.length, bpad=bw*0.18;
-
-  // Grid
-  for(let ph=0;ph<=18;ph+=3){
-    const mo=PM[ph]||0, y=pad.t+ch-(mo/maxM)*ch;
-    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y);
-    ctx.strokeStyle='#cfc8b8'; ctx.lineWidth=1; ctx.stroke();
-    ctx.fillStyle='#5a4f45'; ctx.font='bold 11px DM Sans,sans-serif'; ctx.textAlign='right';
-    ctx.fillText((mo/12).toFixed(0)+' J', pad.l-4, y+4);
-  }
-
-  // Bars
-  AREA_ORDER.forEach((aid,i)=>{
-    const da=calcDevAgeFromAnswers(aid, erh.answers||{})||0;
-    const bh=(Math.min(da,maxM)/maxM)*ch, by=pad.t+ch-bh;
-    const x=pad.l+i*bw+bpad/2, bwidth=bw-bpad;
-    ctx.fillStyle=AREA_COLORS[aid]; ctx.fillRect(x,by,bwidth,bh);
-    // Emoji label
-    ctx.font='14px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(DATA[aid].emoji, x+bwidth/2, H-legendH+18);
-    ctx.textBaseline='alphabetic';
-  });
-
-  // Axis
-  ctx.strokeStyle='#b0a898'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ch); ctx.lineTo(pad.l+cw,pad.t+ch); ctx.stroke();
-}
-
-function _drawVerlaufRadar(canvas, erh){
-  const size=Math.min(380, canvas.parentElement?.offsetWidth||380);
-  canvas.width=size; canvas.height=size;
-  const ctx=canvas.getContext('2d');
-  const cx=size/2, cy=size/2, r=size*0.33;
-  const n=AREA_ORDER.length;
-  const ang=i=>-Math.PI/2+(2*Math.PI/n)*i;
-  const maxM=114;
-
-  // Grid
-  [0.25,0.5,0.75,1].forEach(frac=>{
-    ctx.beginPath();
-    AREA_ORDER.forEach((aid,i)=>{
-      const a=ang(i), x=cx+r*frac*Math.cos(a), y=cy+r*frac*Math.sin(a);
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    });
-    ctx.closePath();
-    ctx.strokeStyle='#e0d8cc'; ctx.lineWidth=1; ctx.stroke();
-  });
-
-  // Spokes
-  AREA_ORDER.forEach((_,i)=>{
-    ctx.beginPath(); ctx.moveTo(cx,cy);
-    ctx.lineTo(cx+r*Math.cos(ang(i)), cy+r*Math.sin(ang(i)));
-    ctx.strokeStyle='#e0d8cc'; ctx.lineWidth=1; ctx.stroke();
-  });
-
-  // Polygon for this erhebung
-  ctx.beginPath();
-  AREA_ORDER.forEach((aid,i)=>{
-    const da=calcDevAgeFromAnswers(aid,erh.answers||{})||0;
-    const frac=Math.min(da/maxM,1);
-    const x=cx+r*frac*Math.cos(ang(i)), y=cy+r*frac*Math.sin(ang(i));
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  });
-  ctx.closePath();
-  ctx.fillStyle='rgba(61,107,82,0.2)'; ctx.fill();
-  ctx.strokeStyle='rgba(61,107,82,0.8)'; ctx.lineWidth=2.5; ctx.stroke();
-
-  // Emoji labels
-  AREA_ORDER.forEach((aid,i)=>{
-    const lx=cx+(r+20)*Math.cos(ang(i)), ly=cy+(r+20)*Math.sin(ang(i));
-    ctx.font='16px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(DATA[aid].emoji, lx, ly);
-    ctx.textBaseline='alphabetic';
-  });
-}
 
 init();
 </script>
