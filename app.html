@@ -2059,7 +2059,7 @@ function importKBD(evt){
   reader.onload=e=>{
     try{
       const d=JSON.parse(e.target.result);
-      if(d.format!=='kbd') throw new Error('Keine gueltige .kbd-Datei');
+      if(d.format!=='kbd') throw new Error('Nicht unterstütztes Dateiformat. Bitte eine .kbd-Datei öffnen.');
       _pendingLoad=d;
       _pendingFile=file.name;
       const result=handleThirtyDayRule(d);
@@ -3977,6 +3977,42 @@ function toggleVerlaufNav(){
   if(ch) ch.textContent=isOpen?'\u25b8':'\u25be';
 }
 
+
+function exportSingleChart(type){
+  var g=function(id){return document.getElementById(id);};
+  var cm={linear:'linearChart',bar:'barChart',radar:'radarChart'};
+  var tm={linear:'Entwicklungsprofil nach Beller (Liniendiagramm)',bar:'Entwicklungsprofil nach Trost (Balkendiagramm)',radar:'Entwicklungsprofil (Radialdiagramm)'};
+  var vp=g('view-profile');
+  var vpW=vp?vp.style.display:'';
+  if(vp){vp.style.position='fixed';vp.style.top='-9999px';vp.style.left='0';vp.style.width='900px';vp.style.display='block';vp.style.zIndex='-999';}
+  var cb=g('cb-'+type);if(cb)cb.style.display='block';
+  setTimeout(function(){
+    var m3=parseFloat(childInfo.months)||0;
+    if(type==='linear')drawLinear(m3);else if(type==='bar')drawBar(m3);else drawRadar();
+    requestAnimationFrame(function(){
+      var cv=g(cm[type]);var img=cv&&cv.width>10?cv.toDataURL('image/png',0.95):'';
+      if(cb)cb.style.display='none';
+      if(vp){vp.style.position='';vp.style.top='';vp.style.left='';vp.style.width='';vp.style.zIndex='';vp.style.display=vpW;}
+      if(!img){alert('Kein Diagramm verfügbar. Bitte zuerst das Entwicklungsprofil öffnen.');return;}
+      var w=window.open('','_blank');
+      if(!w){alert('Pop-up-Blocker aktiv.');return;}
+      var d=w.document;d.open();
+      d.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+tm[type]+'<\/title>');
+      d.write('<style>body{font-family:Arial,sans-serif;padding:2rem;max-width:900px;margin:0 auto}h2{color:#2d5a3d}img{max-width:100%}<\/style><\/head><body>');
+      d.write('<h2>'+tm[type]+'<\/h2><p style="color:#666;font-size:.85rem">'+(childInfo.name||'Kind')+' · '+new Date().toLocaleDateString('de-DE')+'<\/p>');
+      d.write('<img src="'+img+'" alt="Diagramm"><\/body><\/html>');
+      d.close();setTimeout(function(){w.print();},400);
+    });
+  },300);
+}
+
+function druckElternInfo(){
+  var el=document.getElementById('eltern-lang');
+  var lang=el?el.value:(document.getElementById('dok-lang')?document.getElementById('dok-lang').value:'de');
+  if(typeof exportElternInfo==='function') exportElternInfo(lang);
+  else alert('Elterninformation nicht verfügbar.');
+}
+
 init();
 
 
@@ -4043,128 +4079,25 @@ function exportBericht(){
         vp.style.display=vpWas;
       }
 
-      // Build and open report with chart images
-      _finishExport(opt,p,css,li,bi,ri,notizText,datErhebung,datGespraech,today,name);
+      if(opt.linear&&li){p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" style="max-width:100%" alt="Linie">');}
+      if(opt.bar&&bi){p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" style="max-width:100%" alt="Balken">');}
+      if(opt.radar&&ri){p.push('<h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" style="max-width:100%" alt="Radar">');}
+      var w=window.open('','_blank');
+      if(!w){alert('Pop-up-Blocker aktiv. Bitte erlauben.');return;}
+      var d=w.document;d.open();
+      d.write('<!DOCTYPE html>');
+      d.write('<html lang="de"><head><meta charset="UTF-8"><title>Bericht '+name+'<\/title>');
+      d.write('<style>'+css+'<\/style><\/head><body><div class="pg">');
+      d.write(p.join(''));
+      d.write('<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'<\/div>');
+      d.write('<\/div><\/body><\/html>');
+      d.close();
+      setTimeout(function(){w.print();},600);
     });
   }, 400);
 }
 
-function _finishExport(opt,p,css,li,bi,ri,notizText,datErhebung,datGespraech,today,name){
-  var g=function(id){return document.getElementById(id);};
-  var devAges=AREA_ORDER.map(function(aid){return calcDevAge(aid);}).filter(Boolean);
-  var avgDev=devAges.length?(devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12).toFixed(1):'---';
-  var diffN=devAges.length?((devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12)-(cm/12)):0;
-  var diff=(diffN>=0?'+':'')+diffN.toFixed(1);
-  var COLORS={kup:'#e8b84b',ub:'#e8922a',se:'#d95f45',st:'#cc4488',sl:'#8e5aad',kog:'#5a7cc9',gm:'#4a90d9',fm:'#35a8b8'};
-  var css='body{font-family:Arial,sans-serif;color:#2d2a22;margin:0;padding:0;font-size:14px}';
-  css+='.pg{max-width:740px;margin:0 auto;padding:2rem}';
-  css+='h1{font-size:1.5rem;color:#2d5a3d;margin-bottom:.3rem}';
-  css+='h2{font-size:1.05rem;color:#2d5a3d;border-bottom:2px solid #e0d8cc;padding-bottom:.3rem;margin-top:1.8rem;margin-bottom:.8rem}';
-  css+='.hdr{background:#f0f7f4;border-left:4px solid #2d5a3d;padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin-bottom:1.5rem}';
-  css+='.sg{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0}';
-  css+='.si{text-align:center;background:#f8f5ef;border-radius:8px;padding:.8rem}';
-  css+='.sn{font-size:1.5rem;font-weight:700;color:#2d5a3d}.sl{font-size:.65rem;text-transform:uppercase;color:#7a6f5a}';
-  css+='table{width:100%;border-collapse:collapse;font-size:.85rem;margin:.5rem 0}';
-  css+='th{text-align:left;padding:.4rem .6rem;font-size:.7rem;text-transform:uppercase;color:#7a6f5a;border-bottom:2px solid #e0d8cc}';
-  css+='td{padding:.35rem .6rem;border-bottom:1px solid #f0ebe0}';
-  css+='.badge{border-radius:6px;padding:.15rem .5rem;color:#fff;font-size:.8rem;font-weight:600}';
-  css+='.fi{margin-bottom:1rem;padding:.8rem;background:#f8f5ef;border-radius:8px;border-left:3px solid #2d5a3d}';
-  css+='.fl{font-size:.65rem;text-transform:uppercase;color:#7a6f5a;margin-bottom:.3rem}';
-  css+='.ag{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:.5rem 0}';
-  css+='.ai{background:#f8f5ef;border-radius:8px;padding:.8rem}';
-  css+='.al{font-size:.65rem;text-transform:uppercase;color:#7a6f5a;margin-bottom:.3rem}';
-  css+='.nb{background:#fffef5;border:1px solid #e8e0cc;border-radius:8px;padding:1rem;white-space:pre-wrap;font-size:.85rem}';
-  css+='img{max-width:100%;height:auto;border-radius:8px;margin:.5rem 0}';
-  css+='.ft{margin-top:2rem;padding-top:1rem;border-top:1px solid #e0d8cc;font-size:.72rem;color:#9a8f7a;text-align:center}';
-  css+='@media print{.pg{padding:1rem}}';
-  var p=[];
-  if(opt.deckblatt){
-    // Get logo from existing header img
-    var logoEl=document.querySelector('header img');
-    var logoSrc=logoEl?logoEl.src:'';
-    p.push('<div class="hdr">');
-    p.push('<div style="display:flex;align-items:center;gap:1rem;margin-bottom:.8rem">');
-    if(logoSrc) p.push('<img src="'+logoSrc+'" style="width:52px;height:52px;border-radius:10px;object-fit:cover;flex-shrink:0" alt="KBE Logo">');
-    p.push('<div>');
-    p.push('<div style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#5a7a68;margin-bottom:.1rem">Kuno Bellers Entwicklungstabelle 0–9<\/div>');
-    p.push('<h1 style="margin:0;font-size:1.4rem">Entwicklungsbericht<\/h1>');
-    p.push('<\/div><\/div>');
-    p.push('<div style="font-size:.88rem;color:#5a4f45;border-top:1px solid #c8ddd5;padding-top:.7rem">');
-    p.push('<strong>'+name+'<\/strong> · '+years+' Jahre · '+range+'<br>');
-    p.push('<span style="font-size:.8rem">Erhebung: '+erhDatum+' · Erstellt: '+today+'<\/span>');
-    if(childInfo.beobachter) p.push('<br><span style="font-size:.8rem">Beobachter:in: '+childInfo.beobachter+'<\/span>');
-    if(childInfo.institution) p.push('<br><span style="font-size:.8rem">Einrichtung: '+childInfo.institution+'<\/span>');
-    p.push('<\/div><\/div>');
-  }
-  if(opt.zusammen){
-    var sumTxt=diffN>0.3?name+' zeigt ein Entwicklungsalter über dem chronologischen Alter.':diffN<-0.3?'In einigen Bereichen besteht gezielter Förderbedarf.':'Die Entwicklung verlaeuft altersgemäß.';
-    p.push('<h2>Zusammenfassung<\/h2>');
-    p.push('<div class="sg">');
-    p.push('<div class="si"><div class="sn">'+years+'<\/div><div class="sl">Chron. Alter<\/div><\/div>');
-    p.push('<div class="si"><div class="sn">'+avgDev+'<\/div><div class="sl">Entw. Alter<\/div><\/div>');
-    p.push('<div class="si"><div class="sn">'+diff+'<\/div><div class="sl">Differenz<\/div><\/div>');
-    p.push('<\/div><p style="font-size:.88rem;color:#5a4f45;line-height:1.6">'+sumTxt+'<\/p>');
-  }
-  if(opt.detail){
-    p.push('<h2>Detailergebnisse<\/h2><table><thead><tr><th>Bereich<\/th><th>Entw.alter<\/th><th>Phase<\/th><\/tr><\/thead><tbody>');
-    for(var i=0;i<AREA_ORDER.length;i++){
-      var aid=AREA_ORDER[i];var da=calcDevAge(aid);
-      var daStr=da?(da/12).toFixed(1)+' J':'---';
-      var ph=da?Object.entries(PHASE_MONTHS).reduce(function(b,kv){return +kv[1]<=da?+kv[0]:b;},0):null;
-      var col=COLORS[aid]||'#888';var an=L['area_'+aid]||DATA[aid].name;
-      p.push('<tr><td>'+DATA[aid].emoji+' '+an+'<\/td><td><span class="badge" style="background:'+col+'">'+daStr+'<\/span><\/td><td style="color:#7a6f5a">'+(ph!==null?'Ph.'+ph:'---')+'<\/td><\/tr>');
-    }
-    p.push('<\/tbody><\/table>');
-  }
-  if(opt.staerken){
-    var above=AREA_ORDER.filter(function(aid){var da=calcDevAge(aid);return da&&(da/12)>(cm/12)+0.2;});
-    var ontr=AREA_ORDER.filter(function(aid){var da=calcDevAge(aid);return da&&Math.abs((da/12)-(cm/12))<=0.2;});
-    if(above.length||ontr.length){
-      p.push('<h2>Stärken<\/h2>');
-      if(above.length){var an2=above.map(function(a){return DATA[a].emoji+' '+(L['area_'+a]||DATA[a].name);}).join(', ');p.push('<p style="font-size:.88rem;line-height:1.6"><strong>'+name+'<\/strong> zeigt besondere Stärken in: <strong>'+an2+'<\/strong>.<\/p>');}
-      if(ontr.length){var on2=ontr.map(function(a){return DATA[a].emoji+' '+(L['area_'+a]||DATA[a].name);}).join(', ');p.push('<p style="font-size:.88rem;line-height:1.6">Altersgemäß entwickelt: <strong>'+on2+'<\/strong>.<\/p>');}
-    }
-  }
-  if(opt.foerder){
-    p.push('<h2>Fördermöglichkeiten<\/h2>');
-    for(var j=0;j<AREA_ORDER.length;j++){
-      var faid=AREA_ORDER[j];var fda=calcDevAge(faid);if(!fda)continue;
-      var fyr=Math.min(9,Math.floor(fda/12));var fd2=FOERDER[String(fyr)];var afd=fd2?fd2[faid]:null;if(!afd)continue;
-      var fan=L['area_'+faid]||DATA[faid].name;
-      var fcol=({kup:'#e8b84b',ub:'#e8922a',se:'#d95f45',st:'#cc4488',sl:'#8e5aad',kog:'#5a7cc9',gm:'#4a90d9',fm:'#35a8b8'})[faid]||'#888';
-      p.push('<div class="fi" style="border-left:3px solid '+fcol+'"><div style="font-weight:600;margin-bottom:.5rem">'+DATA[faid].emoji+' '+fan+' <span style="background:'+fcol+';color:#fff;border-radius:6px;padding:.1rem .45rem;font-size:.78rem">'+(fda/12).toFixed(1)+' J<\/span><\/div>');
-      if(afd.home)p.push('<div class="fl">Zuhause<\/div><div style="font-size:.85rem">'+afd.home+'<\/div>');
-      if(afd.inst)p.push('<div class="fl" style="margin-top:.5rem">Einrichtung<\/div><div style="font-size:.85rem">'+afd.inst+'<\/div>');
-      p.push('<\/div>');
-    }
-  }
-    if(opt.notizen&&notizText){p.push('<h2>Notizen<\/h2><div class="nb">'+notizText+'<\/div>');}
-  if(opt.ausblick){
-    p.push('<h2>Ausblick<\/h2><div class="ag">');
-    if(datErhebung){var de=new Date(datErhebung).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">Nächste Erhebung<\/div><strong>'+de+'<\/strong><\/div>');}
-    if(datGespraech){var dg=new Date(datGespraech).toLocaleDateString('de-DE');p.push('<div class="ai"><div class="al">Nächstes Gespräch<\/div><strong>'+dg+'<\/strong><\/div>');}
-    if(!datErhebung&&!datGespraech){p.push('<div class="ai" style="grid-column:1\/-1;color:#9a8f7a;font-size:.85rem">Noch keine Termine vereinbart.<\/div>');}
-    p.push('<\/div>');
-  }
-  // Add chart images to report
-  if(opt.linear&&li){p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" alt="Liniendiagramm" style="max-width:100%">');}
-  if(opt.bar&&bi){p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" alt="Balkendiagramm" style="max-width:100%">');}
-  if(opt.radar&&ri){p.push('<h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" alt="Radialdiagramm" style="max-width:100%">');}
 
-  var w=window.open('','_blank');
-  if(!w){alert('Pop-up-Blocker aktiv.');return;}
-  var d=w.document;
-  d.open();
-  d.write('<!DOCTYPE html>');
-  d.write('<html lang="de"><head><meta charset="UTF-8">');
-  d.write('<title>Bericht '+name+'</title>');
-  d.write('<style>'+css+'<\/style><\/head><body><div class="pg">');
-  d.write(p.join(''));
-  d.write('<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'<\/div>');
-  d.write('<\/div><\/body><\/html>');
-  d.close();
-  setTimeout(function(){w.print();},600);
-}
 </script>
 </body>
 </html>
