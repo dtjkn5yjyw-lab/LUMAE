@@ -2337,11 +2337,11 @@ function closeAlterInfo(){
 
 // ── Pure Canvas Linear (Beller Profil) ──
 function drawLinear(childMonths, canvasOverride){
-  const canvas=document.getElementById('linearChart');
+  const canvas=canvasOverride||document.getElementById('linearChart');
   if(!canvas) return;
-  // Get real display width
   let W=0;
-  const cb=document.getElementById('cb-linear');
+  if(canvas.parentElement&&canvas.parentElement.offsetWidth>0) W=canvas.parentElement.offsetWidth-32;
+  const cb=canvasOverride?null:document.getElementById('cb-linear');
   if(cb&&cb.offsetWidth>0) W=cb.offsetWidth-32;
   if(!W){ let _el=canvas.parentElement; while(_el&&!W){W=_el.offsetWidth;_el=_el.parentElement;} W=W>40?W-32:W; }
   if(!W){ const main=document.getElementById('main'); if(main) W=main.offsetWidth-72; }
