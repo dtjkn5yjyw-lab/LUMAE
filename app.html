@@ -4007,20 +4007,50 @@ function exportBericht(){
   var datGespraech=g('dok-datum-gespraech')?g('dok-datum-gespraech').value:'';
   if(opt.eltern){druckElternInfo();return;}
   // Show view-profile temporarily to get chart canvas with proper dimensions
+  // Position view-profile off-screen with explicit width for Safari canvas rendering
   var vp=g('view-profile');
   var vpWas=vp?vp.style.display:'';
-  if(vp) vp.style.display='block';
+  if(vp){
+    vp.style.position='fixed';
+    vp.style.top='-9999px';
+    vp.style.left='0';
+    vp.style.width='900px';
+    vp.style.display='block';
+    vp.style.zIndex='-999';
+  }
   ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='block';});
-  // Force redraw with current dimensions
-  var cm3=parseFloat(childInfo.months)||0;
-  if(g('linearChart')) drawLinear(cm3);
-  if(g('barChart')) drawBar(cm3);
-  if(g('radarChart')) drawRadar();
-  var li=g('linearChart')?g('linearChart').toDataURL('image/png',1):'';
-  var bi=g('barChart')?g('barChart').toDataURL('image/png',1):'';
-  var ri=g('radarChart')?g('radarChart').toDataURL('image/png',1):'';
-  ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='none';});
-  if(vp) vp.style.display=vpWas;
+
+  // Wait for browser layout, then draw and capture
+  setTimeout(function(){
+    var cm3=parseFloat(childInfo.months)||0;
+    if(g('linearChart')) drawLinear(cm3);
+    if(g('barChart')) drawBar(cm3);
+    if(g('radarChart')) drawRadar();
+
+    requestAnimationFrame(function(){
+      var li=g('linearChart')&&g('linearChart').width>10?g('linearChart').toDataURL('image/png',0.95):'';
+      var bi=g('barChart')&&g('barChart').width>10?g('barChart').toDataURL('image/png',0.95):'';
+      var ri=g('radarChart')&&g('radarChart').width>10?g('radarChart').toDataURL('image/png',0.95):'';
+
+      // Restore view-profile
+      ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='none';});
+      if(vp){
+        vp.style.position='';
+        vp.style.top='';
+        vp.style.left='';
+        vp.style.width='';
+        vp.style.zIndex='';
+        vp.style.display=vpWas;
+      }
+
+      // Build and open report with chart images
+      _finishExport(opt,p,css,li,bi,ri,notizText,datErhebung,datGespraech,today,name);
+    });
+  }, 400);
+}
+
+function _finishExport(opt,p,css,li,bi,ri,notizText,datErhebung,datGespraech,today,name){
+  var g=function(id){return document.getElementById(id);}
   var devAges=AREA_ORDER.map(function(aid){return calcDevAge(aid);}).filter(Boolean);
   var avgDev=devAges.length?(devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12).toFixed(1):'---';
   var diffN=devAges.length?((devAges.reduce(function(a,b){return a+b;},0)/devAges.length/12)-(cm/12)):0;
