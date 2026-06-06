@@ -398,7 +398,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     <div class="nav-item disabled" id="nav-verlauf" data-view="verlauf" onclick="showView('verlauf')"><span>🔄</span><span>Verlauf</span><span id="nav-verlauf-chev" style="margin-left:auto;font-size:.7rem" onclick="event.stopPropagation();const s=document.getElementById('nav-verlauf-sub');const ch=document.getElementById('nav-verlauf-chev');if(s){const o=s.style.display!=='none';s.style.display=o?'none':'block';ch.textContent=o?'▸':'▾';}">▾</span></div>
     <div id="nav-verlauf-sub" style="display:none"></div>
     <div class="nav-item disabled" id="nav-dokumente" data-view="dokumente" onclick="showView('dokumente')"><span>📄</span><span>Entwicklungsbericht</span></div>
-    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.5 Beta · <span id="build-time"></span></div>
+    <div style="margin-top:auto;padding:.6rem 1rem;font-size:.65rem;color:var(--faint,#9aaca4);border-top:1px solid var(--border)">Version 26.6.6 Beta · <span id="build-time"></span></div>
   </nav>
 
   <main id="main">
@@ -862,7 +862,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
           <h4 style="margin-top:1rem;margin-bottom:.5rem">Urheberrecht &amp; Lizenz</h4>
           <div class="help-box" style="font-size:.8rem;margin-bottom:.7rem">
             Inhalte: © Kuno Beller / Verlag das netz<br>
-            Digitale Umsetzung: © 2025 Jens Trost · Version 26.6.5 Beta<br>
+            Digitale Umsetzung: © 2025 Jens Trost · Version 26.6.6 Beta<br>
             Erstellt mit Unterstützung von Claude (Anthropic)
           </div>
           <h4 style="margin-bottom:.5rem">Lizenz anfragen</h4>
@@ -3163,7 +3163,7 @@ function exportAuswahl(){
     body+=buildElternHTML(name,cm,lang);
   }
 
-  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.6.5 Beta</p></body></html>';
+  body+='<hr style="margin-top:2rem"><p style="font-size:.65rem;color:#aaa">© Kuno Beller / Verlag das netz · Digitale Umsetzung © 2025 Jens Trost · Version 26.6.6 Beta</p></body></html>';
   w.document.write(body); w.document.close(); w.print();
 }
 
@@ -4064,7 +4064,7 @@ function exportBericht(){
   css+='.nb{background:#fffef5;border:1px solid #e8e0cc;border-radius:8px;padding:1rem;white-space:pre-wrap;font-size:.85rem}';
   css+='img{max-width:100%;height:auto;border-radius:8px;margin:.5rem 0}';
   css+='.ft{margin-top:2rem;padding-top:1rem;border-top:1px solid #e0d8cc;font-size:.72rem;color:#9a8f7a;text-align:center}';
-  css+='@media print{.pg{padding:1rem}}';
+  css+='@media print{.pg{padding:1rem}.chart-sec{page-break-inside:avoid}}';
 
   // Build content array
   var p=[];
@@ -4159,11 +4159,7 @@ function exportBericht(){
   // Open window immediately (Safari blocks window.open in setTimeout)
   var w=window.open('','_blank');
   if(!w){alert('Pop-up-Blocker aktiv. Bitte erlauben.');return;}
-  // Write loading placeholder immediately to keep window alive
-  w.document.open();
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Wird erstellt...</title><style>body{font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f8f5ef;color:#2d5a3d}h2{font-size:1.5rem}</style></head><body><h2>&#x23F3; Bericht wird erstellt...</h2></body></html>');
-  w.document.close();
-
+  // Capture charts synchronously using off-screen positioning
   var vp=g('view-profile');
   var vpWas=vp?vp.style.display:'';
   if(vp){vp.style.position='fixed';vp.style.top='-9999px';vp.style.left='0';vp.style.width='900px';vp.style.display='block';vp.style.zIndex='-999';}
@@ -4174,23 +4170,27 @@ function exportBericht(){
     if(g('linearChart'))drawLinear(cm3);
     if(g('barChart'))drawBar(cm3);
     if(g('radarChart'))drawRadar();
-    requestAnimationFrame(function(){
+
+    setTimeout(function(){
       var li=g('linearChart')&&g('linearChart').width>10?g('linearChart').toDataURL('image/png',0.9):'';
       var bi=g('barChart')&&g('barChart').width>10?g('barChart').toDataURL('image/png',0.9):'';
       var ri=g('radarChart')&&g('radarChart').width>10?g('radarChart').toDataURL('image/png',0.9):'';
       ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='none';});
       if(vp){vp.style.position='';vp.style.top='';vp.style.left='';vp.style.width='';vp.style.zIndex='';vp.style.display=vpWas;}
-      if(opt.linear&&li)p.push('<h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" style="max-width:100%" alt="Liniendiagramm">');
-      if(opt.bar&&bi)p.push('<h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" style="max-width:100%" alt="Balkendiagramm">');
-      if(opt.radar&&ri)p.push('<h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" style="max-width:100%" alt="Radialdiagramm">');
-      // Replace loading page with actual content
-      var html='<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Entwicklungsbericht '+name+'</title><style>'+css+'</style></head><body><div class="pg">'+p.join('')+'<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'</div></div></body></html>';
+      if(opt.linear&&li)p.push('<div class="chart-sec"><h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" style="max-width:100%" alt="Liniendiagramm"><\/div>');
+      if(opt.bar&&bi)p.push('<div class="chart-sec"><h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" style="max-width:100%" alt="Balkendiagramm"><\/div>');
+      if(opt.radar&&ri)p.push('<div class="chart-sec"><h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" style="max-width:100%" alt="Radialdiagramm"><\/div>');
+      p.push('<div class="ft">Entwicklungsbericht | Kuno Bellers Entwicklungstabelle 0-9 | '+today+'<\/div>');
       w.document.open();
-      w.document.write(html);
+      w.document.write('<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8">');
+      w.document.write('<title>Entwicklungsbericht '+name+'<\/title>');
+      w.document.write('<style>'+css+'<\/style><\/head><body><div class="pg">');
+      w.document.write(p.join(''));
+      w.document.write('<\/div><\/body><\/html>');
       w.document.close();
-      setTimeout(function(){w.print();},800);
-    });
-  },400);
+      setTimeout(function(){w.print();},600);
+    },300);
+  },300);
 }
 
 
