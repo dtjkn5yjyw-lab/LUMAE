@@ -3984,6 +3984,9 @@ function exportSingleChart(type){
   var tm={linear:'Entwicklungsprofil nach Beller (Liniendiagramm)',bar:'Entwicklungsprofil nach Trost (Balkendiagramm)',radar:'Entwicklungsprofil (Radialdiagramm)'};
   var vp=g('view-profile');
   var vpW=vp?vp.style.display:'';
+  if(!g('linearChart')||!g('linearChart').getContext){
+    if(typeof renderProfile==='function') renderProfile();
+  }
   if(vp){vp.style.position='fixed';vp.style.top='-9999px';vp.style.left='0';vp.style.width='900px';vp.style.display='block';vp.style.zIndex='-999';}
   var cb=g('cb-'+type);if(cb)cb.style.display='block';
   setTimeout(function(){
@@ -4159,9 +4162,13 @@ function exportBericht(){
   // Open window immediately (Safari blocks window.open in setTimeout)
   var w=window.open('','_blank');
   if(!w){alert('Pop-up-Blocker aktiv. Bitte erlauben.');return;}
-  // Capture charts synchronously using off-screen positioning
+  // Ensure profile is rendered (charts only exist after renderProfile())
   var vp=g('view-profile');
   var vpWas=vp?vp.style.display:'';
+  if(!g('linearChart')||!g('linearChart').getContext){
+    // Charts not rendered yet - render profile in background first
+    if(typeof renderProfile==='function') renderProfile();
+  }
   if(vp){vp.style.position='fixed';vp.style.top='-9999px';vp.style.left='0';vp.style.width='900px';vp.style.display='block';vp.style.zIndex='-999';}
   ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='block';});
 
