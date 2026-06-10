@@ -366,8 +366,8 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     </div>
     <div class="hdr-btns">
       <button class="hbtn hb-interview" onclick="startInterview()" id="iv-btn" style="display:none" title="Interview-Modus">🎤 <span class="htxt">Interview</span></button>
-      <button class="hbtn hb-accent" onclick="exportKBD()" title="Speichern (.kbd)">💾 <span class="htxt">Speichern</span></button>
-      <button class="hbtn" onclick="triggerImport()" title="Öffnen (.kbd)">📂 <span class="htxt">Öffnen</span></button>
+      <button class="hbtn hb-accent" onclick="exportKBD()" title="Speichern (.lma)">💾 <span class="htxt">Speichern</span></button>
+      <button class="hbtn" onclick="triggerImport()" title="Öffnen (.lma)">📂 <span class="htxt">Öffnen</span></button>
       <button class="hbtn" onclick="confirmNew()" title="Neue Erhebung">✚ <span class="htxt">Neu</span></button>
       <button class="hbtn" onclick="openHelp()" title="Hilfe">❓ <span class="htxt">Hilfe</span></button>
       <div style="position:relative" id="app-lang-wrap">
@@ -382,7 +382,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
           </div>
         </div>
       </div>
-      <input type="file" id="imp-input" accept=".kbd" style="display:none" onchange="importKBD(event)">
+      <input type="file" id="imp-input" accept=".lma,.kbd" style="display:none" onchange="importKBD(event)">
     </div>
   </div>
 </header>
@@ -705,7 +705,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
             <div class="help-step-num">5</div>
             <div>
               <strong>Speichern nicht vergessen!</strong><br>
-              Speichern Sie regelmäßig über den 💾-Button. Die Datei wird als <code>.kbd</code>-Datei gespeichert und kann jederzeit wieder geöffnet werden.
+              Speichern Sie regelmäßig über den 💾-Button. Die Datei wird als <code>.lma</code>-Datei gespeichert und kann jederzeit wieder geöffnet werden.
             </div>
           </div>
 
@@ -808,17 +808,17 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
         <!-- SPEICHERN -->
         <div class="help-section" id="hs-speichern">
           <h3>💾 Speichern & Öffnen</h3>
-          <p>Alle Daten werden im Format <code>.kbd</code> gespeichert (<strong>K</strong>uno <strong>B</strong>eller <strong>D</strong>aten). Das ist eine einfache Datei, die alle Antworten, Kinddaten und den Altersbereich enthält.</p>
+          <p>Alle Daten werden im Format <code>.lma</code> gespeichert (LUMEA-Datei). Das ist eine einfache Datei, die alle Antworten, Kinddaten und den Altersbereich enthält.</p>
 
           <h4 style="margin-top:1rem;margin-bottom:.5rem">Speichern</h4>
           <p>Tippen Sie auf <strong>💾 Speichern</strong>. Die Datei wird automatisch benannt nach dem Schema:</p>
           <div class="help-box" style="font-family:monospace;font-size:.85rem">
-            2026-05-24 Mustermann, Maria.kbd
+            2026-05-24 Mustermann, Maria.lma
           </div>
           <p style="font-size:.8rem;color:var(--muted);margin-top:.3rem">Die Datei wird in Ihren <strong>Downloads-Ordner</strong> gespeichert (Browser-Sicherheitsbeschränkung – der Speicherort kann nicht geändert werden).</p>
 
           <h4 style="margin-top:1rem;margin-bottom:.5rem">Öffnen</h4>
-          <p>Tippen Sie auf <strong>📂 Öffnen</strong> und wählen Sie eine <code>.kbd</code>-Datei. Die Erhebung wird an der Stelle fortgesetzt, wo Sie aufgehört haben.</p>
+          <p>Tippen Sie auf <strong>📂 Öffnen</strong> und wählen Sie eine <code>.lma</code>-Datei. Die Erhebung wird an der Stelle fortgesetzt, wo Sie aufgehört haben.</p>
 
           <div class="help-tip">
             💡 <strong>Empfehlung:</strong> Speichern Sie nach jeder Beobachtungssitzung. Die Sitzungsdaten bleiben zwar im Browser erhalten – aber nur solange der Tab geöffnet ist.
@@ -884,7 +884,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
 
           <h4 style="margin-top:1rem;margin-bottom:.5rem">Datenschutz</h4>
           <div class="help-box">
-            <p>Diese App speichert <strong>keine Daten auf externen Servern</strong>. Alle Kinderdaten verbleiben ausschließlich auf Ihrem Gerät in den <code>.kbd</code>-Dateien.</p>
+            <p>Diese App speichert <strong>keine Daten auf externen Servern</strong>. Alle Kinderdaten verbleiben ausschließlich auf Ihrem Gerät in den <code>.lma</code>-Dateien.</p>
             <p style="margin-top:.5rem">Bitte beachten Sie die geltenden Datenschutzbestimmungen Ihrer Einrichtung beim Umgang mit den Beobachtungsdaten.</p>
           </div>
 
@@ -1477,7 +1477,13 @@ function setAnswerNach(k,val,btn){
 
 function updateNachCnt(){
   const n=Object.values(answers).filter(v=>v==='unknown').length;
-  document.getElementById('nach-cnt').textContent=n>0?n:'';
+  const el=document.getElementById('nach-cnt'); if(el) el.textContent=n>0?n:'';
+  // show the "Noch ausstehend" nav entry whenever there are weiss-nicht items
+  const nav=document.getElementById('nav-nach');
+  if(nav){
+    if(n>0){ nav.style.display=''; nav.classList.remove('disabled'); }
+    else{ nav.style.display='none'; nav.classList.add('disabled'); }
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1494,6 +1500,32 @@ function calcAreaStats(aid){
     });
   });
   return {total,yes,partial,no,unknown,answered:yes+partial+no+unknown};
+}
+
+// ── Reliability (weiss-nicht) indicator – adjustable thresholds ──
+const REL_LIMIT=0.15, REL_POOR=0.33;
+function relLevel(p){ return p<=REL_LIMIT?'full':(p<=REL_POOR?'limited':'poor'); }
+function _activePhases(){ return (ageRange&&RANGE_PHASES[ageRange])?RANGE_PHASES[ageRange].active:[1,2,3,4]; }
+function areaReliability(aid){
+  let tot=0,unk=0;
+  _activePhases().forEach(ph=>{
+    (DATA[aid].phases[String(ph)]||[]).forEach((_,i)=>{ tot++; if(answers[`${aid}-${ph}-${i}`]==='unknown') unk++; });
+  });
+  const pct=tot?unk/tot:0;
+  return {tot,unk,pct,level:relLevel(pct)};
+}
+function overallReliability(){
+  let tot=0,unk=0;
+  AREA_ORDER.forEach(aid=>{ const r=areaReliability(aid); tot+=r.tot; unk+=r.unk; });
+  const pct=tot?unk/tot:0;
+  return {tot,unk,pct,level:relLevel(pct)};
+}
+function relMarkHtml(rel){
+  if(!rel||rel.tot===0||rel.level==='full') return '';
+  const pct=Math.round(rel.pct*100);
+  if(rel.level==='limited')
+    return `<span title="${pct}\u202f% „weiß nicht“ – bitte ergänzen" style="font-size:.62rem;color:#8a6d00;background:#fff5d6;border:1px solid #efd87a;border-radius:6px;padding:.05rem .35rem;margin-left:.4rem;white-space:nowrap">\u25d0 ${pct}\u202f% unsicher</span>`;
+  return `<span title="${pct}\u202f% „weiß nicht“ – keine zuverlässige Aussage möglich" style="font-size:.62rem;color:#9a1515;background:#fde8e8;border:1px solid #f0a0a0;border-radius:6px;padding:.05rem .35rem;margin-left:.4rem;white-space:nowrap">\u26a0 ${pct}\u202f% unsicher</span>`;
 }
 
 // ── LUMEA continuous developmental age (independent of Beller) ──
@@ -1584,6 +1616,17 @@ function renderProfile(){
     <div style="margin-left:auto"><button onclick="openAlterInfo()" style="background:transparent;border:none;cursor:pointer;font-size:1.1rem;color:var(--accent);padding:0 .3rem" title="Was bedeuten diese Werte?">ℹ</button></div>
   </div>`;
 
+  // Reliability banner (weiss-nicht) for the whole erhebung
+  const orel=overallReliability();
+  if(orel.tot>0 && orel.level!=='full'){
+    const opct=Math.round(orel.pct*100);
+    if(orel.level==='limited'){
+      html+=`<div style="background:#fff5d6;border:1px solid #efd87a;color:#7a6200;border-radius:10px;padding:.7rem .9rem;margin:.2rem 0 .8rem;font-size:.84rem;line-height:1.5">\u25d0 <strong>Eingeschränkt aussagekräftig:</strong> ${opct}\u202f% der beobachteten Items wurden mit „weiß nicht“ beantwortet. Bitte holen Sie offene Beobachtungen nach (\u2192 <a onclick="showView('nach')" style="color:#7a6200;text-decoration:underline;cursor:pointer">Noch ausstehend</a>).</div>`;
+    } else {
+      html+=`<div style="background:#fde8e8;border:1px solid #f0a0a0;color:#9a1515;border-radius:10px;padding:.7rem .9rem;margin:.2rem 0 .8rem;font-size:.84rem;line-height:1.5">\u26a0 <strong>Wenig Datengrundlage:</strong> ${opct}\u202f% der Items wurden mit „weiß nicht“ beantwortet. Aufgrund fehlender Beobachtungen sind die Ergebnisse nur eingeschränkt zuverlässig. Die angezeigten Werte verändern sich, sobald mehr Beobachtungen ergänzt werden (\u2192 <a onclick="showView('nach')" style="color:#9a1515;text-decoration:underline;cursor:pointer">Noch ausstehend</a>).</div>`;
+    }
+  }
+
   // 1. Detailergebnisse
   html+=collCard('detail','',(L.card_detail||'📋 Detailergebnisse'),
     `<table class="res-tbl"><thead><tr><th>${L.tbl_bereich||'Bereich'}</th><th>${L.tbl_alter||'Entw.alter'}</th><th>${L.tbl_diff||'Differenz'}</th><th>${L.tbl_kompetenz||'Kompetenz'}</th><th>${L.tbl_basis||'Basis'}</th><th>${L.tbl_decke||'Decke'}</th></tr></thead><tbody id="res-tbody"></tbody></table>`,false);
@@ -1621,7 +1664,8 @@ function renderProfile(){
     const complete=isAreaComplete(aid);
     const tr=document.createElement('tr');
     const areaNameT=(APP_UI[appLang]||APP_UI.de)['area_'+aid]||a.name;
-    tr.innerHTML=`<td>${a.emoji} ${areaNameT}${!complete?(()=>{ const Lw=APP_UI[appLang]||APP_UI.de; return '<span style="font-size:.65rem;color:var(--warn);margin-left:.4rem">⚠ '+(Lw.incomplete||'unvollständig')+'</span>'; })():''}</td>
+    const relMark=relMarkHtml(areaReliability(aid));
+    tr.innerHTML=`<td>${a.emoji} ${areaNameT}${relMark}${!complete?(()=>{ const Lw=APP_UI[appLang]||APP_UI.de; return '<span style="font-size:.65rem;color:var(--warn);margin-left:.4rem">⚠ '+(Lw.incomplete||'unvollständig')+'</span>'; })():''}</td>
       <td><span class="dev-badge" style="background:${complete?AREA_COLORS[aid]:'#bbb'}">${dy}</span></td>
       <td style="color:${dc};font-weight:500">${dstr}</td>
       <td><div class="bar-wrap"><div class="bar-fill" style="width:${sc}%;background:${AREA_COLORS[aid]}"></div></div> <span style="font-size:.7rem;color:var(--muted)">${sc}%</span></td>
@@ -1883,7 +1927,7 @@ function exportFoerderPDF(){
   w.document.write('<h2>\ud83d\udca1 F\u00f6rderm\u00f6glichkeiten nach Entwicklungsbereich</h2><table><thead><tr><th>Bereich</th><th>\ud83c\udfe0 Zuhause</th><th>\ud83c\udfe2 Einrichtung</th></tr></thead><tbody>'+fRows+'</tbody></table>');
   w.document.write('<h2>\ud83c\udf31 Grundprinzipien entwicklungsf\u00f6rdernder Begleitung</h2><table><thead><tr><th style="width:32%">Prinzip</th><th>Erl\u00e4uterung</th></tr></thead><tbody>'+gpRows+'</tbody></table>');
   w.document.write('<div class="highlight"><strong>Ziel:</strong> Kinder dabei begleiten, sich sicher zu f\u00fchlen, Vertrauen in eigene F\u00e4higkeiten zu entwickeln, Beziehungen aufzubauen, neugierig zu bleiben und ihre Umwelt aktiv mitzugestalten.</div>');
-  w.document.write('<div class="footer">Inhalte: \u00a9 Kuno Beller / Verlag das netz \u00b7 Digitale Umsetzung: \u00a9 2025 Jens Trost \u00b7 Erstellt am '+date+' \u00b7 <a href="https://www.verlagdasnetz.de">www.verlagdasnetz.de</a></div>');
+  w.document.write('<div class="footer">LUMEA \u2013 Entwicklung sehen \u00b7 \u00a9 2025 Jens Trost \u00b7 Erstellt am '+date+'</div>');
   w.document.write('<br><button onclick="window.print()" style="margin-top:.7cm;padding:.4rem 1rem;background:#3d6b52;color:white;border:none;border-radius:6px;cursor:pointer">\ud83d\udda8 Drucken / Als PDF speichern</button>');
   w.document.write('</body></html>');
   w.document.close();
@@ -1946,7 +1990,7 @@ function exportPDF(){
   w.document.write('<h2>\ud83d\udca1 F\u00f6rderm\u00f6glichkeiten \u2013 '+year+'. Lebensjahr</h2><div class="highlight">Die Angebote sind entwicklungsbegleitend und st\u00e4rkenorientiert.</div><table><thead><tr><th>Bereich</th><th>\ud83c\udfe0 Zuhause</th><th>\ud83c\udfe2 Einrichtung</th></tr></thead><tbody>'+fRows+'</tbody></table>');
   w.document.write('<h2>\ud83c\udf31 Grundprinzipien entwicklungsf\u00f6rdernder Begleitung</h2><table><thead><tr><th style="width:30%">Prinzip</th><th>Erl\u00e4uterung</th></tr></thead><tbody>'+gpRows+'</tbody></table>');
   w.document.write('<div class="highlight"><strong>Ziel:</strong> Kinder dabei begleiten, sich sicher zu f\u00fchlen, Vertrauen in eigene F\u00e4higkeiten zu entwickeln, Beziehungen aufzubauen, neugierig zu bleiben und ihre Umwelt aktiv mitzugestalten.</div>');
-  w.document.write('<div class="footer">Inhalte: \u00a9 Kuno Beller / Verlag das netz \u00b7 Digitale Umsetzung: \u00a9 2025 Jens Trost \u00b7 Erstellt am '+date+' \u00b7 <a href="https://www.verlagdasnetz.de">www.verlagdasnetz.de</a></div>');
+  w.document.write('<div class="footer">LUMEA \u2013 Entwicklung sehen \u00b7 \u00a9 2025 Jens Trost \u00b7 Erstellt am '+date+'</div>');
   w.document.write('<br><button onclick="window.print()" style="margin-top:.7cm;padding:.4rem 1rem;background:#3d6b52;color:white;border:none;border-radius:6px;cursor:pointer">\ud83d\udda8 Drucken / Als PDF speichern</button>');
   w.document.write('</body></html>');
   w.document.close();
@@ -2098,17 +2142,17 @@ function loadChildUI(){
 }
 
 // ═══════════════════════════════════════
-// EXPORT / IMPORT .kbd
+// EXPORT / IMPORT .lma
 // ═══════════════════════════════════════
 function buildFilename(){
   const today=new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const name=(childInfo.name||'Unbekannt').trim();
-  return `${today} ${name}.kbd`;
+  return `${today} ${name}.lma`;
 }
 
 function exportKBD(){
-  const payload={version:2,format:'kbd',created:new Date().toISOString(),savedAt:new Date().toISOString(),childInfo,ageRange,answers,erhebungen:previousErhebungen||[]};
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/octet-stream'});
+  const payload={app:'LUMEA',format:'lumea',version:3,created:new Date().toISOString(),savedAt:new Date().toISOString(),childInfo,ageRange,answers,erhebungen:previousErhebungen||[]};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download=buildFilename();
@@ -2126,7 +2170,7 @@ function importKBD(evt){
   reader.onload=e=>{
     try{
       const d=JSON.parse(e.target.result);
-      if(!d||d.format!=='kbd') throw new Error('Nicht unterstütztes Dateiformat. Nur .kbd-Dateien können geöffnet werden.');
+      if(!d||(d.format!=='lumea'&&d.format!=='kbd')) throw new Error('Nicht unterstütztes Dateiformat. Nur .lma-Dateien können geöffnet werden.');
       _pendingLoad=d;
       _pendingFile=file.name;
       const result=handleThirtyDayRule(d);
@@ -2355,6 +2399,7 @@ function openAlterInfo(){
       example:'<strong>Beispiel:</strong> Ein 4-jähriges Kind (chronologisches Alter: 48 Monate) zeigt in der Feinmotorik Fähigkeiten, die typischerweise bei 3½-jährigen Kindern auftreten. Sein Entwicklungsalter in diesem Bereich liegt dann bei ca. 42 Monaten – das ist kein Defizit, sondern zeigt den individuellen Entwicklungsweg.',
       diff:'Eine <strong style="color:var(--text)">Differenz</strong> zwischen beiden Werten ist normal und entwicklungsbedingt. Sie gibt Hinweise darauf, in welchen Bereichen gezielte Förderung besonders wertvoll sein kann.',
       goal:'Ziel ist nicht der Vergleich mit anderen Kindern, sondern das Erkennen individueller Stärken und Entwicklungsschritte.',
+      method:'LUMEA ist ein stärkenorientiertes Beobachtungsraster – kein normierter Test und keine Diagnose. Das Entwicklungsalter zeigt den Anteil bereits gemeisterter Kompetenzen und vergleicht das Kind nicht mit einer Altersnorm.',
       btn:'Verstanden',
     },
     en:{
@@ -2364,6 +2409,7 @@ function openAlterInfo(){
       example:"<strong>Example:</strong> A 4-year-old child (chronological age: 48 months) shows fine motor skills typically seen in 3½-year-old children. Their developmental age in this area is approximately 42 months – this is not a deficit, but shows the individual developmental path.",
       diff:"A <strong style=\"color:var(--text)\">difference</strong> between both values is normal and developmentally determined. It gives hints about which areas targeted support could be particularly valuable.",
       goal:"The goal is not to compare children with each other, but to recognise individual strengths and developmental steps.",
+      method:"LUMEA is a strength-based observation grid \u2013 not a standardised test or a diagnosis. The developmental age reflects the share of competencies already mastered and does not compare the child against an age norm.",
       btn:"Understood",
     },
     it:{
@@ -2373,6 +2419,7 @@ function openAlterInfo(){
       example:"<strong>Esempio:</strong> Un bambino di 4 anni (età cronologica: 48 mesi) mostra abilità di motricità fine tipiche dei bambini di 3½ anni. La sua età di sviluppo in quest'area è di circa 42 mesi – non è un deficit, ma mostra il percorso di sviluppo individuale.",
       diff:"Una <strong style=\"color:var(--text)\">differenza</strong> tra i due valori è normale e determinata dallo sviluppo. Fornisce indicazioni su quali aree il sostegno mirato può essere particolarmente prezioso.",
       goal:"L'obiettivo non è confrontare i bambini tra loro, ma riconoscere i punti di forza individuali e i passi di sviluppo.",
+      method:"LUMEA è uno strumento di osservazione orientato ai punti di forza \u2013 non un test standardizzato né una diagnosi. L'età di sviluppo indica la quota di competenze già acquisite e non confronta il bambino con una norma d'età.",
       btn:"Capito",
     },
   };
@@ -2385,6 +2432,7 @@ function openAlterInfo(){
       <div style="background:var(--accent-light);border-left:3px solid var(--accent);border-radius:6px;padding:.75rem 1rem;margin:.8rem 0;font-size:.82rem;color:var(--accent)">${M.example}</div>
       <p style="margin-bottom:.7rem">${M.diff}</p>
       <p style="font-size:.78rem;color:#aaa">${M.goal}</p>
+      <p style="font-size:.8rem;color:var(--accent);background:var(--accent-light);border-radius:6px;padding:.6rem .8rem;margin-top:.6rem">${M.method}</p>
     </div>
     <button class="modal-close" onclick="closeAlterInfo()">${M.btn}</button>`;
   document.getElementById('alter-info-modal').classList.add('open');
@@ -2580,11 +2628,11 @@ function drawBar(childMonths, canvasOverride){
 const ELTERN_TEXTS = {
   de: {
     title: `Information für Eltern und Personensorgeberechtigte`,
-    subtitle: `Kuno Bellers Entwicklungstabelle 0\u20139 Jahre`,
-    intro: `In unserer Einrichtung beobachten wir die Entwicklung Ihres Kindes systematisch und einfühlsam. Dafür nutzen wir Kuno Bellers Entwicklungstabelle \u2013 ein bewährtes pädagogisches Instrument, das die Stärken und den individuellen Entwicklungsweg jedes Kindes in den Mittelpunkt stellt.`,
+    subtitle: `LUMEA \u2013 Entwicklung sehen \u00b7 Beobachtung 0\u201312 Jahre`,
+    intro: `In unserer Einrichtung beobachten wir die Entwicklung Ihres Kindes systematisch und einfühlsam. Dafür nutzen wir LUMEA \u2013 ein stärkenorientiertes Beobachtungsraster, das die Stärken und den individuellen Entwicklungsweg jedes Kindes in den Mittelpunkt stellt.`,
     sections: [
-      {h:`Was ist Kuno Bellers Entwicklungstabelle?`, t:`Die Entwicklungstabelle von Kuno Beller ist ein Beobachtungsbogen für Kinder von 0 bis 9 Jahren. Er beschreibt in 8 Entwicklungsbereichen und 18 Phasen, welche Fähigkeiten Kinder typischerweise in welchem Alter zeigen. Wir beobachten Ihr Kind im Alltag und halten fest, welche Kompetenzen es bereits zeigt.`},
-      {h:`Was bedeutet Entwicklungsalter?`, t:`Das Entwicklungsalter beschreibt, auf welchem Entwicklungsstand sich Ihr Kind in einem bestimmten Bereich befindet \u2013 unabhängig von seinem tatsächlichen Geburtsalter. Jedes Kind entwickelt sich in seinem eigenen Tempo \u2013 das ist völlig normal.`},
+      {h:`Was ist LUMEA?`, t:`LUMEA ist ein Beobachtungsraster für Kinder von 0 bis 12 Jahren. Es beschreibt in 10 Entwicklungsbereichen und 4 Altersstufen, welche Fähigkeiten Kinder zeigen können. Wir beobachten Ihr Kind im Alltag und halten fest, welche Kompetenzen es bereits zeigt \u2013 es ist kein Test und keine Prüfung.`},
+      {h:`Was bedeutet Entwicklungsalter?`, t:`Das Entwicklungsalter beschreibt, auf welchem Entwicklungsstand sich Ihr Kind in einem bestimmten Bereich befindet \u2013 unabhängig von seinem tatsächlichen Geburtsalter. Es zeigt den Anteil bereits gemeisterter Kompetenzen und ist kein normierter Test und keine Diagnose. Jedes Kind entwickelt sich in seinem eigenen Tempo \u2013 das ist völlig normal.`},
       {h:`Was bedeuten Basis und Decke?`, t:`Die Basis ist der Entwicklungsstand, den Ihr Kind sicher erreicht hat. Die Decke zeigt, bis wohin Ihr Kind beobachtet wurde. Der Bereich dazwischen ist der aktuelle Entwicklungsraum Ihres Kindes.`},
       {h:`Was ist das Ziel der Beobachtung?`, t:`Unser Ziel ist nicht, Defizite festzustellen, sondern die individuellen Stärken Ihres Kindes zu erkennen und frühzeitig gezielte Förderung anzubieten. Die Beobachtung ist immer stärkenorientiert.`},
       {h:`Was passiert mit den Ergebnissen?`, t:`Die Ergebnisse werden vertraulich behandelt und nur mit Ihrem Einverständnis weitergegeben. Ihre Sichtweise als Elternteil ist genauso wichtig wie unsere pädagogische Einschätzung.`},
@@ -2961,7 +3009,7 @@ const HELP_CONTENT={
       <div class="help-step"><div class="help-step-num">2</div><div><strong>Enter master data</strong><br>Enter name, date of birth, gender, institution and observer. Age in months is calculated automatically.</div></div>
       <div class="help-step"><div class="help-step-num">3</div><div><strong>Start observation</strong><br>Click "Start observation". You are guided through all 8 developmental areas.</div></div>
       <div class="help-step"><div class="help-step-num">4</div><div><strong>Answer items</strong><br>Each item is answered with: <span class="ans-demo yes">✓ Does it</span> <span class="ans-demo partial">◑ Partly</span> <span class="ans-demo no">✗ Does not</span> <span class="ans-demo unknown">? Don't know</span></div></div>
-      <div class="help-step"><div class="help-step-num">5</div><div><strong>Don't forget to save!</strong><br>Save regularly using the 💾 button as a .kbd file.</div></div>
+      <div class="help-step"><div class="help-step-num">5</div><div><strong>Don't forget to save!</strong><br>Save regularly using the 💾 button as a .lma file.</div></div>
       <div class="help-tip">💡 <strong>Tip:</strong> Use <strong>Interview Mode</strong> (🎤) for guided observation – ideal when directly observing a child.</div>`,
     alter:`<h3>📅 Age range &amp; Phases</h3>
       <p>The table covers <strong>0 to 9 years</strong>, divided into <strong>18 developmental phases</strong>.</p>
@@ -2989,9 +3037,9 @@ const HELP_CONTENT={
     speichern:`<h3>💾 Save &amp; Open</h3>
       <p>All data stays <strong>exclusively on your device</strong> – nothing is sent to external servers.</p>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">💾 Save</h4>
-      <p>Click <strong>💾 Save</strong> to save as a <strong>.kbd file</strong>. Filename: <code>YYYY-MM-DD Lastname, Firstname.kbd</code></p>
+      <p>Click <strong>💾 Save</strong> to save as a <strong>.lma file</strong>. Filename: <code>YYYY-MM-DD Lastname, Firstname.lma</code></p>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">📂 Open</h4>
-      <p>Click <strong>📂 Open</strong> to load a saved .kbd file and continue or update the observation.</p>
+      <p>Click <strong>📂 Open</strong> to load a saved .lma file and continue or update the observation.</p>
       <div class="help-tip">💡 <strong>Tip:</strong> Save regularly during longer observations to avoid data loss.</div>`,
     diagramm:`<h3>📊 Reading charts</h3>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">📈 Line chart (Beller profile)</h4>
@@ -3011,7 +3059,7 @@ const HELP_CONTENT={
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">Copyright</h4>
       <p><strong>Contents:</strong> © Kuno Beller / <a href="https://www.verlagdasnetz.de" target="_blank">Verlag das netz</a><br><strong>Digital implementation:</strong> © 2025 Jens Trost · <a href="https://www.kunobelleronline.de">kunobelleronline.de</a></p>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">🔒 Privacy</h4>
-      <p>This app stores <strong>no personal data on external servers</strong>. All data stays on your device in locally saved .kbd files.</p>
+      <p>This app stores <strong>no personal data on external servers</strong>. All data stays on your device in locally saved .lma files.</p>
       <div class="help-tip">🛡️ <strong>Note:</strong> Users are responsible for GDPR compliance when handling children's data and for secure storage of saved files.</div>`,
     grundprinz:`<h3>🌱 Core principles of developmental support</h3>
       <p>These principles form the basis for supportive accompaniment of children according to Kuno Beller:</p>`,
@@ -3023,7 +3071,7 @@ const HELP_CONTENT={
       <div class="help-step"><div class="help-step-num">2</div><div><strong>Inserire i dati anagrafici</strong><br>Nome, data di nascita, sesso, istituzione e osservatore. L'età in mesi viene calcolata automaticamente.</div></div>
       <div class="help-step"><div class="help-step-num">3</div><div><strong>Avviare l'osservazione</strong><br>Fare clic su "Avvia osservazione". Si viene guidati attraverso tutte le 8 aree di sviluppo.</div></div>
       <div class="help-step"><div class="help-step-num">4</div><div><strong>Rispondere agli item</strong><br>Ogni item viene valutato con: <span class="ans-demo yes">✓ Lo fa</span> <span class="ans-demo partial">◑ In parte</span> <span class="ans-demo no">✗ Non lo fa</span> <span class="ans-demo unknown">? Non so</span></div></div>
-      <div class="help-step"><div class="help-step-num">5</div><div><strong>Non dimenticare di salvare!</strong><br>Salvare regolarmente tramite il pulsante 💾 come file .kbd.</div></div>
+      <div class="help-step"><div class="help-step-num">5</div><div><strong>Non dimenticare di salvare!</strong><br>Salvare regolarmente tramite il pulsante 💾 come file .lma.</div></div>
       <div class="help-tip">💡 <strong>Consiglio:</strong> Utilizzare la <strong>Modalità intervista</strong> (🎤) per un'osservazione guidata.</div>`,
     alter:`<h3>📅 Fascia d'età &amp; Fasi</h3>
       <p>La tabella copre la fascia d'età da <strong>0 a 9 anni</strong>, divisa in <strong>18 fasi di sviluppo</strong>.</p>
@@ -3051,9 +3099,9 @@ const HELP_CONTENT={
     speichern:`<h3>💾 Salva &amp; Apri</h3>
       <p>Tutti i dati rimangono <strong>esclusivamente sul dispositivo</strong> – nessun dato viene trasmesso a server esterni.</p>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">💾 Salva</h4>
-      <p>Fare clic su <strong>💾 Salva</strong> per salvare come <strong>file .kbd</strong>. Nome file: <code>AAAA-MM-GG Cognome, Nome.kbd</code></p>
+      <p>Fare clic su <strong>💾 Salva</strong> per salvare come <strong>file .lma</strong>. Nome file: <code>AAAA-MM-GG Cognome, Nome.lma</code></p>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">📂 Apri</h4>
-      <p>Fare clic su <strong>📂 Apri</strong> per caricare un file .kbd salvato e continuare o aggiornare l'osservazione.</p>
+      <p>Fare clic su <strong>📂 Apri</strong> per caricare un file .lma salvato e continuare o aggiornare l'osservazione.</p>
       <div class="help-tip">💡 <strong>Consiglio:</strong> Salvare regolarmente durante le osservazioni più lunghe per evitare la perdita di dati.</div>`,
     diagramm:`<h3>📊 Leggere i grafici</h3>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">📈 Grafico a linee (profilo Beller)</h4>
@@ -3073,7 +3121,7 @@ const HELP_CONTENT={
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">Copyright</h4>
       <p><strong>Contenuti:</strong> © Kuno Beller / <a href="https://www.verlagdasnetz.de" target="_blank">Verlag das netz</a><br><strong>Implementazione digitale:</strong> © 2025 Jens Trost · <a href="https://www.kunobelleronline.de">kunobelleronline.de</a></p>
       <h4 style="margin:.8rem 0 .4rem;font-size:.88rem">🔒 Privacy</h4>
-      <p>Questa app <strong>non memorizza dati personali su server esterni</strong>. Tutti i dati rimangono sul dispositivo in file .kbd locali.</p>
+      <p>Questa app <strong>non memorizza dati personali su server esterni</strong>. Tutti i dati rimangono sul dispositivo in file .lma locali.</p>
       <div class="help-tip">🛡️ <strong>Nota:</strong> Gli utenti sono responsabili del rispetto del GDPR nella gestione dei dati dei bambini e della conservazione sicura dei file.</div>`,
     grundprinz:`<h3>🌱 Principi fondamentali</h3>
       <p>Questi principi costituiscono la base per l'accompagnamento di supporto dei bambini secondo Kuno Beller:</p>`,
