@@ -1496,25 +1496,38 @@ function calcAreaStats(aid){
   return {total,yes,partial,no,unknown,answered:yes+partial+no+unknown};
 }
 
-function calcDevAge(aid){
-  // Beller method: developmental age = month value of the HIGHEST phase
-  // where >= 50% of items are answered 'yes' or 'partial'
-  const phases=Object.keys(DATA[aid].phases).map(Number).sort((a,b)=>a-b);
-  let highestPh=0;
-  phases.forEach(ph=>{
-    const items=DATA[aid].phases[String(ph)];
-    if(!items||items.length===0) return;
-    let sc=0;
-    items.forEach((_,i)=>{
-      const a=answers[`${aid}-${ph}-${i}`];
-      if(a==='yes') sc+=1; else if(a==='partial') sc+=0.5;
-    });
-    const norm=sc/items.length;
-    // Phase counts if >= 50% competency shown
-    if(norm>=0.5) highestPh=ph;
+// ── LUMEA continuous developmental age (independent of Beller) ──
+// dev age = sum over the four Altersstufen bands (each STAGE_W months,
+// 0–36–72–108–144) of the mastered fraction, gated so a higher stage only
+// counts once the lower ones largely sit (foundation weighting).
+const STAGE_W=36;      // months per Altersstufe band
+const FOUND_TAU=0.5;   // foundation threshold for full carry-over
+const PARTIAL_W=0.5;   // weight of "teilweise"
+function stageRatio(aid, ph, ans){
+  const items=DATA[aid].phases[String(ph)]||[];
+  let score=0, denom=0;
+  items.forEach((_,i)=>{
+    const a=ans[`${aid}-${ph}-${i}`];
+    if(a==='yes'){ score+=1; denom++; }
+    else if(a==='partial'){ score+=PARTIAL_W; denom++; }
+    else if(a==='no'){ denom++; }
+    // 'unknown'/unanswered are excluded from the denominator
   });
-  return highestPh>0?(PHASE_MONTHS[highestPh]||highestPh*6):null;
+  return denom>0 ? score/denom : 0;
 }
+function devAgeCore(aid, ans){
+  let carry=1, dev=0, hasData=false;
+  for(const ph of [1,2,3,4]){
+    if((DATA[aid].phases[String(ph)]||[]).length===0) continue;
+    const r=stageRatio(aid, ph, ans);
+    if(r>0) hasData=true;
+    dev += STAGE_W * r * carry;
+    carry *= Math.min(1, r/FOUND_TAU);
+    if(carry<=0) break; // no foundation -> higher stages do not count
+  }
+  return hasData ? dev : null;
+}
+function calcDevAge(aid){ return devAgeCore(aid, answers); }
 
 function calcBasisDecke(aid){
   let basis=null,decke=null;
@@ -1576,11 +1589,11 @@ function renderProfile(){
     `<table class="res-tbl"><thead><tr><th>${L.tbl_bereich||'Bereich'}</th><th>${L.tbl_alter||'Entw.alter'}</th><th>${L.tbl_diff||'Differenz'}</th><th>${L.tbl_kompetenz||'Kompetenz'}</th><th>${L.tbl_basis||'Basis'}</th><th>${L.tbl_decke||'Decke'}</th></tr></thead><tbody id="res-tbody"></tbody></table>`,false);
 
   // 2. Liniendiagramm
-  html+=collCard('linear','',(L.card_linear||'📈 Entwicklungsprofil nach Beller (Liniendiagramm)'),
+  html+=collCard('linear','',(L.card_linear||'📈 Entwicklungsprofil (Liniendiagramm)'),
     `<div style="position:relative"><canvas id="linearChart" class="mychart"></canvas></div>`,false);
 
   // 3. Balkendiagramm
-  html+=collCard('bar','',(L.card_bar||'📊 Entwicklungsprofil nach Trost (Balkendiagramm)'),
+  html+=collCard('bar','',(L.card_bar||'📊 Entwicklungsprofil (Balkendiagramm)'),
     `<canvas id="barChart" class="mychart"></canvas>`,false);
 
   // 4. Radialdiagramm
@@ -1682,7 +1695,7 @@ function drawRadar(childMonths, canvasOverride){
   canvas.style.width=W+'px';
   const cx=W/2, cy=W/2;
   const r=W*0.33; // smaller radius = more room for labels
-  const n=8, max=120;
+  const n=AREA_ORDER.length, max=144;
   ctx.clearRect(0,0,W,W+labelSpace);
   const ang=i=>-Math.PI/2+(2*Math.PI*i/n);
 
@@ -2394,47 +2407,42 @@ function drawLinear(childMonths, canvasOverride){
   canvas.style.width=W+'px';
   const H=500; canvas.width=W; canvas.height=H;
   const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
-  const PMX={0:0,1:2,2:5,3:8,4:11,5:15,6:21,7:27,8:33,9:39,10:45,11:51,12:57,13:63,14:69,15:80,16:92,17:104,18:116};
-  const PAD={l:52,r:52,t:32,b:60};
+  const PAD={l:52,r:74,t:32,b:60};
   const cw=W-PAD.l-PAD.r, ch=H-PAD.t-PAD.b;
-  const maxPhase=18;
+  const maxM=144; // 0-12 Jahre (4 Altersstufen a 36 Monate)
 
-  // Fixed Y-axis: always Ph.0-18 for comparability
-  const minPh=0, maxPh=18, phRange=18;
-  for(let ph=0;ph<=18;ph++){
-    const frac=ph/18;
-    const y=PAD.t+ch-frac*ch;
-    const isMajor=(ph%3===0);
+  // Y-axis: years 0-12, stage boundaries (0/3/6/9/12) as major lines
+  for(let yr=0;yr<=12;yr++){
+    const y=PAD.t+ch-(yr/12)*ch;
+    const isMajor=(yr%3===0);
     ctx.beginPath(); ctx.moveTo(PAD.l,y); ctx.lineTo(PAD.l+cw,y);
     ctx.strokeStyle=isMajor?'#cfc8b8':'#e8e0d0'; ctx.lineWidth=isMajor?1:0.5; ctx.stroke();
     if(isMajor){
       ctx.fillStyle='#5a4f45'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='right';
-      ctx.fillText('Ph.'+ph, PAD.l-6, y+5);
-      const mo=PMX[ph]||0;
-      if(mo>0){ ctx.textAlign='left'; ctx.fillStyle='#7a6f60'; ctx.font='12px "Nunito Sans",sans-serif'; ctx.fillText(mo+'M', PAD.l+cw+7, y+5); }
+      ctx.fillText(yr+' J', PAD.l-6, y+5);
     }
   }
+  const _stageNames=['Krippe','Kita','Grundschule','Transition'];
+  for(let st=0;st<4;st++){
+    const yc=PAD.t+ch-(((st+0.5)*36)/maxM)*ch;
+    ctx.fillStyle='#9a8f80'; ctx.font='11px "Nunito Sans",sans-serif'; ctx.textAlign='left';
+    ctx.fillText(_stageNames[st], PAD.l+cw+6, yc+4);
+  }
 
-  // Axis labels
   ctx.save(); ctx.translate(16,PAD.t+ch/2); ctx.rotate(-Math.PI/2);
-  ctx.fillStyle='#3a3028'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='center'; ctx.fillText('Phase',0,0); ctx.restore();
-  ctx.save(); ctx.translate(W-12,PAD.t+ch/2); ctx.rotate(Math.PI/2);
-  ctx.fillStyle='#5a4f45'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='center'; ctx.fillText('Monate',0,0); ctx.restore();
+  ctx.fillStyle='#3a3028'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='center'; ctx.fillText('Entwicklungsalter (Jahre)',0,0); ctx.restore();
 
-  // Collect plot points
   const bw=cw/AREA_ORDER.length;
   const plotPoints=[];
   AREA_ORDER.forEach((aid,i)=>{
     const da=calcDevAge(aid);
     if(da===null){ plotPoints.push(null); return; }
-    const ph=Object.entries(PMX).reduce((best,[p,mo])=>mo<=da?+p:best,0);
-    const frac=Math.min(Math.max(ph-minPh,0)/phRange,1);
+    const frac=Math.min(da/maxM,1);
     const x=PAD.l+i*bw+bw/2;
     const y=PAD.t+ch-frac*ch;
     plotPoints.push({x,y,aid,da});
   });
 
-  // Draw connecting profile line
   const validPts=plotPoints.filter(Boolean);
   if(validPts.length>1){
     ctx.beginPath();
@@ -2442,37 +2450,28 @@ function drawLinear(childMonths, canvasOverride){
     ctx.strokeStyle='rgba(45,90,61,0.65)'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.stroke();
   }
 
-  // Draw dots and labels
   plotPoints.forEach((pt,i)=>{
     if(!pt) return;
     const aid=AREA_ORDER[i];
-    // Vertical dashed connector
     ctx.beginPath(); ctx.moveTo(pt.x,PAD.t+ch); ctx.lineTo(pt.x,pt.y);
     ctx.strokeStyle=AREA_COLORS[aid]+'44'; ctx.lineWidth=1; ctx.setLineDash([3,3]); ctx.stroke(); ctx.setLineDash([]);
-    // Dot
     ctx.beginPath(); ctx.arc(pt.x,pt.y,8,0,Math.PI*2);
     ctx.fillStyle=AREA_COLORS[aid]; ctx.fill();
     ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
-    // Value above dot
     ctx.fillStyle='#1a2520'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='center';
     ctx.fillText((pt.da/12).toFixed(1)+'J', pt.x, pt.y-14);
-    // Emoji below axis
     ctx.font='15px serif'; ctx.textAlign='center';
     ctx.fillText(DATA[aid].emoji, pt.x, PAD.t+ch+20);
   });
 
-  // Chronological age line
   if(childMonths){
-    const chronPh=Object.entries(PMX).reduce((best,[p,mo])=>mo<=childMonths?+p:best,0);
-    const phFrac=Math.min(Math.max(chronPh-minPh,0)/phRange,1);
-    const ly=PAD.t+ch-phFrac*ch;
+    const ly=PAD.t+ch-Math.min(childMonths/maxM,1)*ch;
     ctx.beginPath(); ctx.moveTo(PAD.l,ly); ctx.lineTo(PAD.l+cw,ly);
     ctx.strokeStyle='rgba(184,80,80,0.85)'; ctx.lineWidth=2; ctx.setLineDash([8,4]); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle='#b85050'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='left';
     ctx.fillText('Chron. '+(childMonths/12).toFixed(1)+' J', PAD.l+4, ly-7);
   }
 
-  // Axis borders
   ctx.strokeStyle='#b0a898'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(PAD.l,PAD.t); ctx.lineTo(PAD.l,PAD.t+ch); ctx.lineTo(PAD.l+cw,PAD.t+ch); ctx.stroke();
 }
@@ -2485,104 +2484,56 @@ function drawBar(childMonths, canvasOverride){
   if(!W){ let el=canvas.parentElement; while(el&&!W){W=el.offsetWidth;el=el.parentElement;} W=W>40?W-32:W; }
   if(!W){ const main=document.getElementById('main'); if(main) W=main.offsetWidth-72; }
   W=Math.max(W,480);
-  const PM={0:0,1:2,2:5,3:8,4:11,5:15,6:21,7:27,8:33,9:39,10:45,11:51,12:57,13:63,14:69,15:80,16:92,17:104,18:116};
   const legendH=70, H=540+legendH;
   canvas.width=W; canvas.height=H;
   canvas.style.width=W+'px';
   const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,H);
   const pad={l:56,r:110,t:28,b:8};
   const chartH=H-legendH;
-  const cw=W-pad.l-pad.r, ch=chartH-pad.t-pad.b, maxM=120;
+  const cw=W-pad.l-pad.r, ch=chartH-pad.t-pad.b, maxM=144;
   const devAges=AREA_ORDER.map(id=>calcDevAge(id)||0);
   const bw=cw/AREA_ORDER.length, bpad=bw*0.18;
 
-  // All 18 phase grid lines
-  for(let ph=0;ph<=18;ph++){
-    const mo=PM[ph]||0, y=pad.t+ch-(mo/maxM)*ch;
-    const isMajor=(ph%3===0);
+  // Y-axis grid: years 0-12 (4 Altersstufen a 36 Monate)
+  for(let yr=0;yr<=12;yr++){
+    const y=pad.t+ch-(yr/12)*ch;
+    const isMajor=(yr%3===0);
     ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y);
     ctx.strokeStyle=isMajor?'#cfc8b8':'#ece8e0'; ctx.lineWidth=isMajor?1:0.5; ctx.stroke();
     if(isMajor){
       ctx.fillStyle='#3a3028'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='right';
-      ctx.fillText((mo/12).toFixed(0)+' J', pad.l-6, y+5);
+      ctx.fillText(yr+' J', pad.l-6, y+5);
     }
-    ctx.fillStyle=isMajor?'#3a3028':'#8a7a6a';
-    ctx.font=(isMajor?'bold 12px':'10px')+' "Nunito Sans",sans-serif'; ctx.textAlign='left';
-    ctx.fillText('Ph.'+ph, pad.l+cw+7, y+4);
+  }
+  const _stageNames=['Krippe','Kita','Grundschule','Transition'];
+  for(let st=0;st<4;st++){
+    const yc=pad.t+ch-(((st+0.5)*36)/maxM)*ch;
+    ctx.fillStyle='#9a8f80'; ctx.font='11px "Nunito Sans",sans-serif'; ctx.textAlign='left';
+    ctx.fillText(_stageNames[st], pad.l+cw+7, yc+4);
   }
 
-  // Axis labels
   ctx.save(); ctx.translate(14,pad.t+ch/2); ctx.rotate(-Math.PI/2);
-  ctx.fillStyle='#3a3028'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='center'; ctx.fillText('Jahre',0,0); ctx.restore();
+  ctx.fillStyle='#3a3028'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='center'; ctx.fillText('Entwicklungsalter (Jahre)',0,0); ctx.restore();
   ctx.save(); ctx.translate(W-8,pad.t+ch/2); ctx.rotate(Math.PI/2);
-  ctx.fillStyle='#5a4f45'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='center'; ctx.fillText('Phase',0,0); ctx.restore();
+  ctx.fillStyle='#5a4f45'; ctx.font='bold 13px "Nunito Sans",sans-serif'; ctx.textAlign='center'; ctx.fillText('Altersstufe',0,0); ctx.restore();
 
-  // Collect bar center X positions and basis/decke Y values
   const barCenters=[];
-  const basisPoints=[], deckePoints=[];
-
   AREA_ORDER.forEach((aid,i)=>{
     const x=pad.l+i*bw+bpad/2, bwidth=bw-bpad;
-    const cx_bar=x+bwidth/2;
-    barCenters.push({x,bwidth,cx_bar});
-
-    const bd=calcBasisDecke(aid);
-    if(bd.basis){
-      const mo=PM[bd.basis]||0;
-      basisPoints.push({x:cx_bar, y:pad.t+ch-(mo/maxM)*ch, mo, ph:bd.basis});
-    } else {
-      basisPoints.push(null);
-    }
-    if(bd.decke){
-      const mo=PM[bd.decke]||0;
-      deckePoints.push({x:cx_bar, y:pad.t+ch-(mo/maxM)*ch, mo, ph:bd.decke});
-    } else {
-      deckePoints.push(null);
-    }
+    barCenters.push({x,bwidth,cx_bar:x+bwidth/2});
   });
 
-  // Draw bars (behind lines)
   devAges.forEach((v,i)=>{
     const {x,bwidth,cx_bar}=barCenters[i];
     const bh=(Math.min(v,maxM)/maxM)*ch, by=pad.t+ch-bh;
     ctx.fillStyle='rgba(0,0,0,0.04)'; ctx.fillRect(x+2,by+2,bwidth,bh);
     ctx.fillStyle=AREA_COLORS[AREA_ORDER[i]]; ctx.fillRect(x,by,bwidth,bh);
     if(v>0){
-      const phVal=Object.entries(PM).reduce((best,[ph,mo])=>mo<=v?+ph:best,0);
-      ctx.fillStyle='#fff'; ctx.font='bold 12px "Nunito Sans",sans-serif'; ctx.textAlign='center';
-      ctx.fillText('Ph.'+phVal, cx_bar, by-7);
+      ctx.fillStyle='#3a3028'; ctx.font='bold 12px "Nunito Sans",sans-serif'; ctx.textAlign='center';
+      ctx.fillText((v/12).toFixed(1)+' J', cx_bar, by-7);
     }
   });
 
-  // Draw BASIS connecting line (dark grey, solid, 2.5px)
-  const validBasis=basisPoints.filter(Boolean);
-  if(validBasis.length>=2){
-    ctx.beginPath();
-    validBasis.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
-    ctx.strokeStyle='rgba(60,60,60,0.8)'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.stroke();
-    // Dots on basis line
-    validBasis.forEach(p=>{
-      ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2);
-      ctx.fillStyle='rgba(60,60,60,0.85)'; ctx.fill();
-      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
-    });
-  }
-
-  // Draw DECKE connecting line (light grey, solid, 2px)
-  const validDecke=deckePoints.filter(Boolean);
-  if(validDecke.length>=2){
-    ctx.beginPath();
-    validDecke.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
-    ctx.strokeStyle='rgba(160,160,160,0.75)'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
-    // Dots on decke line
-    validDecke.forEach(p=>{
-      ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2);
-      ctx.fillStyle='rgba(160,160,160,0.85)'; ctx.fill();
-      ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
-    });
-  }
-
-  // Chronological age line (red dashed)
   if(childMonths){
     const ly=pad.t+ch-(Math.min(childMonths,maxM)/maxM)*ch;
     ctx.beginPath(); ctx.moveTo(pad.l,ly); ctx.lineTo(pad.l+cw,ly);
@@ -2591,7 +2542,6 @@ function drawBar(childMonths, canvasOverride){
     ctx.fillText('Chron. '+(childMonths/12).toFixed(1)+' J', pad.l+4, ly-8);
   }
 
-  // Average dev age line (green dashed)
   const ages=devAges.filter(v=>v>0);
   if(ages.length>0){
     const avg=ages.reduce((a,b)=>a+b,0)/ages.length;
@@ -2602,27 +2552,19 @@ function drawBar(childMonths, canvasOverride){
     ctx.fillText('\u00d8 Entw. '+(avg/12).toFixed(1)+' J', pad.l+cw-4, ly2-8);
   }
 
-  // Axis border
   ctx.strokeStyle='#b0a898'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+ch); ctx.lineTo(pad.l+cw,pad.t+ch); ctx.stroke();
 
   // Legend
   const lY=chartH+10, lY2=chartH+32;
-  // Row 1: Basis + Decke lines
   ctx.beginPath(); ctx.moveTo(pad.l,lY); ctx.lineTo(pad.l+22,lY);
-  ctx.strokeStyle='rgba(60,60,60,0.8)'; ctx.lineWidth=2.5; ctx.setLineDash([]); ctx.stroke();
-  ctx.beginPath(); ctx.arc(pad.l+11,lY,3,0,Math.PI*2); ctx.fillStyle='rgba(60,60,60,0.85)'; ctx.fill();
-  ctx.fillStyle='#333'; ctx.font='12px "Nunito Sans",sans-serif'; ctx.textAlign='left';
-  ctx.fillText('Basis', pad.l+26, lY+4);
+  ctx.strokeStyle='rgba(184,80,80,0.9)'; ctx.lineWidth=2.5; ctx.setLineDash([8,4]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#b85050'; ctx.font='12px "Nunito Sans",sans-serif'; ctx.textAlign='left';
+  ctx.fillText('Chron. Alter', pad.l+26, lY+4);
+  ctx.beginPath(); ctx.moveTo(pad.l+130,lY); ctx.lineTo(pad.l+152,lY);
+  ctx.strokeStyle='rgba(61,107,82,0.85)'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle='#2d5a3d'; ctx.fillText('\u00d8 Entwicklungsalter', pad.l+156, lY+4);
 
-  ctx.beginPath(); ctx.moveTo(pad.l+80,lY); ctx.lineTo(pad.l+102,lY);
-  ctx.strokeStyle='rgba(160,160,160,0.75)'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.stroke();
-  ctx.beginPath(); ctx.arc(pad.l+91,lY,3,0,Math.PI*2); ctx.fillStyle='rgba(160,160,160,0.85)'; ctx.fill();
-  ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
-  ctx.fillStyle='#888'; ctx.fillText('Decke', pad.l+106, lY+4);
-
-  // Row 2: emoji centered under each bar (no color squares)
-  const colW=W/8;
   AREA_ORDER.forEach((aid,i)=>{
     const {cx_bar}=barCenters[i];
     ctx.font='18px serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
@@ -2811,8 +2753,8 @@ const APP_UI={
     prof_chron:'Chron. Alter (Jahre)', prof_avg:'Ø Entwicklungsalter', prof_diff:'Differenz',
     card_verlauf:'🔄 Verlauf',
     card_detail:'📋 Detailergebnisse',
-    card_linear:'📈 Entwicklungsprofil nach Beller (Liniendiagramm)',
-    card_bar:'📊 Entwicklungsprofil nach Trost (Balkendiagramm)',
+    card_linear:'📈 Entwicklungsprofil (Liniendiagramm)',
+    card_bar:'📊 Entwicklungsprofil (Balkendiagramm)',
     card_radar:'🎯 Entwicklungsprofil (Radialdiagramm)',
     foerder_title:'💡 Fördermöglichkeiten',
     dok_title:'📄 Dokumente',
@@ -3621,21 +3563,7 @@ function formatMonthYear(isoDate){
   return d.toLocaleDateString('de',{month:'long',year:'numeric'});
 }
 
-function calcDevAgeFromAnswers(aid, answersObj){
-  const phases=Object.keys(DATA[aid].phases).map(Number).sort((a,b)=>a-b);
-  let highestPh=0;
-  phases.forEach(ph=>{
-    const items=DATA[aid].phases[String(ph)];
-    if(!items||items.length===0) return;
-    let sc=0;
-    items.forEach((_,i)=>{
-      const a=answersObj[`${aid}-${ph}-${i}`];
-      if(a==='yes') sc+=1; else if(a==='partial') sc+=0.5;
-    });
-    if(sc/items.length>=0.5) highestPh=ph;
-  });
-  return highestPh>0?(PHASE_MONTHS[highestPh]||0):null;
-}
+function calcDevAgeFromAnswers(aid, answersObj){ return devAgeCore(aid, answersObj||{}); }
 
 
 // ═══════════════════════════════════════
@@ -3794,7 +3722,7 @@ function renderErhebungFull(erh, idx, total){
   </div>`;
   html+=`<div class="coll-card">
     <div class="coll-hdr" onclick="toggleColl('erh-linear')">
-      <span>${L.card_linear||'📈 Entwicklungsprofil nach Beller (Liniendiagramm)'}</span>
+      <span>${L.card_linear||'📈 Entwicklungsprofil (Liniendiagramm)'}</span>
       <span class="coll-chev" id="chev-erh-linear">▸</span>
     </div>
     <div class="coll-body" id="cb-erh-linear" style="display:none">
@@ -3803,7 +3731,7 @@ function renderErhebungFull(erh, idx, total){
   </div>`;
   html+=`<div class="coll-card">
     <div class="coll-hdr" onclick="toggleColl('erh-bar')">
-      <span>${L.card_bar||'📊 Entwicklungsprofil nach Trost (Balkendiagramm)'}</span>
+      <span>${L.card_bar||'📊 Entwicklungsprofil (Balkendiagramm)'}</span>
       <span class="coll-chev" id="chev-erh-bar">▸</span>
     </div>
     <div class="coll-body" id="cb-erh-bar" style="display:none">
@@ -4035,7 +3963,7 @@ function toggleVerlaufNav(){
 function exportSingleChart(type){
   var g=function(id){return document.getElementById(id);};
   var cm={linear:'linearChart',bar:'barChart',radar:'radarChart'};
-  var tm={linear:'Entwicklungsprofil nach Beller (Liniendiagramm)',bar:'Entwicklungsprofil nach Trost (Balkendiagramm)',radar:'Entwicklungsprofil (Radialdiagramm)'};
+  var tm={linear:'Entwicklungsprofil (Liniendiagramm)',bar:'Entwicklungsprofil (Balkendiagramm)',radar:'Entwicklungsprofil (Radialdiagramm)'};
   var vp=g('view-profile');
   var vpW=vp?vp.style.display:'';
   if(!g('linearChart')||!g('linearChart').getContext){
@@ -4238,8 +4166,8 @@ function exportBericht(){
       var ri=g('radarChart')&&g('radarChart').width>10?g('radarChart').toDataURL('image/png',0.9):'';
       ['linear','bar','radar'].forEach(function(id){var cb=g('cb-'+id);if(cb)cb.style.display='none';});
       if(vp){vp.style.position='';vp.style.top='';vp.style.left='';vp.style.width='';vp.style.zIndex='';vp.style.display=vpWas;}
-      if(opt.linear&&li)p.push('<div class="chart-sec"><h2>Entwicklungsprofil nach Beller (Liniendiagramm)<\/h2><img src="'+li+'" style="max-width:100%" alt="Liniendiagramm"><\/div>');
-      if(opt.bar&&bi)p.push('<div class="chart-sec"><h2>Entwicklungsprofil nach Trost (Balkendiagramm)<\/h2><img src="'+bi+'" style="max-width:100%" alt="Balkendiagramm"><\/div>');
+      if(opt.linear&&li)p.push('<div class="chart-sec"><h2>Entwicklungsprofil (Liniendiagramm)<\/h2><img src="'+li+'" style="max-width:100%" alt="Liniendiagramm"><\/div>');
+      if(opt.bar&&bi)p.push('<div class="chart-sec"><h2>Entwicklungsprofil (Balkendiagramm)<\/h2><img src="'+bi+'" style="max-width:100%" alt="Balkendiagramm"><\/div>');
       if(opt.radar&&ri)p.push('<div class="chart-sec"><h2>Entwicklungsprofil (Radialdiagramm)<\/h2><img src="'+ri+'" style="max-width:100%" alt="Radialdiagramm"><\/div>');
       p.push('<div class="ft">Entwicklungsbericht | LUMEA – Entwicklung sehen | '+today+'<\/div>');
       w.document.open();
