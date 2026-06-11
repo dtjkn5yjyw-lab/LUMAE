@@ -737,14 +737,6 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
             </div>
           </div>
 
-          <h4 style="margin-top:1.2rem;margin-bottom:.5rem">Basis und Decke</h4>
-          <p>Zwei ergänzende Begriffe in der Detailtabelle:</p>
-          <div class="help-box">
-            <p><strong>Basis:</strong> Die höchste Phase, in der ein Kind <em>alle</em> Items mit „Tut es" beantwortet hat. Dies ist der sichere Entwicklungsstand.</p>
-          </div>
-          <div class="help-box" style="border-left-color:var(--danger)">
-            <p><strong>Decke:</strong> Die niedrigste Phase, in der ein Kind <em>alle</em> Items mit „Tut es nicht" beantwortet hat. Oberhalb der Decke werden keine weiteren Items ausgewertet.</p>
-          </div>
 
           <div class="help-tip">
             💡 <strong>Vorausfüllung:</strong> Wählt man z. B. „Kitabereich", werden die Phasen 1–8 automatisch als „Tut es" vorausgefüllt – das Kind hat diese Kompetenzen bereits erworben.
@@ -1206,7 +1198,7 @@ function renderArea(aid){
           <span class="ph-badge" style="background:${col}">${lbl}</span>
           <span class="ph-title">Stufe ${ph}</span>
           <span class="ph-age">${PHASE_AGES[ph]||''}</span>
-          ${isPre?'<span style="font-size:.62rem;color:var(--accent)">✓ Basis</span>':''}
+          ${isPre?'<span style="font-size:.62rem;color:var(--accent)">✓ erworben</span>':''}
           ${isLock?'<span style="font-size:.62rem;color:#ccc">🔒 nicht aktiv</span>':''}
         </div>
         <div class="ph-r">
@@ -1214,7 +1206,7 @@ function renderArea(aid){
           <span class="ph-chev">▾</span>
         </div>
       </div>
-      ${isPre?'<div class="pre-notice">✓ Kompetenzen dieser Phase werden als vorhanden angenommen (Basis).</div>':''}
+      ${isPre?'<div class="pre-notice">✓ Kompetenzen dieser Phase werden als vorhanden angenommen (vorausgefüllt).</div>':''}
       ${isLock?'<div class="lock-notice">Diese Phase liegt oberhalb des gewählten Altersbereichs – Items sind als „Tut es nicht" vormarkiert, können aber angepasst werden.</div>':''}
       <div class="phase-items" id="pi-${aid}-${ph}"></div>`;
     pc.appendChild(block);
@@ -1231,22 +1223,38 @@ function renderArea(aid){
   });
 }
 
+// ── i18n for item content & area names (DE source = DATA; EN/IT overrides) ──
+const ITEM_I18N = { en:{}, it:{} };
+function _curLang(){ return (typeof appLang!=='undefined'&&appLang)?appLang:'de'; }
+function locItem(aid,ph,i){
+  const base=DATA[aid].phases[String(ph)][i];
+  const L=ITEM_I18N[_curLang()];
+  const o=L&&L[aid]&&L[aid][String(ph)]&&L[aid][String(ph)][i];
+  if(o) return { text:o.text||base.text, bsp:(o.bsp!=null?o.bsp:base.bsp) };
+  return base;
+}
+function locItemByKey(key){ const p=key.split('-'); return locItem(p[0],p[1],+p[2]); }
+function locArea(aid){ const L=APP_UI[_curLang()]||APP_UI.de; return L['area_'+aid]||DATA[aid].name; }
+
 function makeItemRow(key,item,cur,num,isPre,isLock,areaName,ph){
   const row=document.createElement('div');
   row.className='item-row'+(isPre?' pre':'')+(isLock?' pre-lock':'');
   row.id='ir-'+key;
-  const safeItem=item.text.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
-  const safeBsp=(item.bsp||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;");
-  const safeArea=areaName.replace(/'/g,"&#39;");
+  const L=APP_UI[_curLang()]||APP_UI.de;
+  const loc=locItemByKey(key);
+  const aidK=key.split('-')[0];
+  const safeItem=loc.text.replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+  const safeBsp=(loc.bsp||'').replace(/'/g,"&#39;").replace(/"/g,"&quot;");
+  const safeArea=locArea(aidK).replace(/'/g,"&#39;");
   row.innerHTML=`
     <span class="item-num">${num}.</span>
-    <span class="item-text">${item.text}</span>
-    ${item.bsp?`<button class="info-btn" onclick="openInfoModal('${safeItem}','${safeBsp}','${safeArea} · Stufe ${ph}')">ℹ</button>`:'<span></span>'}
+    <span class="item-text">${loc.text}</span>
+    ${loc.bsp?`<button class="info-btn" onclick="openInfoModal('${safeItem}','${safeBsp}','${safeArea} · ${L.lbl_stufe||'Stufe'} ${ph}')">ℹ</button>`:'<span></span>'}
     <div class="ans-btns">
-      <button class="ans-btn ${cur==='yes'?'sel-yes':''}" onclick="setAnswer('${key}','yes',this)">✓ Tut es</button>
-      <button class="ans-btn ${cur==='partial'?'sel-partial':''}" onclick="setAnswer('${key}','partial',this)">◑ Teilw.</button>
-      <button class="ans-btn ${cur==='no'?'sel-no':''}" onclick="setAnswer('${key}','no',this)">✗ Nicht</button>
-      <button class="ans-btn ${cur==='unknown'?'sel-unknown':''}" onclick="setAnswer('${key}','unknown',this)">? Weiß nicht</button>
+      <button class="ans-btn ${cur==='yes'?'sel-yes':''}" onclick="setAnswer('${key}','yes',this)">${L.ans_yes||'✓ Tut es'}</button>
+      <button class="ans-btn ${cur==='partial'?'sel-partial':''}" onclick="setAnswer('${key}','partial',this)">${L.ans_partial_s||'◑ Teilw.'}</button>
+      <button class="ans-btn ${cur==='no'?'sel-no':''}" onclick="setAnswer('${key}','no',this)">${L.ans_no_s||'✗ Nicht'}</button>
+      <button class="ans-btn ${cur==='unknown'?'sel-unknown':''}" onclick="setAnswer('${key}','unknown',this)">${L.ans_unknown||'? Weiß nicht'}</button>
     </div>`;
   return row;
 }
@@ -1347,15 +1355,18 @@ function renderIvItem(){
   if(ivIndex>=ivItems.length){ closeInterview(); showToast('Interview abgeschlossen ✓'); return; }
   const {key,item,aid,ph,areaName,areaEmoji}=ivItems[ivIndex];
   const total=ivItems.length;
+  const L=APP_UI[_curLang()]||APP_UI.de;
+  const loc=locItemByKey(key);
+  ['yes','partial','no','unknown'].forEach(v=>{const b=document.getElementById('iv-btn-'+v); if(b&&L['ans_'+v]) b.textContent=L['ans_'+v];});
   const pct=Math.round((ivIndex/total)*100);
-  document.getElementById('iv-prog-lbl').textContent=`Frage ${ivIndex+1} von ${total}`;
+  document.getElementById('iv-prog-lbl').textContent=`${L.iv_frage||'Frage'} ${ivIndex+1} ${L.iv_von||'von'} ${total}`;
   document.getElementById('iv-prog-fill').style.width=pct+'%';
   document.getElementById('iv-counter').textContent=`${ivIndex+1} / ${total}`;
-  document.getElementById('iv-area-lbl').innerHTML=`${areaEmoji} ${areaName}`;
-  document.getElementById('iv-phase-lbl').textContent=`Stufe ${ph} · ${PHASE_AGES[ph]||''}`;
-  document.getElementById('iv-question').textContent=item.text;
+  document.getElementById('iv-area-lbl').innerHTML=`${areaEmoji} ${locArea(aid)}`;
+  document.getElementById('iv-phase-lbl').textContent=`${L.lbl_stufe||'Stufe'} ${ph} · ${PHASE_AGES[ph]||''}`;
+  document.getElementById('iv-question').textContent=loc.text;
   const bspEl=document.getElementById('iv-bsp');
-  if(item.bsp){ bspEl.textContent='Beispiel: '+item.bsp; bspEl.style.display=''; }
+  if(loc.bsp){ bspEl.textContent=(L.ex_iv||'Beispiel: ')+loc.bsp; bspEl.style.display=''; }
   else bspEl.style.display='none';
   // Highlight current answer
   const cur=answers[key]||'';
@@ -1384,7 +1395,7 @@ function ivPrev(){ if(ivIndex>0){ ivIndex--; renderIvItem(); } }
 function openInfoModal(item,bsp,area){
   document.getElementById('mo-area').textContent=area;
   document.getElementById('mo-item').textContent=item;
-  document.getElementById('mo-bsp').innerHTML='<strong>Beispiele:</strong> '+bsp;
+  const Lm=APP_UI[_curLang()]||APP_UI.de; document.getElementById('mo-bsp').innerHTML='<strong>'+(Lm.ex_label||'Beispiele:')+'</strong> '+bsp;
   document.getElementById('info-modal').classList.add('open');
 }
 function closeInfoModal(){ document.getElementById('info-modal').classList.remove('open'); }
@@ -1630,7 +1641,7 @@ function renderProfile(){
 
   // 1. Detailergebnisse
   html+=collCard('detail','',(L.card_detail||'📋 Detailergebnisse'),
-    `<table class="res-tbl"><thead><tr><th>${L.tbl_bereich||'Bereich'}</th><th>${L.tbl_alter||'Entw.alter'}</th><th>${L.tbl_diff||'Differenz'}</th><th>${L.tbl_kompetenz||'Kompetenz'}</th><th>${L.tbl_basis||'Basis'}</th><th>${L.tbl_decke||'Decke'}</th></tr></thead><tbody id="res-tbody"></tbody></table>`,false);
+    `<table class="res-tbl"><thead><tr><th>${L.tbl_bereich||'Bereich'}</th><th>${L.tbl_alter||'Entw.alter'}</th><th>${L.tbl_diff||'Differenz'}</th><th>${L.tbl_kompetenz||'Kompetenz'}</th></tr></thead><tbody id="res-tbody"></tbody></table>`,false);
 
   // 2. Liniendiagramm
   html+=collCard('linear','',(L.card_linear||'📈 Entwicklungsprofil (Liniendiagramm)'),
@@ -1669,9 +1680,7 @@ function renderProfile(){
     tr.innerHTML=`<td>${a.emoji} ${areaNameT}${relMark}${!complete?(()=>{ const Lw=APP_UI[appLang]||APP_UI.de; return '<span style="font-size:.65rem;color:var(--warn);margin-left:.4rem">⚠ '+(Lw.incomplete||'unvollständig')+'</span>'; })():''}</td>
       <td><span class="dev-badge" style="background:${complete?AREA_COLORS[aid]:'#bbb'}">${dy}</span></td>
       <td style="color:${dc};font-weight:500">${dstr}</td>
-      <td><div class="bar-wrap"><div class="bar-fill" style="width:${sc}%;background:${AREA_COLORS[aid]}"></div></div> <span style="font-size:.7rem;color:var(--muted)">${sc}%</span></td>
-      <td style="font-size:.75rem">${basis?((APP_UI[appLang]||APP_UI.de).lbl_phase||'Phase')+' '+basis:'—'}</td>
-      <td style="font-size:.75rem">${decke?((APP_UI[appLang]||APP_UI.de).lbl_phase||'Phase')+' '+decke:'—'}</td>`;
+      <td><div class="bar-wrap"><div class="bar-fill" style="width:${sc}%;background:${AREA_COLORS[aid]}"></div></div> <span style="font-size:.7rem;color:var(--muted)">${sc}%</span></td>`;
     tbody.appendChild(tr);
   });
 
@@ -1976,7 +1985,7 @@ function exportPDF(){
     const d2=da&&cm?da-cm:null,dstr=d2!==null?(d2>=0?'+':'')+(d2/12).toFixed(1)+' J':'—';
     const sc=s.total>0?Math.round(((s.yes+s.partial*.5)/s.total)*100):0;
     const {basis,decke}=calcBasisDecke(aid);
-    tableRows+=`<tr><td>${a.emoji} ${a.name}</td><td>${dy}</td><td>${dstr}</td><td>${sc}%</td><td>${basis?'Phase '+basis:'—'}</td><td>${decke?'Phase '+decke:'—'}</td></tr>`;
+    tableRows+=`<tr><td>${a.emoji} ${a.name}</td><td>${dy}</td><td>${dstr}</td><td>${sc}%</td></tr>`;
   });
   let fRows='';
   AREA_ORDER.forEach(aid=>{const f=fd[aid];if(!f)return;fRows+=`<tr><td style="font-weight:600;vertical-align:top">${areaEmoji[aid]} ${areaNames[aid]}</td><td>${f.home}</td><td>${f.inst}</td></tr>`;});
@@ -1986,7 +1995,7 @@ function exportPDF(){
   const w=window.open('','_blank');
   w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Gesamtbericht</title><style>'+pdfCSS+'</style></head><body>');
   w.document.write('<div class="cover"><h1 style="font-weight:800;letter-spacing:.05em">LUMAE <span style="font-weight:600;font-size:.6em;letter-spacing:.16em;color:#9ccb6a;text-transform:uppercase;white-space:nowrap">Entwicklung sehen</span></h1><div style="font-size:10pt;color:#7a6f60;margin-bottom:7pt">Gesamtbericht \u2013 Entwicklungsprofil</div><div class="meta-grid"><div class="meta-row"><span class="meta-label">Name:</span><strong>'+name+'</strong></div><div class="meta-row"><span class="meta-label">Geschlecht:</span>'+(childInfo.gender||'—')+'</div><div class="meta-row"><span class="meta-label">Geburtsdatum:</span>'+(childInfo.birth?new Date(childInfo.birth).toLocaleDateString("de-DE"):"—")+'</div><div class="meta-row"><span class="meta-label">Chron. Alter:</span>'+(cm?Math.round(cm)+' M / '+(cm/12).toFixed(1)+' J':'—')+'</div><div class="meta-row"><span class="meta-label">Institution:</span>'+(childInfo.inst||'—')+'</div><div class="meta-row"><span class="meta-label">Altersbereich:</span>'+rangeLabel(ageRange)+'</div><div class="meta-row"><span class="meta-label">Beobachter:in:</span>'+(childInfo.obs||'—')+'</div><div class="meta-row"><span class="meta-label">Erhebungsdatum:</span>'+erhDatum+'</div><div class="meta-row"><span class="meta-label">Anlass:</span>'+(childInfo.reason||'—')+'</div><div class="meta-row"><span class="meta-label">Erstellt am:</span>'+date+'</div></div></div>');
-  w.document.write('<h2>\ud83d\udccb Detailergebnisse</h2><table><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Kompetenz</th><th>Basis</th><th>Decke</th></tr></thead><tbody>'+tableRows+'</tbody></table>');
+  w.document.write('<h2>\ud83d\udccb Detailergebnisse</h2><table><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Kompetenz</th></tr></thead><tbody>'+tableRows+'</tbody></table>');
   w.document.write('<h2>\ud83d\udcca Diagramme</h2><div>'+(li?'<img src="'+li+'" alt="Liniendiagramm" style="max-width:98%"><br>':'')+(bi?'<img src="'+bi+'" alt="Balkendiagramm">':'')+(ri?'<img src="'+ri+'" alt="Radialdiagramm">':'')+'</div>');
   w.document.write('<h2>\ud83d\udca1 F\u00f6rderm\u00f6glichkeiten \u2013 '+year+'. Lebensjahr</h2><div class="highlight">Die Angebote sind entwicklungsbegleitend und st\u00e4rkenorientiert.</div><table><thead><tr><th>Bereich</th><th>\ud83c\udfe0 Zuhause</th><th>\ud83c\udfe2 Einrichtung</th></tr></thead><tbody>'+fRows+'</tbody></table>');
   w.document.write('<h2>\ud83c\udf31 Grundprinzipien entwicklungsf\u00f6rdernder Begleitung</h2><table><thead><tr><th style="width:30%">Prinzip</th><th>Erl\u00e4uterung</th></tr></thead><tbody>'+gpRows+'</tbody></table>');
@@ -2634,7 +2643,6 @@ const ELTERN_TEXTS = {
     sections: [
       {h:`Was ist LUMAE?`, t:`LUMAE ist ein Beobachtungsraster für Kinder von 0 bis 12 Jahren. Es beschreibt in 10 Entwicklungsbereichen und 4 Altersstufen, welche Fähigkeiten Kinder zeigen können. Wir beobachten Ihr Kind im Alltag und halten fest, welche Kompetenzen es bereits zeigt \u2013 es ist kein Test und keine Prüfung.`},
       {h:`Was bedeutet Entwicklungsalter?`, t:`Das Entwicklungsalter beschreibt, auf welchem Entwicklungsstand sich Ihr Kind in einem bestimmten Bereich befindet \u2013 unabhängig von seinem tatsächlichen Geburtsalter. Es zeigt den Anteil bereits gemeisterter Kompetenzen und ist kein normierter Test und keine Diagnose. Jedes Kind entwickelt sich in seinem eigenen Tempo \u2013 das ist völlig normal.`},
-      {h:`Was bedeuten Basis und Decke?`, t:`Die Basis ist der Entwicklungsstand, den Ihr Kind sicher erreicht hat. Die Decke zeigt, bis wohin Ihr Kind beobachtet wurde. Der Bereich dazwischen ist der aktuelle Entwicklungsraum Ihres Kindes.`},
       {h:`Was ist das Ziel der Beobachtung?`, t:`Unser Ziel ist nicht, Defizite festzustellen, sondern die individuellen Stärken Ihres Kindes zu erkennen und frühzeitig gezielte Förderung anzubieten. Die Beobachtung ist immer stärkenorientiert.`},
       {h:`Was passiert mit den Ergebnissen?`, t:`Die Ergebnisse werden vertraulich behandelt und nur mit Ihrem Einverständnis weitergegeben. Ihre Sichtweise als Elternteil ist genauso wichtig wie unsere pädagogische Einschätzung.`},
     ],
@@ -2647,7 +2655,6 @@ const ELTERN_TEXTS = {
     sections: [
       {h:`What is LUMAE?`, t:`An observation grid for children aged 0\u201312, describing across 10 developmental areas and 4 age stages which abilities a child shows. It is not a test or an exam.`},
       {h:`What does Developmental Age mean?`, t:`The developmental age describes your child\u2019s level in a specific area \u2013 regardless of chronological age. It reflects the share of competencies already mastered and is not a standardised test or diagnosis. Every child develops at their own pace \u2013 this is completely normal.`},
-      {h:`What do Basis and Ceiling mean?`, t:`The basis is the developmental level your child has securely achieved. The ceiling shows how far your child has been observed. The space between is your child\u2019s current developmental zone.`},
       {h:`What is the goal of the observation?`, t:`Our goal is not to identify deficits, but to recognize your child\u2019s individual strengths and offer targeted support early. The observation is always strengths-based.`},
       {h:`What happens with the results?`, t:`Results are treated confidentially and only shared with your consent. Your perspective as a parent is just as important as our pedagogical assessment.`},
     ],
@@ -2712,7 +2719,6 @@ const ELTERN_TEXTS = {
     sections: [
       {h:`Wat is LUMAE?`, t:`Een observatie-instrument voor kinderen van 0 tot 12 jaar, dat 10 ontwikkelingsgebieden en 4 leeftijdsniveaus beschrijft. Het is geen test.`},
       {h:`Wat betekent ontwikkelingsleeftijd?`, t:`De ontwikkelingsleeftijd beschrijft het niveau van uw kind in een specifiek gebied, onafhankelijk van de kalenderleeftijd. Elk kind ontwikkelt zich in zijn eigen tempo.`},
-      {h:`Wat betekenen Basis en Plafond?`, t:`De basis is het niveau dat uw kind zeker heeft bereikt. Het plafond toont hoe ver uw kind is geobserveerd. De ruimte daartussen is de huidige ontwikkelingszone van uw kind.`},
       {h:`Wat is het doel?`, t:`Individuele sterke punten herkennen en vroeg gerichte ondersteuning bieden. De observatie is altijd gericht op krachten.`},
       {h:`Wat gebeurt er met de resultaten?`, t:`Resultaten zijn vertrouwelijk en worden alleen met uw toestemming gedeeld. Uw perspectief is even belangrijk als onze pedagogische beoordeling.`},
     ],
@@ -2797,6 +2803,7 @@ const APP_UI={
     btn_start:'Erhebung starten →', btn_resume:'Erhebung fortsetzen →', btn_update:'Erhebung aktualisieren →',
     btn_save:'Speichern', btn_open:'Öffnen', btn_new:'Neu', btn_help:'Hilfe', btn_interview:'Interview',
     ans_yes:'✓ Tut es', ans_partial:'◑ Teilweise', ans_no:'✗ Tut es nicht', ans_unknown:'? Weiß nicht',
+    ans_partial_s:'◑ Teilw.', ans_no_s:'✗ Nicht', ex_label:'Beispiele:', ex_iv:'Beispiel: ', lbl_stufe:'Stufe', iv_frage:'Frage', iv_von:'von',
     range_krippe:'Krippenbereich', range_kita:'Kitabereich', range_schule:'Grundschulbereich',
     hdr_sub:'10 Entwicklungsbereiche · 4 Altersstufen',
     prof_chron:'Chron. Alter (Jahre)', prof_avg:'Ø Entwicklungsalter', prof_diff:'Differenz',
@@ -2817,9 +2824,7 @@ const APP_UI={
     dok_einzeln:'Einzelne Diagramme',
     nav_nachstehend:'Noch ausstehend',
     lbl_phase:'Phase', incomplete:'unvollständig',
-    area_kup:'Körperbewusstsein & Pflege', area_ub:'Umgebungsbewusstsein',
-    area_se:'Sozial-emotionale Entwicklung', area_st:'Spieltätigkeit',
-    area_sl:'Sprache & Literacy', area_kog:'Kognition', area_gm:'Grobmotorik', area_fm:'Feinmotorik',
+    area_bm:'Bewegung & Motorik', area_kg:'Körper & Gesundheit', area_sk:'Sprache & Kommunikation', area_se:'Soziale & emotionale Entwicklung', area_mi:'Mehrsprachigkeit & Interkulturalität', area_mae:'Musisch-ästhetische Bildung', area_ma:'Mathematische Bildung', area_nt:'Naturwissenschaft & Technik', area_md:'Medien & Digitale Welt', area_ew:'Ethik & Werte',
   },
   en:{
     nav_setup:"Profile data", nav_profile:"Developmental Profile", nav_nach:"Still pending",
@@ -2828,13 +2833,14 @@ const APP_UI={
     btn_start:"Start observation →", btn_resume:"Continue observation →", btn_update:"Update observation →",
     btn_save:"Save", btn_open:"Open", btn_new:"New", btn_help:"Help", btn_interview:"Interview",
     ans_yes:"✓ Does it", ans_partial:"◑ Partly", ans_no:"✗ Does not", ans_unknown:"? Don't know",
+    ans_partial_s:"◑ Partly", ans_no_s:"✗ No", ex_label:"Examples:", ex_iv:"Example: ", lbl_stufe:"Stage", iv_frage:"Question", iv_von:"of",
     range_krippe:"Nursery (0–3)", range_kita:"Kindergarten (3–6)", range_schule:"Primary school (6–9)",
-    hdr_sub:"8 developmental areas · Phases 1–18",
+    hdr_sub:"10 developmental areas · 4 age stages",
     prof_chron:"Chron. age (years)", prof_avg:"Ø Dev. age", prof_diff:"Difference",
     card_verlauf:"🔄 Timeline",
     card_detail:"📋 Detail results",
     card_linear:"📈 Developmental profile (line chart)",
-    card_bar:"📊 Developmental profile acc. Trost (bar chart)",
+    card_bar:"📊 Developmental profile (bar chart)",
     card_radar:"🎯 Developmental profile (radar chart)",
     foerder_title:"💡 Support suggestions",
     dok_title:"📄 Documents",
@@ -2847,9 +2853,7 @@ const APP_UI={
     dok_eltern_h:"Language of parent information",
     dok_einzeln:"Individual charts",
     lbl_phase:"Phase", incomplete:"incomplete",
-    area_kup:"Body awareness & care", area_ub:"Environmental awareness",
-    area_se:"Social-emotional dev.", area_st:"Play activities",
-    area_sl:"Language & Literacy", area_kog:"Cognition", area_gm:"Gross motor skills", area_fm:"Fine motor skills",
+    area_bm:"Movement & Motor Skills", area_kg:"Body & Health", area_sk:"Language & Communication", area_se:"Social & Emotional Development", area_mi:"Multilingualism & Interculturality", area_mae:"Artistic & Aesthetic Education", area_ma:"Mathematical Education", area_nt:"Science & Technology", area_md:"Media & Digital World", area_ew:"Ethics & Values",
   },
   it:{
     nav_setup:'Dati del profilo', nav_profile:'Profilo di sviluppo', nav_nach:'In sospeso',
@@ -2858,13 +2862,14 @@ const APP_UI={
     btn_start:'Avvia osservazione →', btn_resume:'Continua osservazione →', btn_update:'Aggiorna osservazione →',
     btn_save:'Salva', btn_open:'Apri', btn_new:'Nuovo', btn_help:'Aiuto', btn_interview:'Intervista',
     ans_yes:'✓ Lo fa', ans_partial:'◑ In parte', ans_no:'✗ Non lo fa', ans_unknown:'? Non so',
+    ans_partial_s:'◑ In parte', ans_no_s:'✗ No', ex_label:'Esempi:', ex_iv:'Esempio: ', lbl_stufe:'Livello', iv_frage:'Domanda', iv_von:'di',
     range_krippe:'Asilo nido (0–3)', range_kita:'Scuola materna (3–6)', range_schule:'Scuola primaria (6–9)',
-    hdr_sub:'8 aree di sviluppo · Fasi 1–18',
+    hdr_sub:'10 aree di sviluppo · 4 livelli d\'età',
     prof_chron:'Età cron. (anni)', prof_avg:'Ø Età di sviluppo', prof_diff:'Differenza',
     card_verlauf:'🔄 Cronologia',
     card_detail:'📋 Risultati dettagliati',
     card_linear:'📈 Profilo di sviluppo (grafico a linee)',
-    card_bar:'📊 Profilo di sviluppo sec. Trost (grafico a barre)',
+    card_bar:'📊 Profilo di sviluppo (grafico a barre)',
     card_radar:'🎯 Profilo di sviluppo (grafico radar)',
     foerder_title:'💡 Possibilità di sostegno',
     dok_title:'📄 Documenti',
@@ -2877,9 +2882,7 @@ const APP_UI={
     dok_eltern_h:'Lingua delle informazioni per i genitori',
     dok_einzeln:'Grafici singoli',
     lbl_phase:'Fase', incomplete:'incompleto',
-    area_kup:'Cura del corpo', area_ub:"Consapevolezza dell'ambiente",
-    area_se:'Sviluppo socio-emozionale', area_st:'Attività ludiche',
-    area_sl:'Linguaggio & Literacy', area_kog:'Cognizione', area_gm:'Motricità grossolana', area_fm:'Motricità fine',
+    area_bm:'Movimento e motricità', area_kg:'Corpo e salute', area_sk:'Linguaggio e comunicazione', area_se:'Sviluppo sociale ed emotivo', area_mi:'Multilinguismo e interculturalità', area_mae:'Educazione artistica ed estetica', area_ma:'Educazione matematica', area_nt:'Scienze e tecnica', area_md:'Media e mondo digitale', area_ew:'Etica e valori',
   },
 };
 let appLang='de';
@@ -3019,7 +3022,7 @@ const HELP_CONTENT={
       <div class="help-box">🧸 <strong>Kindergarten (3–6 years)</strong> · Stage 2</div>
       <div class="help-box">📚 <strong>Primary school (6–9 years)</strong> · Stage 3</div>
       <div class="help-box">🎒 <strong>Transition (9–12 years)</strong> · Stage 4</div>
-      <p style="margin-top:.8rem"><strong>Basis:</strong> Competencies below the selected range are pre-filled as "Does it".<br><strong>Above range:</strong> Pre-filled as "Does not" – but can be changed if the child shows advanced development.</p>
+      <p style="margin-top:.8rem"><strong>Pre-filled:</strong> Competencies below the selected range are pre-filled as "Does it".<br><strong>Above range:</strong> Pre-filled as "Does not" – but can be changed if the child shows advanced development.</p>
       <div class="help-tip">💡 <strong>Tip:</strong> Choose the age range that matches the child's actual age. If the child is near a boundary, use your professional judgement.</div>`,
     beobachtung:`<h3>✏️ Observation &amp; Assessment</h3>
       <p>Rate each item according to the following scheme:</p>
@@ -3176,12 +3179,12 @@ function exportAuswahl(){
 
   // Detail table
   if(sel.detail){
-    body+='<h2>📋 Detailergebnisse</h2><table><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Basis</th><th>Decke</th></tr></thead><tbody>';
+    body+='<h2>📋 Detailergebnisse</h2><table><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th></tr></thead><tbody>';
     AREA_ORDER.forEach(aid=>{
       const da=calcDevAge(aid); const dy=da?(da/12).toFixed(1)+' J':'—';
       const d=da&&cm?da-cm:null; const ds=d!==null?(d>=0?'+':'')+(d/12).toFixed(1)+' J':'—';
       const {basis,decke}=calcBasisDecke(aid);
-      body+=`<tr><td>${DATA[aid].emoji} ${DATA[aid].name}</td><td>${dy}</td><td>${ds}</td><td>${basis?'Phase '+basis:'—'}</td><td>${decke?'Phase '+decke:'—'}</td></tr>`;
+      body+=`<tr><td>${DATA[aid].emoji} ${DATA[aid].name}</td><td>${dy}</td><td>${ds}</td></tr>`;
     });
     body+='</tbody></table>';
   }
@@ -3604,7 +3607,7 @@ function _finishLoad(d, isNew){
 // ═══════════════════════════════════════
 
 function rangeShort(r){
-  const m={krippe:'Krippe (0–3)',kita:'Kita (3–6)',schule:'Grundschule (6–9)'};
+  const m={krippe:'Krippe (0–3)',kita:'Kita (3–6)',schule:'Grundschule (6–9)',transition:'Transition (9–12)'};
   return m[r]||r;
 }
 
@@ -3643,7 +3646,7 @@ function updateVerlaufNav(){
     div.className='nav-item';
     div.dataset.verlaufIdx=i;
     div.style.cssText='padding-left:2.2rem;font-size:.75rem;';
-    const rangeShortLabel={krippe:'Krippe',kita:'Kita',schule:'GS'}[erh.ageRange]||'';
+    const rangeShortLabel={krippe:'Krippe',kita:'Kita',schule:'GS',transition:'Trans.'}[erh.ageRange]||'';
     div.innerHTML=`<span style="margin-right:.3rem">📊</span><span>Profil: ${mm}/${yyyy}${rangeShortLabel?' ('+rangeShortLabel+')':''}</span>`;
     div.onclick=()=>showVerlaufDetail(i);
     sub.appendChild(div);
