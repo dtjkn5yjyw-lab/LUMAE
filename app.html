@@ -366,7 +366,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
     </div>
     <div class="hdr-btns">
       <button class="hbtn hb-interview" onclick="startInterview()" id="iv-btn" style="display:none" title="Interview-Modus">🎤 <span class="htxt">Interview</span></button>
-      <button class="hbtn hb-accent" onclick="exportKBD()" title="Speichern (.lma)">💾 <span class="htxt">Speichern</span></button>
+      <button class="hbtn hb-accent" onclick="exportLMA()" title="Speichern (.lma)">💾 <span class="htxt">Speichern</span></button>
       <button class="hbtn" onclick="triggerImport()" title="Öffnen (.lma)">📂 <span class="htxt">Öffnen</span></button>
       <button class="hbtn" onclick="confirmNew()" title="Neue Erhebung">✚ <span class="htxt">Neu</span></button>
       <button class="hbtn" onclick="openHelp()" title="Hilfe">❓ <span class="htxt">Hilfe</span></button>
@@ -382,7 +382,7 @@ canvas.canvas.mychart{width:100%!important;height:auto!important;display:block}
           </div>
         </div>
       </div>
-      <input type="file" id="imp-input" accept=".lma" style="display:none" onchange="importKBD(event)">
+      <input type="file" id="imp-input" accept=".lma" style="display:none" onchange="importLMA(event)">
     </div>
   </div>
 </header>
@@ -1868,7 +1868,6 @@ function renderFoerder(){
     // Build inner content
     let inner=`<div style="font-size:.78rem;color:var(--muted);margin-bottom:.8rem">
       ${L.tbl_alter||'Entwicklungsalter'}: <strong style="color:var(--text)">${daYears} J</strong>
-      &nbsp;·&nbsp; Phase <strong style="color:var(--text)">${ph}</strong>
       &nbsp;·&nbsp; Förderung für <strong style="color:var(--text)">Stufe ${fStufe}</strong>
     </div>`;
 
@@ -1889,7 +1888,6 @@ function renderFoerder(){
       inner+=`<div style="font-size:.82rem;color:var(--muted)">Keine spezifischen Fördermöglichkeiten für diesen Bereich verfügbar.</div>`;
     }
 
-    // sl_quer and medien reserved for future use
 
     // Color accent matching area color
     const areaColor=AREA_COLORS[aid]||'var(--accent)';
@@ -1897,7 +1895,7 @@ function renderFoerder(){
       <div class="coll-hdr" onclick="toggleColl('foerder-${aid}')">
         <span>${DATA[aid].emoji} ${areaName}</span>
         <span style="display:flex;align-items:center;gap:.5rem">
-          <span style="font-size:.72rem;font-weight:400;color:var(--muted)">${daYears} J · Ph.${ph}</span>
+          <span style="font-size:.72rem;font-weight:400;color:var(--muted)">${daYears} J · Stufe ${fStufe}</span>
           <span class="coll-chev" id="chev-foerder-${aid}">▸</span>
         </span>
       </div>
@@ -1909,103 +1907,8 @@ function renderFoerder(){
 }
 
 
-function exportFoerderPDF(){
-  const name=childInfo.name||'Kind';
-  const date=new Date().toLocaleDateString('de-DE');
-  const erhDatum=childInfo.date?new Date(childInfo.date).toLocaleDateString('de-DE'):date;
-  const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  const year=Math.min(9,Math.floor(cm/12));
-  const fd=FOERDER[String(year)]||{};
-  const areaNames={kup:'K\u00f6rperbewusstsein & Pflege',ub:'Umgebungsbewusstsein',se:'Sozial-emotionale Entwicklung',st:'Spielt\u00e4tigkeit',sl:'Sprache & Literacy',kog:'Kognition',gm:'Grobmotorik',fm:'Feinmotorik'};
-  const areaEmoji={kup:'\ud83e\uddf4',ub:'\ud83c\udfd8\ufe0f',se:'\u2764\ufe0f',st:'\ud83e\uddf8',sl:'\ud83d\udde3\ufe0f',kog:'\ud83e\udde0',gm:'\ud83d\udd28',fm:'\ud83e\udeb6'};
-  let fRows='';
-  AREA_ORDER.forEach(aid=>{
-    const f=fd[aid]; if(!f) return;
-    fRows+=`<tr><td style="font-weight:600;vertical-align:top;padding:5pt 7pt;border-bottom:1pt solid #e8dfc8">${areaEmoji[aid]} ${areaNames[aid]}</td><td style="padding:5pt 7pt;border-bottom:1pt solid #e8dfc8;border-left:1pt solid #e8dfc8">${f.home}</td><td style="padding:5pt 7pt;border-bottom:1pt solid #e8dfc8;border-left:1pt solid #e8dfc8">${f.inst}</td></tr>`;
-  });
-  ['sl_quer','medien'].forEach(k=>{
-    if(!fd[k]) return;
-    const lbl=k==='sl_quer'?'\ud83c\udf0d Mehrsprachigkeit':'\ud83d\udcbb Medien & Digitales';
-    fRows+=`<tr><td style="font-weight:600;vertical-align:top;padding:5pt 7pt;border-bottom:1pt solid #e8dfc8">${lbl}</td><td style="padding:5pt 7pt;border-bottom:1pt solid #e8dfc8;border-left:1pt solid #e8dfc8">${fd[k].home}</td><td style="padding:5pt 7pt;border-bottom:1pt solid #e8dfc8;border-left:1pt solid #e8dfc8">${fd[k].inst}</td></tr>`;
-  });
-  let gpRows=GRUNDPRINZIPIEN.map((p,i)=>`<tr><td style="font-weight:600;padding:4pt 7pt;border-bottom:1pt solid #e8dfc8">${i+1}. ${p.n}</td><td style="padding:4pt 7pt;border-bottom:1pt solid #e8dfc8;color:#555">${p.t}</td></tr>`).join('');
-  const pdfCSS='body{margin:1.5cm;font-family:Helvetica Neue,Arial,sans-serif;color:#2a2520;font-size:9.5pt}.cover{border-bottom:3pt solid #3d6b52;padding-bottom:9pt;margin-bottom:12pt}h1{font-size:16pt;font-weight:300;color:#3d6b52;margin-bottom:3pt}h2{font-size:11pt;font-weight:600;color:#2a2520;margin:12pt 0 5pt;border-bottom:1pt solid #e8dfc8;padding-bottom:3pt}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:3pt 18pt;font-size:8pt;color:#555;margin-top:6pt}.meta-row{display:flex;gap:4pt}.meta-label{color:#aaa;min-width:85pt}table{width:100%;border-collapse:collapse;font-size:8.5pt}th{background:#f5f0e8;padding:4pt 7pt;text-align:left;border-bottom:2pt solid #e8dfc8;font-size:7.5pt;text-transform:uppercase}.highlight{background:#f0f7f3;border-left:3pt solid #3d6b52;border-radius:3pt;padding:7pt 9pt;font-size:8.5pt;line-height:1.6;color:#3d6b52;margin:7pt 0}.footer{font-size:7pt;color:#aaa;margin-top:14pt;border-top:1pt solid #e8dfc8;padding-top:4pt}@media print{button{display:none}}';
-  const w=window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Foerderbericht</title><style>'+pdfCSS+'</style></head><body>');
-  w.document.write('<div class="cover"><h1 style="font-weight:800;letter-spacing:.05em">LUMAE <span style="font-weight:600;font-size:.6em;letter-spacing:.16em;color:#9ccb6a;text-transform:uppercase;white-space:nowrap">Entwicklung sehen</span></h1><div style="font-size:10pt;color:#7a6f60;margin-bottom:7pt">F\u00f6rderbericht \u2013 '+year+'. Lebensjahr</div><div class="meta-grid"><div class="meta-row"><span class="meta-label">Name:</span><strong>'+name+'</strong></div><div class="meta-row"><span class="meta-label">Alter:</span>'+(cm?Math.round(cm)+' M / '+(cm/12).toFixed(1)+' J':'—')+'</div><div class="meta-row"><span class="meta-label">Institution:</span>'+(childInfo.inst||'—')+'</div><div class="meta-row"><span class="meta-label">Beobachter:in:</span>'+(childInfo.obs||'—')+'</div><div class="meta-row"><span class="meta-label">Erhebungsdatum:</span>'+erhDatum+'</div><div class="meta-row"><span class="meta-label">Altersbereich:</span>'+rangeLabel(ageRange)+'</div></div></div>');
-  w.document.write('<div class="highlight">Diese Angebote sind entwicklungsbegleitend und st\u00e4rkenorientiert.</div>');
-  w.document.write('<h2>\ud83d\udca1 F\u00f6rderm\u00f6glichkeiten nach Entwicklungsbereich</h2><table><thead><tr><th>Bereich</th><th>\ud83c\udfe0 Zuhause</th><th>\ud83c\udfe2 Einrichtung</th></tr></thead><tbody>'+fRows+'</tbody></table>');
-  w.document.write('<h2>\ud83c\udf31 Grundprinzipien entwicklungsf\u00f6rdernder Begleitung</h2><table><thead><tr><th style="width:32%">Prinzip</th><th>Erl\u00e4uterung</th></tr></thead><tbody>'+gpRows+'</tbody></table>');
-  w.document.write('<div class="highlight"><strong>Ziel:</strong> Kinder dabei begleiten, sich sicher zu f\u00fchlen, Vertrauen in eigene F\u00e4higkeiten zu entwickeln, Beziehungen aufzubauen, neugierig zu bleiben und ihre Umwelt aktiv mitzugestalten.</div>');
-  w.document.write('<div class="footer">LUMAE \u2013 Entwicklung sehen \u00b7 \u00a9 2025 Jens Trost \u00b7 Erstellt am '+date+'</div>');
-  w.document.write('<br><button onclick="window.print()" style="margin-top:.7cm;padding:.4rem 1rem;background:#3d6b52;color:white;border:none;border-radius:6px;cursor:pointer">\ud83d\udda8 Drucken / Als PDF speichern</button>');
-  w.document.write('</body></html>');
-  w.document.close();
-  showToast('F\u00f6rderbericht PDF ge\u00f6ffnet \u2713');
-}
 
-function exportCanvasPDF(canvasId,title){
-  const canvas=document.getElementById(canvasId);
-  if(!canvas){ showToast('Diagramm nicht gefunden'); return; }
-  const img=canvas.toDataURL('image/png',1.0);
-  // Use a simple print window
-  const w=window.open('','_blank');
-  const name=childInfo.name||'Kind';
-  const date=new Date().toLocaleDateString('de-DE');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title>
-  <style>body{margin:1cm;font-family:sans-serif}h2{color:#2a2520;font-size:16pt}p{color:#7a6f60;font-size:10pt}img{max-width:100%;margin-top:1cm}@media print{button{display:none}}</style></head>
-  <body><h2>LUMAE – Entwicklung sehen · ${title}</h2>
-  <p>${name} · ${rangeLabel(ageRange)} · ${date}</p>
-  <img src="${img}">
-  <br><button onclick="window.print()">🖨 Drucken / Als PDF speichern</button>
-  </body></html>`);
-  w.document.close();
-  showToast('Druckansicht geöffnet – als PDF speichern');
-}
 
-function exportPDF(){
-  const name=childInfo.name||'Kind';
-  const date=new Date().toLocaleDateString('de-DE');
-  const erhDatum=childInfo.date?new Date(childInfo.date).toLocaleDateString('de-DE'):date;
-  const lc=document.getElementById('linearChart');
-  const bc=document.getElementById('barChart');
-  const rc=document.getElementById('radarChart');
-  const li=lc?lc.toDataURL('image/png',1):'';
-  const bi=bc?bc.toDataURL('image/png',1):'';
-  const ri=rc?rc.toDataURL('image/png',1):'';
-  const cm=parseFloat(childInfo.months)||parseFloat(childInfo.years)*12||0;
-  const year=Math.min(9,Math.floor(cm/12));
-  const fd=FOERDER[String(year)]||{};
-  const areaNames={kup:'K\u00f6rperbewusstsein & Pflege',ub:'Umgebungsbewusstsein',se:'Sozial-emotionale Entwicklung',st:'Spielt\u00e4tigkeit',sl:'Sprache & Literacy',kog:'Kognition',gm:'Grobmotorik',fm:'Feinmotorik'};
-  const areaEmoji={kup:'\ud83e\uddf4',ub:'\ud83c\udfd8\ufe0f',se:'\u2764\ufe0f',st:'\ud83e\uddf8',sl:'\ud83d\udde3\ufe0f',kog:'\ud83e\udde0',gm:'\ud83d\udd28',fm:'\ud83e\udeb6'};
-  let tableRows='';
-  AREA_ORDER.forEach(aid=>{
-    const a=DATA[aid],s=calcAreaStats(aid);
-    const da=calcDevAge(aid),dy=da?(da/12).toFixed(1)+' J':'—';
-    const d2=da&&cm?da-cm:null,dstr=d2!==null?(d2>=0?'+':'')+(d2/12).toFixed(1)+' J':'—';
-    const sc=s.total>0?Math.round(((s.yes+s.partial*.5)/s.total)*100):0;
-    const {basis,decke}=calcBasisDecke(aid);
-    tableRows+=`<tr><td>${a.emoji} ${a.name}</td><td>${dy}</td><td>${dstr}</td><td>${sc}%</td></tr>`;
-  });
-  let fRows='';
-  AREA_ORDER.forEach(aid=>{const f=fd[aid];if(!f)return;fRows+=`<tr><td style="font-weight:600;vertical-align:top">${areaEmoji[aid]} ${areaNames[aid]}</td><td>${f.home}</td><td>${f.inst}</td></tr>`;});
-  ['sl_quer','medien'].forEach(k=>{if(!fd[k])return;const lbl=k==='sl_quer'?'\ud83c\udf0d Mehrsprachigkeit':'\ud83d\udcbb Medien & Digitales';fRows+=`<tr><td style="font-weight:600;vertical-align:top">${lbl}</td><td>${fd[k].home}</td><td>${fd[k].inst}</td></tr>`;});
-  let gpRows=GRUNDPRINZIPIEN.map((p,i)=>`<tr><td style="font-weight:600">${i+1}. ${p.n}</td><td style="color:#555">${p.t}</td></tr>`).join('');
-  const pdfCSS='body{margin:1.5cm;font-family:Helvetica Neue,Arial,sans-serif;color:#2a2520;font-size:9pt}.cover{border-bottom:3pt solid #3d6b52;padding-bottom:9pt;margin-bottom:12pt}h1{font-size:16pt;font-weight:300;color:#3d6b52;margin-bottom:3pt}h2{font-size:10.5pt;font-weight:600;color:#2a2520;margin:12pt 0 4pt;border-bottom:1pt solid #e8dfc8;padding-bottom:3pt}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:3pt 18pt;font-size:8pt;color:#555;margin-top:6pt}.meta-row{display:flex;gap:4pt}.meta-label{color:#aaa;min-width:85pt}img{max-width:48%;display:inline-block;margin:3pt;vertical-align:top}table{width:100%;border-collapse:collapse;font-size:8pt}th{background:#f5f0e8;padding:4pt 7pt;text-align:left;border-bottom:2pt solid #e8dfc8;font-size:7pt;text-transform:uppercase}td{padding:4pt 7pt;border-bottom:1pt solid #e8dfc8;vertical-align:top}.highlight{background:#f0f7f3;border-left:3pt solid #3d6b52;border-radius:3pt;padding:6pt 8pt;font-size:8pt;line-height:1.6;color:#3d6b52;margin:6pt 0}.footer{font-size:7pt;color:#aaa;margin-top:12pt;border-top:1pt solid #e8dfc8;padding-top:4pt}@media print{button{display:none}}';
-  const w=window.open('','_blank');
-  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Gesamtbericht</title><style>'+pdfCSS+'</style></head><body>');
-  w.document.write('<div class="cover"><h1 style="font-weight:800;letter-spacing:.05em">LUMAE <span style="font-weight:600;font-size:.6em;letter-spacing:.16em;color:#9ccb6a;text-transform:uppercase;white-space:nowrap">Entwicklung sehen</span></h1><div style="font-size:10pt;color:#7a6f60;margin-bottom:7pt">Gesamtbericht \u2013 Entwicklungsprofil</div><div class="meta-grid"><div class="meta-row"><span class="meta-label">Name:</span><strong>'+name+'</strong></div><div class="meta-row"><span class="meta-label">Geschlecht:</span>'+(childInfo.gender||'—')+'</div><div class="meta-row"><span class="meta-label">Geburtsdatum:</span>'+(childInfo.birth?new Date(childInfo.birth).toLocaleDateString("de-DE"):"—")+'</div><div class="meta-row"><span class="meta-label">Chron. Alter:</span>'+(cm?Math.round(cm)+' M / '+(cm/12).toFixed(1)+' J':'—')+'</div><div class="meta-row"><span class="meta-label">Institution:</span>'+(childInfo.inst||'—')+'</div><div class="meta-row"><span class="meta-label">Altersbereich:</span>'+rangeLabel(ageRange)+'</div><div class="meta-row"><span class="meta-label">Beobachter:in:</span>'+(childInfo.obs||'—')+'</div><div class="meta-row"><span class="meta-label">Erhebungsdatum:</span>'+erhDatum+'</div><div class="meta-row"><span class="meta-label">Anlass:</span>'+(childInfo.reason||'—')+'</div><div class="meta-row"><span class="meta-label">Erstellt am:</span>'+date+'</div></div></div>');
-  w.document.write('<h2>\ud83d\udccb Detailergebnisse</h2><table><thead><tr><th>Bereich</th><th>Entw.alter</th><th>Differenz</th><th>Kompetenz</th></tr></thead><tbody>'+tableRows+'</tbody></table>');
-  w.document.write('<h2>\ud83d\udcca Diagramme</h2><div>'+(li?'<img src="'+li+'" alt="Liniendiagramm" style="max-width:98%"><br>':'')+(bi?'<img src="'+bi+'" alt="Balkendiagramm">':'')+(ri?'<img src="'+ri+'" alt="Radialdiagramm">':'')+'</div>');
-  w.document.write('<h2>\ud83d\udca1 F\u00f6rderm\u00f6glichkeiten \u2013 '+year+'. Lebensjahr</h2><div class="highlight">Die Angebote sind entwicklungsbegleitend und st\u00e4rkenorientiert.</div><table><thead><tr><th>Bereich</th><th>\ud83c\udfe0 Zuhause</th><th>\ud83c\udfe2 Einrichtung</th></tr></thead><tbody>'+fRows+'</tbody></table>');
-  w.document.write('<h2>\ud83c\udf31 Grundprinzipien entwicklungsf\u00f6rdernder Begleitung</h2><table><thead><tr><th style="width:30%">Prinzip</th><th>Erl\u00e4uterung</th></tr></thead><tbody>'+gpRows+'</tbody></table>');
-  w.document.write('<div class="highlight"><strong>Ziel:</strong> Kinder dabei begleiten, sich sicher zu f\u00fchlen, Vertrauen in eigene F\u00e4higkeiten zu entwickeln, Beziehungen aufzubauen, neugierig zu bleiben und ihre Umwelt aktiv mitzugestalten.</div>');
-  w.document.write('<div class="footer">LUMAE \u2013 Entwicklung sehen \u00b7 \u00a9 2025 Jens Trost \u00b7 Erstellt am '+date+'</div>');
-  w.document.write('<br><button onclick="window.print()" style="margin-top:.7cm;padding:.4rem 1rem;background:#3d6b52;color:white;border:none;border-radius:6px;cursor:pointer">\ud83d\udda8 Drucken / Als PDF speichern</button>');
-  w.document.write('</body></html>');
-  w.document.close();
-  showToast('Gesamtbericht ge\u00f6ffnet \u2013 als PDF speichern');
-}
 
 // ═══════════════════════════════════════
 // PROGRESS & NAV
@@ -2160,7 +2063,7 @@ function buildFilename(){
   return `${today} ${name}.lma`;
 }
 
-function exportKBD(){
+function exportLMA(){
   const payload={app:'LUMAE',format:'lumae',version:3,created:new Date().toISOString(),savedAt:new Date().toISOString(),childInfo,ageRange,answers,erhebungen:previousErhebungen||[]};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const a=document.createElement('a');
@@ -2174,7 +2077,7 @@ function exportKBD(){
 
 function triggerImport(){ document.getElementById('imp-input').click(); }
 
-function importKBD(evt){
+function importLMA(evt){
   const file=evt.target.files[0]; if(!file) return;
   const reader=new FileReader();
   reader.onload=e=>{
@@ -2196,11 +2099,11 @@ function importKBD(evt){
   evt.target.value='';
 }
 function saveSession(){
-  try{ sessionStorage.setItem('kbd_v3',JSON.stringify({answers,childInfo,ageRange,started,erhebungen:previousErhebungen})); }catch(e){}
+  try{ sessionStorage.setItem('lumae_v3',JSON.stringify({answers,childInfo,ageRange,started,erhebungen:previousErhebungen})); }catch(e){}
 }
 function loadSession(){
   try{
-    const s=sessionStorage.getItem('kbd_v3'); if(!s) return;
+    const s=sessionStorage.getItem('lumae_v3'); if(!s) return;
     const d=JSON.parse(s);
     answers=d.answers||{}; childInfo=d.childInfo||{}; ageRange=d.ageRange||null; started=d.started||false; previousErhebungen=d.erhebungen||[];
     loadChildUI();
@@ -2224,7 +2127,7 @@ function loadSession(){
     }
   }catch(e){}
 }
-function clearSession(){ try{ sessionStorage.removeItem('kbd_v3'); }catch(e){} }
+function clearSession(){ try{ sessionStorage.removeItem('lumae_v3'); }catch(e){} }
 
 // ═══════════════════════════════════════
 // HILFE
@@ -2373,12 +2276,12 @@ function setLang(lang){
   const langs=Object.keys(LANGS);
   const idx=langs.indexOf(lang);
   if(langBtns[idx]) langBtns[idx].classList.add('active');
-  try{localStorage.setItem('kbe_lang',lang);}catch(e){}
+  try{localStorage.setItem('lumae_lang',lang);}catch(e){}
 }
 
 // Load saved language
 document.addEventListener('DOMContentLoaded',function(){
-  try{const saved=localStorage.getItem('kbe_lang');if(saved&&LANGS[saved])setLang(saved);}catch(e){}
+  try{const saved=localStorage.getItem('lumae_lang');if(saved&&LANGS[saved])setLang(saved);}catch(e){}
 });
 
 const GRUNDPRINZIPIEN=[
@@ -2996,7 +2899,7 @@ function setAppLang(lang){
     const span=el.querySelector('span:nth-child(2)');
     if(span) span.textContent=DATA[aid].emoji+' '+locArea(aid);
   });
-  try{localStorage.setItem('kbe_app_lang',lang);}catch(e){}
+  try{localStorage.setItem('lumae_app_lang',lang);}catch(e){}
   // Re-render the currently visible view so item texts switch immediately
   try{
     const vis=v=>{const el=document.getElementById('view-'+v);return el&&el.style.display!=='none';};
@@ -3723,7 +3626,7 @@ function renderVerlaufView(){
 function renderErhebungFull(erh, idx, total){
   const date=new Date(erh.savedAt||erh.created);
   const dateStr=date.toLocaleDateString('de',{day:'2-digit',month:'long',year:'numeric'});
-  const range={krippe:'Krippenbereich (0–3 J)',kita:'Kitabereich (3–6 J)',schule:'Grundschulbereich (6–9 J)'}[erh.ageRange]||erh.ageRange;
+  const range={krippe:'Krippenbereich (0–3 J)',kita:'Kitabereich (3–6 J)',schule:'Grundschulbereich (6–9 J)',transition:'Übergangsbereich (9–12 J)'}[erh.ageRange]||erh.ageRange;
   const cm=parseFloat(erh.childInfo?.months)||0;
   const L=APP_UI[appLang]||APP_UI.de;
 
@@ -3836,7 +3739,7 @@ function renderVerlaufVergleich(){
     all.forEach((erh,i)=>{
       const d=new Date(erh.savedAt||erh.created);
       const lbl=d.toLocaleDateString('de',{month:'short',year:'numeric'});
-      const range={krippe:'Krippe',kita:'Kita',schule:'Grundschule'}[erh.ageRange]||erh.ageRange;
+      const range={krippe:'Krippe',kita:'Kita',schule:'Grundschule',transition:'Transition'}[erh.ageRange]||erh.ageRange;
       const sel=(window._vergleichIdx===undefined&&i===0)||window._vergleichIdx===i;
       selHtml+=`<button class="${sel?'btn btn-primary':'btn btn-outline'}"
         style="font-size:.72rem;padding:.25rem .6rem"
@@ -4028,43 +3931,7 @@ function toggleVerlaufNav(){
 }
 
 
-function exportSingleChart(type){
-  var g=function(id){return document.getElementById(id);};
-  var cm={linear:'linearChart',bar:'barChart',radar:'radarChart'};
-  var tm={linear:'Entwicklungsprofil (Liniendiagramm)',bar:'Entwicklungsprofil (Balkendiagramm)',radar:'Entwicklungsprofil (Radialdiagramm)'};
-  var vp=g('view-profile');
-  var vpW=vp?vp.style.display:'';
-  if(!g('linearChart')||!g('linearChart').getContext){
-    if(typeof renderProfile==='function') renderProfile();
-  }
-  if(vp){vp.style.position='fixed';vp.style.top='-9999px';vp.style.left='0';vp.style.width='900px';vp.style.display='block';vp.style.zIndex='-999';}
-  var cb=g('cb-'+type);if(cb)cb.style.display='block';
-  setTimeout(function(){
-    var m3=parseFloat(childInfo.months)||0;
-    if(type==='linear')drawLinear(m3);else if(type==='bar')drawBar(m3);else drawRadar();
-    requestAnimationFrame(function(){
-      var cv=g(cm[type]);var img=cv&&cv.width>10?cv.toDataURL('image/png',0.95):'';
-      if(cb)cb.style.display='none';
-      if(vp){vp.style.position='';vp.style.top='';vp.style.left='';vp.style.width='';vp.style.zIndex='';vp.style.display=vpW;}
-      if(!img){alert('Kein Diagramm verfügbar. Bitte zuerst das Entwicklungsprofil öffnen.');return;}
-      var w=window.open('','_blank');
-      if(!w){alert('Pop-up-Blocker aktiv.');return;}
-      var d=w.document;d.open();
-      d.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+tm[type]+'<\/title>');
-      d.write('<style>body{font-family:Arial,sans-serif;padding:2rem;max-width:900px;margin:0 auto}h2{color:#2d5a3d}img{max-width:100%}<\/style><\/head><body>');
-      d.write('<h2>'+tm[type]+'<\/h2><p style="color:#666;font-size:.85rem">'+(childInfo.name||'Kind')+' · '+new Date().toLocaleDateString('de-DE')+'<\/p>');
-      d.write('<img src="'+img+'" alt="Diagramm"><\/body><\/html>');
-      d.close();setTimeout(function(){w.print();},400);
-    });
-  },300);
-}
 
-function druckElternInfo(){
-  var el=document.getElementById('eltern-lang');
-  var lang=el?el.value:(document.getElementById('dok-lang')?document.getElementById('dok-lang').value:'de');
-  if(typeof exportElternInfo==='function') exportElternInfo(lang);
-  else alert('Elterninformation nicht verfügbar.');
-}
 
 init();
 
@@ -4125,7 +3992,6 @@ function exportBericht(){
 
   // Build content array
   var p=[];
-  var COLORS={kup:'#e8b84b',ub:'#e8922a',se:'#d95f45',st:'#cc4488',sl:'#8e5aad',kog:'#5a7cc9',gm:'#4a90d9',fm:'#35a8b8'};
 
   // DECKBLATT
   if(opt.deckblatt){
@@ -4167,7 +4033,7 @@ function exportBericht(){
       var aid=AREA_ORDER[i];var da=calcDevAge(aid);
       var daStr=da?(da/12).toFixed(1)+' J':'---';
       var ph=da?Object.entries(PHASE_MONTHS).reduce(function(b,kv){return +kv[1]<=da?+kv[0]:b;},0):null;
-      var col=AREA_COLORS[aid]||COLORS[aid]||'#888';var an=(R.areas&&R.areas[aid])||DATA[aid].name;
+      var col=AREA_COLORS[aid]||'#888';var an=(R.areas&&R.areas[aid])||DATA[aid].name;
       p.push('<tr><td>'+DATA[aid].emoji+' '+an+'<\/td>');
       p.push('<td><span class="badge" style="background:'+col+'">'+daStr+'<\/span><\/td>');
       p.push('<td style="color:#7a6f5a">'+(ph!==null?R.ph+ph:'---')+'<\/td><\/tr>');
@@ -4193,7 +4059,7 @@ function exportBericht(){
       var faid=AREA_ORDER[j];var fda=calcDevAge(faid);if(!fda)continue;
       var fst=fda<36?1:fda<72?2:fda<108?3:4;var fd2=FOERDER[String(fst)];var afd=locFoerder(fst,faid,rlang);if(!afd)continue;
       var fan=(R.areas&&R.areas[faid])||DATA[faid].name;
-      var fcol=AREA_COLORS[faid]||COLORS[faid]||'#888';
+      var fcol=AREA_COLORS[faid]||'#888';
       p.push('<div class="fi" style="border-left:3px solid '+fcol+'"><div style="font-weight:600;margin-bottom:.5rem">'+DATA[faid].emoji+' '+fan+' <span class="badge" style="background:'+fcol+'">'+(fda/12).toFixed(1)+' J<\/span><\/div>');
       if(afd.home)p.push('<div class="fl">'+R.zuhause+'<\/div><div style="font-size:.85rem">'+afd.home+'<\/div>');
       if(afd.inst)p.push('<div class="fl" style="margin-top:.5rem">'+R.einrLbl+'<\/div><div style="font-size:.85rem">'+afd.inst+'<\/div>');
