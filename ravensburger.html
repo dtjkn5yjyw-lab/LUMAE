@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ravensburger Bogen · Entwicklungsbeobachtung</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232b3043'/%3E%3Ccircle cx='11' cy='16' r='3.4' fill='%232f7e86'/%3E%3Ccircle cx='16' cy='16' r='3.4' fill='%23c77b30'/%3E%3Ccircle cx='21' cy='16' r='3.4' fill='%23a8456b'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F1EA; --surface:#FCFBF7; --surface2:#F8F5EE;
+  --ink:#2B3043; --muted:#6E6B63; --faint:#9A968C; --line:#E5E0D4; --line2:#EEEAE0;
+  --pen1:#2F7E86; --pen2:#C77B30; --pen3:#A8456B;
+  --s4:#33786A; --s3:#7A9A4E; --s2:#C8923A; --s1:#B5664B;
+  --r:12px; --shadow:0 1px 2px rgba(43,48,67,.04),0 6px 20px rgba(43,48,67,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.ff{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+a{color:var(--pen1)}
+
+/* ── Header ── */
+header{position:sticky;top:0;z-index:100;background:var(--ink);color:#F3EFE6}
+.hwrap{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:1rem;padding:.7rem 1.2rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:.6rem;min-width:0}
+.dots{display:flex;gap:3px;flex-shrink:0}
+.dots i{width:11px;height:11px;border-radius:50%;display:block}
+.brand h1{font-size:1.02rem;line-height:1.1;font-weight:500;color:#F8F5EE}
+.brand .sub{font-size:.66rem;letter-spacing:.04em;color:#A9A59A;margin-top:1px}
+.hspace{flex:1}
+.prog{min-width:120px;max-width:200px;flex:1}
+.prog .pl{font-size:.62rem;color:#B4B0A4;margin-bottom:3px;display:flex;justify-content:space-between;gap:.5rem}
+.pbar{height:4px;background:rgba(255,255,255,.14);border-radius:99px;overflow:hidden}
+.pfill{height:100%;width:0;background:linear-gradient(90deg,var(--pen1),var(--pen3));transition:width .4s}
+.hbtns{display:flex;gap:.35rem;flex-wrap:wrap}
+.hb{display:inline-flex;align-items:center;gap:.32rem;padding:.36rem .6rem;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#EFEBE1;font-size:.74rem;font-weight:500;transition:.15s;white-space:nowrap}
+.hb:hover{background:rgba(255,255,255,.1)}
+.hb.pri{background:rgba(47,126,134,.85);border-color:transparent}
+.hb.pri:hover{background:#2f7e86}
+.hb svg{width:14px;height:14px}
+
+/* ── Layout ── */
+.app{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:248px 1fr;gap:0;min-height:calc(100vh - 56px)}
+nav{position:sticky;top:56px;align-self:start;height:calc(100vh - 56px);overflow-y:auto;padding:1rem .7rem 2rem;border-right:1px solid var(--line)}
+.nsec{font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:.5rem .6rem .3rem;font-weight:600}
+.nitem{display:flex;align-items:center;gap:.55rem;width:100%;text-align:left;background:transparent;border:0;border-radius:9px;padding:.5rem .6rem;font-size:.82rem;color:var(--ink);transition:.13s;position:relative}
+.nitem:hover{background:var(--surface2)}
+.nitem.on{background:var(--surface);box-shadow:var(--shadow);font-weight:600}
+.nitem.on::before{content:"";position:absolute;left:-.7rem;top:50%;transform:translateY(-50%);width:3px;height:22px;border-radius:99px;background:var(--accent,var(--pen1))}
+.nitem.dis{opacity:.42;pointer-events:none}
+.nico{font-size:1rem;width:1.2rem;text-align:center;flex-shrink:0}
+.nrn{font-size:.62rem;color:var(--faint);font-weight:600;margin-left:auto}
+.ncheck{margin-left:auto;display:flex;gap:2px}
+.ncheck i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+main{padding:1.6rem 1.8rem 4rem;min-width:0}
+
+/* ── Generic ── */
+.wrap{max-width:760px}
+.eyebrow{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.h-lg{font-size:1.7rem;margin:.2rem 0 .3rem}
+.lead{color:var(--muted);font-size:.92rem;margin-bottom:1.4rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1.1rem 1.2rem;box-shadow:var(--shadow);margin-bottom:1rem}
+.card > h3{font-size:1.05rem;margin-bottom:.2rem}
+.card .hint{font-size:.78rem;color:var(--muted);margin-bottom:.9rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem}
+.fld{display:flex;flex-direction:column;gap:.28rem}
+.fld.full{grid-column:1/-1}
+.fld label{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.fld input,.fld select,.fld textarea{width:100%;padding:.5rem .65rem;border:1px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--ink);font-size:.88rem;transition:.13s}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--pen1);background:#fff;box-shadow:0 0 0 3px rgba(47,126,134,.12)}
+.fld input[readonly]{background:#EFEBE1;color:var(--muted)}
+.fld textarea{resize:vertical;min-height:62px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.1rem;border-radius:10px;border:1px solid transparent;font-size:.88rem;font-weight:600;transition:.15s}
+.btn.pri{background:var(--ink);color:#F6F2E9}
+.btn.pri:hover{background:#363c52}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+
+/* ── Age choice ── */
+.ages{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.4rem}
+.agec{border:1.5px solid var(--line);border-radius:var(--r);padding:1rem;background:var(--surface2);text-align:left;transition:.16s}
+.agec:hover{border-color:var(--pen1)}
+.agec.sel{border-color:var(--pen1);background:#fff;box-shadow:0 0 0 3px rgba(47,126,134,.13)}
+.agec .ae{font-size:1.5rem}
+.agec .at{font-weight:700;margin-top:.2rem}
+.agec .as{font-size:.74rem;color:var(--muted)}
+
+/* ── Round selector ── */
+.rounds{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.2rem}
+.rtab{display:flex;align-items:center;gap:.45rem;padding:.45rem .75rem;border-radius:99px;border:1.5px solid var(--line);background:var(--surface);font-size:.8rem;font-weight:600;color:var(--muted);transition:.14s}
+.rtab .rdot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:2px solid currentColor}
+.rtab.on{color:#fff}
+.rtab.on.r0{background:var(--pen1);border-color:var(--pen1)}
+.rtab.on.r1{background:var(--pen2);border-color:var(--pen2)}
+.rtab.on.r2{background:var(--pen3);border-color:var(--pen3)}
+.rtab.on .rdot{border-color:rgba(255,255,255,.7)}
+.rtab:not(.on).r0 .rdot{color:var(--pen1)}
+.rtab:not(.on).r1 .rdot{color:var(--pen2)}
+.rtab:not(.on).r2 .rdot{color:var(--pen3)}
+.rmeta{font-size:.74rem;color:var(--muted);margin:.5rem 0 0}
+.rmeta b{color:var(--ink)}
+
+/* ── Area capture ── */
+.ahead{display:flex;align-items:flex-start;gap:.8rem;margin-bottom:.1rem}
+.ahead .ae{font-size:1.7rem;line-height:1}
+.ahead .anum{font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--accent,var(--pen1))}
+.ahead h2{font-size:1.35rem;line-height:1.1}
+.aintro{font-style:italic;color:var(--muted);font-size:.86rem;margin:.7rem 0 0}
+
+.scaletbl{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-top:1rem}
+.colhead{display:grid;grid-template-columns:1fr repeat(4,var(--cw,72px));position:sticky;top:56px;background:var(--surface);z-index:5;border-bottom:1px solid var(--line)}
+.colhead .ch-sp{padding:.5rem .8rem}
+.colhead .ch{font-size:.6rem;line-height:1.15;text-align:center;color:var(--muted);font-weight:600;padding:.5rem .25rem;border-left:1px solid var(--line2);display:flex;align-items:center;justify-content:center}
+.grouplbl{font-size:.74rem;font-weight:700;color:var(--ink);background:var(--surface2);padding:.4rem .8rem;border-bottom:1px solid var(--line2);border-top:1px solid var(--line2)}
+.irow{display:grid;grid-template-columns:1fr repeat(4,var(--cw,72px));align-items:stretch;border-bottom:1px solid var(--line2)}
+.irow:last-child{border-bottom:0}
+.irow .itxt{padding:.6rem .8rem;font-size:.84rem;line-height:1.4;display:flex;align-items:center}
+.cell{border-left:1px solid var(--line2);display:flex;align-items:center;justify-content:center;gap:3px;position:relative;background:transparent;min-height:44px;transition:background .1s}
+.cell:hover{background:var(--surface2)}
+.cell.act-here{background:color-mix(in srgb,var(--cellc,var(--pen1)) 14%,transparent)}
+.mk{width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.mk.r0{background:var(--pen1)} .mk.r1{background:var(--pen2)} .mk.r2{background:var(--pen3)}
+.mk.ghost{opacity:.32}
+.mk.cur{width:17px;height:17px}
+
+.texts{margin-top:1rem}
+.tcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:.7rem;overflow:hidden}
+.tcard summary{list-style:none;cursor:pointer;padding:.7rem .9rem;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:.5rem;color:var(--ink)}
+.tcard summary::-webkit-details-marker{display:none}
+.tcard summary .chev{margin-left:auto;color:var(--faint);transition:.2s;font-size:.7rem}
+.tcard[open] summary .chev{transform:rotate(90deg)}
+.tcard .tbody{padding:0 .9rem .9rem}
+.tcard textarea{width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:.55rem .65rem;font-size:.86rem;line-height:1.5;resize:vertical;min-height:70px}
+.tcard textarea:focus{outline:none;border-color:var(--pen1);background:#fff}
+.filledtag{font-size:.6rem;font-weight:700;color:var(--s4);background:rgba(51,120,106,.12);padding:.1rem .4rem;border-radius:99px}
+
+.anav{display:flex;justify-content:space-between;gap:.8rem;margin-top:1.4rem}
+
+/* ── Auswertung ── */
+.note{background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--pen2);border-radius:9px;padding:.7rem .9rem;font-size:.8rem;color:var(--muted);line-height:1.55;margin-bottom:1.2rem}
+.legend{display:flex;gap:.9rem;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin:.2rem 0 1rem}
+.legend span{display:inline-flex;align-items:center;gap:.35rem}
+.legend i{width:10px;height:10px;border-radius:50%}
+.profile .prow{display:grid;grid-template-columns:140px 1fr;gap:.7rem;align-items:center;margin-bottom:.5rem}
+.profile .pname{font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:.4rem}
+.ptrack{position:relative;height:30px;background:var(--surface2);border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.ptick{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.pbarv{position:absolute;top:3px;height:10px;border-radius:5px;transition:width .5s}
+.pbarv.r0{background:var(--pen1)} .pbarv.r1{background:var(--pen2)} .pbarv.r2{background:var(--pen3)}
+canvas{max-width:100%}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.chips{display:flex;flex-direction:column;gap:.45rem}
+.chip{display:flex;gap:.5rem;align-items:flex-start;font-size:.82rem;line-height:1.4;padding:.5rem .65rem;border-radius:9px;border:1px solid var(--line2)}
+.chip .ci{font-size:.62rem;font-weight:700;color:#fff;border-radius:5px;padding:.05rem .35rem;flex-shrink:0;margin-top:1px}
+.chip.str{background:rgba(51,120,106,.07)} .chip.str .ci{background:var(--s4)}
+.chip.foc{background:rgba(181,102,75,.06)} .chip.foc .ci{background:var(--s1)}
+.chip .ca{font-size:.66rem;color:var(--faint);display:block;margin-top:1px}
+.emptyc{font-size:.82rem;color:var(--faint);padding:.5rem}
+
+.toast{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%) translateY(140%);background:var(--ink);color:#F6F2E9;padding:.7rem 1.1rem;border-radius:99px;font-size:.84rem;font-weight:500;box-shadow:0 8px 28px rgba(0,0,0,.25);z-index:400;transition:transform .35s;display:flex;gap:.5rem;align-items:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.modal-bg{position:fixed;inset:0;background:rgba(30,32,42,.5);backdrop-filter:blur(2px);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:1.3rem;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal h3{font-size:1.1rem;margin-bottom:.4rem}
+.modal p{font-size:.86rem;color:var(--muted);margin-bottom:1.1rem;line-height:1.5}
+.modal .mrow{display:flex;gap:.6rem;justify-content:flex-end}
+
+.mobnav{display:none}
+
+@media(max-width:860px){
+  .app{grid-template-columns:1fr}
+  nav{display:none}
+  main{padding:1.1rem 1rem 5rem}
+  .colhead,.irow{--cw:46px}
+  .colhead .ch{font-size:.5rem}
+  .cols2{grid-template-columns:1fr}
+  .profile .prow{grid-template-columns:96px 1fr}
+  .mobnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);z-index:90;padding:.3rem;gap:.2rem;overflow-x:auto}
+  .mobnav button{flex:0 0 auto;background:transparent;border:0;border-radius:8px;padding:.4rem .55rem;font-size:1.1rem;opacity:.5}
+  .mobnav button.on{opacity:1;background:var(--surface2)}
+}
+@media print{header,nav,.mobnav,.anav,.rounds,.hbtns{display:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div class="brand">
+      <span class="dots"><i style="background:var(--pen1)"></i><i style="background:var(--pen2)"></i><i style="background:var(--pen3)"></i></span>
+      <div>
+        <h1>Ravensburger Bogen</h1>
+        <div class="sub" id="brand-sub">Entwicklungsbeobachtung · digital</div>
+      </div>
+    </div>
+    <div class="hspace"></div>
+    <div class="prog" id="prog" style="display:none">
+      <div class="pl"><span>Erhebung <span id="prog-round"></span></span><span id="prog-pct">0 %</span></div>
+      <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    </div>
+    <div class="hbtns">
+      <button class="hb pri" onclick="saveFile()" title="Als Datei speichern">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        <span class="lbl">Speichern</span>
+      </button>
+      <button class="hb" onclick="document.getElementById('openf').click()" title="Datei öffnen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v9a2 2 0 0 1-2 2H3z"/></svg>
+        <span class="lbl">Öffnen</span>
+      </button>
+      <button class="hb" onclick="confirmNew()" title="Neue Erhebung">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="lbl">Neu</span>
+      </button>
+      <input type="file" id="openf" accept=".rbb,.json" style="display:none" onchange="openFile(event)">
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<div class="mobnav" id="mobnav"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modal-t"></h3>
+    <p id="modal-p"></p>
+    <div class="mrow">
+      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn pri" id="modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* Ravensburger Bogen zur Entwicklungsbeobachtung – Itemdaten
+   Quelle: © 2007 Fachberatungsstellen für Kindertageseinrichtungen im Landkreis Ravensburg
+   Bögen: 2–3 Jahre und 4–6 Jahre. Wortlaut der Items aus den Originalbögen übernommen. */
+
+const SCALE = [
+  { key: 'zu',        label: 'trifft zu',          val: 4 },
+  { key: 'eher',      label: 'trifft eher zu',     val: 3 },
+  { key: 'weniger',   label: 'trifft weniger zu',  val: 2 },
+  { key: 'nochnicht', label: 'trifft noch nicht zu', val: 1 }
+];
+
+const AREA_META = {
+  sozial:    { num: 'I',   title: 'Sozialverhalten',                emoji: '🤝' },
+  emotional: { num: 'II',  title: 'Emotionale Entwicklung',         emoji: '💛' },
+  lernen:    { num: 'III', title: 'Lernen (Kognitive Entwicklung)', emoji: '🧩' },
+  sprache:   { num: 'IV',  title: 'Sprachliche Entwicklung',        emoji: '💬' },
+  kreativ:   { num: 'V',   title: 'Kreativität',                    emoji: '🎨' },
+  spiel:     { num: 'VI',  title: 'Spielverhalten',                 emoji: '🎲' },
+  koerper:   { num: 'VII', title: 'Körperliche Entwicklung',        emoji: '🤸' }
+};
+
+/* Jeder Bereich: blocks = [{ group?: '...', items: ['...'] }]
+   extras = zusätzliche Freitextfelder (über die Standardfelder hinaus) */
+
+const FORMS = {
+  '2-3': {
+    label: '2–3 Jahre',
+    areas: {
+      sozial: { blocks: [{ items: [
+        'Das Kind nimmt von sich aus positive Kontakte zu anderen Kindern auf.',
+        'Es hat positive Kontakte zu Kindern und Erwachsenen in der Gruppe.',
+        'Andere Kinder suchen gern die Gesellschaft des Kindes.',
+        'Im Spiel mit anderen Kindern verhält es sich kooperativ.',
+        'Das Kind gliedert sich in die Gruppe ein (es hält sich an Regeln).',
+        'Das Kind achtet auf das Einhalten der Regeln bei anderen.',
+        'Das Kind trägt bei Konflikten zu positiven Lösungsmöglichkeiten bei.',
+        'Das Kind geht Kompromisse ein.',
+        'Es verträgt sich wieder.',
+        'Das Kind hört anderen Kindern zu.',
+        'Es hilft anderen Kindern, wenn sie Aufmerksamkeit benötigen.'
+      ] }] },
+      emotional: { blocks: [{ items: [
+        'Das Kind wirkt insgesamt ausgeglichen und zufrieden.',
+        'Das Kind drückt negative Gefühle aus (Ärger, Wut, Angst).',
+        'Das Kind drückt positive Gefühle aus (Freude, Zärtlichkeit, Mitgefühl).',
+        'Das Kind reguliert Gefühle seinem Alter angemessen (lässt sich trösten).',
+        'Das Kind kann sich Hilfe holen.',
+        'Das Kind ist selbstbewusst; es äußert und vertritt seine eigene Meinung.',
+        'Das Kind übernimmt Verantwortung für sich („Was tut mir gut?“).'
+      ] }] },
+      lernen: { blocks: [
+        { group: '1. Lernverhalten', items: [
+          'Das Kind konzentriert sich eine Zeit lang auf ein Spiel oder eine Aufgabe (allein/mit anderen Kindern/in der Gruppe).',
+          'Das Kind hat eigene Ideen (beim Konstruieren, Gestalten, Probleme lösen).',
+          'Das Kind zeigt vielfältiges Interesse und Neugier an seiner Umgebung (Materialien, Natur, Technik, Erlebnisse) und geht den Dingen experimentierend und forschend auf den Grund.',
+          'Das Kind lässt sich motivieren, ist begeisterungsfähig, macht gerne mit.',
+          'Das Kind kann mit Erfolg und Misserfolg umgehen.',
+          'Das Kind setzt seine Energie ein, um ans Ziel zu kommen.',
+          'Das Kind verschafft sich Ruhepausen.',
+          'Das Kind entwickelt Strategien, um etwas zu erreichen (Sachen „abluchsen“).'
+        ] },
+        { group: '2. Merkfähigkeit', items: [
+          'Das Kind erkennt Gedichte, Lieder, Memorykärtchen usw. wieder.',
+          'Das Kind erinnert sich an besondere Erlebnisse, Ereignisse.'
+        ] },
+        { group: '3. Auffassung, logisches Denken', items: [
+          'Das Kind versteht Spielregeln sowie Umgangsregeln.',
+          'Das Kind kann einfache Regeln befolgen.',
+          'Das Kind stellt Fragen (zu Beobachtungen oder Situationen).'
+        ] },
+        { group: '4. Ordnen und Unterscheiden', items: [
+          'Das Kind unterscheidet Dinge nach Merkmalen (Farbe, Form, Größe, Gewicht).'
+        ] }
+      ] },
+      sprache: { blocks: [{ items: [
+        'Der Wortschatz des Kindes ist altersentsprechend. Das Kind spricht in Ein-/Zwei-/Dreiwortsätzen (bitte Zutreffendes markieren).',
+        'Das Kind ersetzt nicht einzelne Buchstaben durch andere.',
+        'Das Kind spricht deutlich (Aussprache, Artikulation).',
+        'Das Kind hat eine angemessene sprachliche Lautstärke.',
+        'Das Kind spricht gerne und viel (Sprechfreudigkeit).',
+        'Das Kind kann seine Anliegen sprachlich mitteilen.',
+        'Das Kind versteht Anweisungen, Aufforderungen und Begriffe.',
+        'Das Kind beteiligt sich an Fingerspielen und Reimen.'
+      ] }] },
+      kreativ: { intro: 'Das Kind entwickelt eigene Ideen und drückt diese aus …', blocks: [
+        { group: '1. im kreativen Rollenspiel', items: [
+          'Es hat eigene Spielideen und setzt diese unter Zuhilfenahme von Materialien und Spielpartnern um.',
+          'Es gibt Dingen im Spiel neue Bedeutung („tun, als ob“).',
+          'Es begeistert sich für eine Spielidee, entwickelt diese weiter und bringt dabei weitere neue Ideen ein.'
+        ] },
+        { group: '2. im Gestalten (Malen, Zeichnen, Basteln, Werken)', items: [
+          'Es hat Freude daran, unterschiedliche Materialien auszuprobieren.',
+          'Es lernt gern neue Techniken und probiert diese selbst aus.'
+        ] },
+        { group: '3. in musikalischer Improvisation', items: [
+          'Es hat Freude an Musik und Geräuschen.',
+          'Es singt gern mit.',
+          'Es singt, summt, lallt vor sich hin.',
+          'Es reagiert auf Wechsel im Rhythmus oder im Tempo von Musikstücken oder auf Wechsel in der Lautstärke.',
+          'Es hat Spaß an Variationen in Rhythmus und Lautstärke von Musikstücken.',
+          'Es zeigt Interesse an Klängen, die mit verschiedenen Gegenständen erzeugt werden können, und experimentiert gerne mit diesen Klängen.'
+        ] },
+        { group: '4. in Gesprächen und Erzählungen', items: [
+          'Es erzählt gern Geschichten über eigene Abenteuer oder selbst erfundene Geschichten.',
+          'Es benutzt manchmal fantasievolle Sprachbilder.'
+        ] }
+      ] },
+      spiel: { blocks: [{ items: [
+        'Das Kind ist an Neuem interessiert und probiert gerne etwas aus.',
+        'Das Kind beteiligt sich häufig an Gruppenaktivitäten.',
+        'Das Kind spielt unterschiedliche Spiele.',
+        'Das Kind zeigt Ausdauer.',
+        'Das Kind geht sorgfältig mit Materialien um.',
+        'Das Kind kann sich auf eine Sache konzentrieren.',
+        'Das Kind motiviert andere Kinder zum Mitspielen.',
+        'Das Kind braucht keine Aufforderung zum Spiel.'
+      ] }],
+        extras: [
+          { id: 'spielpartner', label: 'Spielpartner / Spielbereiche' },
+          { id: 'interessen', label: 'Interessen / Vorlieben' }
+        ] },
+      koerper: { blocks: [
+        { group: '1. Allgemeine körperliche Entwicklung', items: [
+          'Die Körpergröße des Kindes ist altersentsprechend.',
+          'Der gesundheitliche Zustand ist gut und altersentsprechend.',
+          'Das äußere Erscheinungsbild ist angenehm, positiv.',
+          'Das Essverhalten ist altersentsprechend.',
+          'Das Kind ortet akustische Signale (Beispiel: Hörkim).',
+          'Das Kind erkennt visuelle Reize (hell-dunkel, grelles Licht).',
+          'Das Kind ertastet Gegenstände und unterscheidet diese.',
+          'Das Kind matscht und knetet.'
+        ] },
+        { group: '2. Feinmotorik', items: [
+          'Das Kind ahmt Fingerspiele nach.',
+          'Das Kind hat feinmotorische Fähigkeiten (Dinge greifen, stecken, kneten).'
+        ] },
+        { group: '3. Grobmotorik', items: [
+          'Das Kind hält das Gleichgewicht im Sitzen, Stehen, Laufen (Zutreffendes markieren).',
+          'Das Kind setzt seinen Körper und seine Kräfte gezielt ein (wälzen, rückwärts gehen, rollen, auf den Zehenspitzen gehen).',
+          'Das Kind kreuzt die Körpermitte (Hampelmann, Schneidersitz).',
+          'Das Kind bewegt sich gern, häufig und zeigt dabei Ausdauer (krabbelt, schaukelt, steigt Treppen, klettert, balanciert).',
+          'Das Kind bewegt sich sicher.',
+          'Das Kind kann seine Bewegung einem vorgegebenen Rhythmus anpassen (Musik, Takt, Sprache).'
+        ] },
+        { group: '4. Mundmotorik', items: [
+          'Die Zungenmotorik des Kindes ist unauffällig.',
+          'Das Kind schließt den Mund beim Essen oder Trinken aus dem Glas.',
+          'Das Kind kann eine Kerze ausblasen (auspusten).',
+          'Das Kind kann Eis schlecken.'
+        ] }
+      ] }
+    },
+    abschluss: [
+      { id: 'eingewoehnung', label: 'Eingewöhnungsphase', placeholder: 'Wie verlief die Eingewöhnung? Wie hat sich das Kind in der Gruppe entwickelt? Zu welchen Bezugspersonen besteht eine positive Bindung?' },
+      { id: 'eltern', label: 'Angaben der Eltern', placeholder: 'Was berichten die Eltern über das Kind (familiäres Umfeld, Verhalten zu Hause)?' },
+      { id: 'allgemein', label: 'Allgemeine Anmerkungen nach Abschluss der Beobachtung', placeholder: 'z. B. zur Vorbereitung eines Elterngesprächs' }
+    ]
+  },
+
+  '4-6': {
+    label: '4–6 Jahre',
+    areas: {
+      sozial: { blocks: [{ items: [
+        'Das Kind nimmt von sich aus positive Kontakte zu anderen Kindern auf.',
+        'Es hat positive Kontakte zu Kindern und Erwachsenen in der Gruppe.',
+        'Andere Kinder suchen gern die Gesellschaft des Kindes.',
+        'Im Spiel mit anderen Kindern verhält es sich kooperativ.',
+        'Das Kind gliedert sich in die Gruppe ein (es hält sich an Regeln).',
+        'Das Kind achtet auf das Einhalten der Regeln bei anderen.',
+        'Das Kind trägt bei Konflikten zu positiven Lösungsmöglichkeiten bei.',
+        'Es trägt Streit verbal und lösungsorientiert aus.',
+        'Das Kind geht Kompromisse ein.',
+        'Es verträgt sich wieder.',
+        'Es versetzt sich in andere Kinder hinein.',
+        'Das Kind hört anderen Kindern zu.',
+        'Es hilft anderen Kindern, wenn diese Aufmerksamkeit benötigen.'
+      ] }] },
+      emotional: { blocks: [{ items: [
+        'Das Kind drückt negative Gefühle aus (Ärger, Wut, Angst).',
+        'Das Kind drückt positive Gefühle aus (Freude, Zärtlichkeit, Mitgefühl).',
+        'Das Kind reguliert Emotionen seinem Alter angemessen (Frustrationstoleranz).',
+        'Das Kind zeigt Sinn für Humor.',
+        'Das Kind ist selbstbewusst; es äußert und vertritt seine eigene Meinung.',
+        'Das Kind übernimmt Verantwortung für sich („Was tut mir gut?“).',
+        'Das Kind hat eine Vertrauensbeziehung zu einer/mehreren Fachkräften.'
+      ] }] },
+      lernen: { blocks: [
+        { group: '1. Lernverhalten', items: [
+          'Das Kind konzentriert sich eine Zeit lang auf ein Spiel oder auf eine Aufgabe (allein/mit anderen Kindern/in der Gruppe).',
+          'Das Kind hat eigene Ideen und entwickelt Problemlösungen (beim Konstruieren, Gestalten).',
+          'Das Kind zeigt vielfältiges Interesse und Neugier an seiner Umgebung (Materialien, Natur, Technik, Erlebnisse) und geht den Dingen experimentierend und forschend auf den Grund.',
+          'Das Kind lässt sich motivieren, ist begeisterungsfähig, macht gerne mit.',
+          'Das Kind kann mit Erfolg und Misserfolg umgehen.',
+          'Das Kind braucht selten oder nie die Unterstützung der Erzieherin oder anderer Kinder.'
+        ] },
+        { group: '2. Merkfähigkeit', items: [
+          'Das Kind merkt sich Gedichte, Lieder, Memorykärtchen usw.',
+          'Das Kind erinnert sich an besondere Erlebnisse, Ereignisse.'
+        ] },
+        { group: '3. Auffassung, logisches Denken', items: [
+          'Das Kind versteht Spielregeln sowie Umgangsregeln.',
+          'Es versteht den Sinn von Geschichten, Liedtexten und Spielen.',
+          'Das Kind beschreibt eine Reihenfolge von Schritten, die zu einer Aktivität gehören („Was muss ich alles tun, wenn ich malen oder etwas basteln will?“).',
+          'Das Kind fragt danach, wie Dinge funktionieren bzw. bietet eigene Erklärungen an.',
+          'Das Kind zieht logische Schlüsse (wenn …, dann …).'
+        ] },
+        { group: '4. Ordnen und Unterscheiden', items: [
+          'Das Kind zeigt Interesse an Zahlen, Zeichen, Buchstaben usw.',
+          'Das Kind unterscheidet und benennt Farben, Formen und Mengen.',
+          'Das Kind unterscheidet Geräusche und Klänge.',
+          'Es sortiert Objekte nach ihren Merkmalen (Farbe, Form, Größe, Gewicht).'
+        ] }
+      ] },
+      sprache: { blocks: [{ items: [
+        'Das Kind bildet alle Laute.',
+        'Das Kind ersetzt nicht einzelne Buchstaben durch andere.',
+        'Auffälligkeiten im Wortschatz des Kindes sind nicht festzustellen.',
+        'Das Kind spricht in der Ich-Form.',
+        'Es spricht in korrekten zeitlichen Zusammenhängen (gestern/heute/morgen).',
+        'Das Kind spricht grammatikalisch richtig.',
+        'Das Kind bildet ganze Sätze (Satzstruktur).',
+        'Das Kind spricht deutlich (Aussprache, Artikulation).',
+        'Das Kind stottert, stammelt oder poltert nicht.',
+        'Das Kind hat eine angemessene sprachliche Lautstärke.',
+        'Das Kind spricht gerne und viel (Sprechfreudigkeit).',
+        'Das Kind versteht Anweisungen, Aufforderungen und Begriffe.',
+        'Das Kind spricht in angemessenem Tempo.',
+        'Es gibt Erlebnisse und Geschichten wieder (zusammenhängendes Nacherzählen).',
+        'Das Kind interessiert sich für Schriftzeichen (Buchstaben, Zahlen).',
+        'Das Kind interessiert sich für Bilderbücher.'
+      ] }] },
+      kreativ: { intro: 'Das Kind entwickelt eigene Ideen und drückt diese aus …', blocks: [
+        { group: '1. im Spiel', items: [
+          'Es hat eigene Spielideen und setzt diese unter Zuhilfenahme von Materialien und Spielpartnern um.',
+          'Es ist in der Lage, Dinge je nach Spielidee umzufunktionieren und ihnen neue Bedeutung zu geben.',
+          'Es lässt sich im „Tun-als-ob-Spiel“ auf die Ideen anderer Kinder ein.',
+          'Es begeistert sich für eine Spielidee, entwickelt diese weiter und bringt dabei weitere neue Ideen ein.',
+          'Es entwickelt einen eigenen Plan und versucht ihn umzusetzen.'
+        ] },
+        { group: '2. im Gestalten (Bauen, Legen, Malen, Werken etc.)', items: [
+          'Es hat Freude daran, Selbsthergestelltes auszustellen.',
+          'Es experimentiert mit unterschiedlichen Materialien und entwickelt Ideen.',
+          'Es erlernt neue Techniken und probiert diese selbst aus.'
+        ] },
+        { group: '3. in musikalischer Improvisation', items: [
+          'Es versucht neue Melodien/Lieder und Rhythmen wiederzugeben.',
+          'Es hat Freude an Musik.',
+          'Es reagiert auf Wechsel im Rhythmus oder im Tempo von Musikstücken oder auf Wechsel in der Lautstärke.',
+          'Es hält einen Rhythmus oder ein Tempo (durch Klopfen, Stampfen oder Vokalisationen).',
+          'Es hat Spaß daran, den Klang einzelner Instrumente zu unterscheiden und sie auch zu benennen (nur bei älteren Kindern).',
+          'Es zeigt Interesse an Klängen, die mit verschiedenen Gegenständen erzeugt werden können, und experimentiert gerne mit diesen Klängen.'
+        ] },
+        { group: '4. in Gesprächen und Erzählungen', items: [
+          'Es erzählt gern Geschichten über eigene Abenteuer oder selbst erfundene Geschichten.',
+          'Es benutzt manchmal fantasievolle Sprachbilder.'
+        ] }
+      ] },
+      spiel: { blocks: [{ items: [
+        'Das Kind ist an Neuem interessiert und probiert gerne etwas aus.',
+        'Das Kind beteiligt sich häufig an Gruppenaktivitäten.',
+        'Das Kind spielt unterschiedliche Spiele.',
+        'Das Kind zeigt Ausdauer. Es bringt angefangene Dinge zu Ende.',
+        'Das Kind geht sorgfältig mit Materialien um.',
+        'Es konzentriert sich in Freispiel und Gruppenaktivitäten auf eine Sache.',
+        'Das Kind bewältigt den Alltag selbstständig (Anziehen, auf die Toilette gehen, Spiele finden, Aufräumen).',
+        'Das Kind braucht selten die Unterstützung der Erzieherin oder eines anderen Kindes.',
+        'Das Kind motiviert andere Kinder zum Mitspielen.',
+        'Das Kind braucht keine Aufforderung zum Spiel.'
+      ] }],
+        extras: [
+          { id: 'spielpartner', label: 'Spielpartner' },
+          { id: 'spielbereiche', label: 'Spielbereiche' }
+        ] },
+      koerper: { blocks: [
+        { group: '1. Allgemeine körperliche Entwicklung', items: [
+          'Die Körpergröße des Kindes ist altersentsprechend.',
+          'Der gesundheitliche Zustand ist gut und altersentsprechend.',
+          'Das äußere Erscheinungsbild ist angenehm, positiv.',
+          'Das Essverhalten ist altersentsprechend.',
+          'Das Kind findet sich in den Räumen zurecht (erkennt oben-unten, rechts-links).',
+          'Das Kind ortet akustische Signale (Bsp. Hörkim).',
+          'Das Kind verarbeitet und benennt visuelle Reize (hell-dunkel, grelles Licht).',
+          'Das Kind ertastet Gegenstände und unterscheidet diese.',
+          'Das Kind erkennt verschiedene Geschmacksrichtungen und Gerüche.',
+          'Das Kind hat ein Körperempfinden für Gesundheit und Krankheit.'
+        ] },
+        { group: '2. Feinmotorik', items: [
+          'Das Kind ahmt Fingerspiele nach.',
+          'Das Kind hat feinmotorische Fähigkeiten (kleine Dinge greifen, Stift halten, stecken, falten, schneiden, kneten, fädeln).',
+          'Das Kind koordiniert Augen und Hände (gerade schneiden, Nagel einschlagen).'
+        ] },
+        { group: '3. Grobmotorik', items: [
+          'Das Kind hält das Gleichgewicht.',
+          'Es schaukelt, steigt Treppen, hüpft auf einem Bein, klettert (Klettergerüst).',
+          'Das Kind setzt seinen Körper und seine Kräfte gezielt ein (wälzen, rückwärtsgehen, rollen, auf den Zehenspitzen gehen).',
+          'Das Kind kreuzt die Körpermitte (Hampelmann, Schneidersitz).',
+          'Das Kind bewegt sich gern, häufig und zeigt dabei Ausdauer.',
+          'Das Kind bewegt sich sicher.',
+          'Das Kind hat einen flüssigen, runden Bewegungsablauf.',
+          'Das Kind koordiniert Augen und Hände (Ball fangen, Getränk eingießen).'
+        ] },
+        { group: '4. Mundmotorik', items: [
+          'Die Zungenmotorik des Kindes ist unauffällig.',
+          'Das Kind schließt den Mund beim Essen und Trinken aus dem Glas.',
+          'Das Kind kann eine Kerze ausblasen (auspusten).',
+          'Das Kind kann Eis schlecken.'
+        ] }
+      ] }
+    },
+    abschluss: [
+      { id: 'allgemein', label: 'Allgemeine Anmerkungen nach Abschluss der Beobachtung', placeholder: 'z. B. zur Vorbereitung eines Elterngesprächs' }
+    ]
+  }
+};
+
+const AREA_ORDER = ['sozial','emotional','lernen','sprache','kreativ','spiel','koerper'];
+const STD_TEXTS = [
+  { id: 'fortschritte', label: 'Entwicklungsfortschritte' },
+  { id: 'beispiele',    label: 'Beobachtungsbeispiele' },
+  { id: 'foerder',      label: 'Fördermöglichkeiten / Vereinbarungen' }
+];
+
+</script>
+<script>
+/* ===== Ravensburger Bogen – App-Logik ===== */
+const PENS = ['var(--pen1)','var(--pen2)','var(--pen3)'];
+const PENHEX = ['#2F7E86','#C77B30','#A8456B'];
+const SHORT = {sozial:'Sozial',emotional:'Emotion',lernen:'Lernen',sprache:'Sprache',kreativ:'Kreativ',spiel:'Spiel',koerper:'Körper'};
+const CELLVAL = [4,3,2,1]; // Spalte 0..3 -> trifft zu .. noch nicht
+const $ = id => document.getElementById(id);
+
+function blank(){
+  return {
+    v:1,
+    child:{name:'',geb:'',erstsprache:'',kigaSeit:'',form:'4-6'},
+    rounds:[{date:'',beobachter:''},{date:'',beobachter:''},{date:'',beobachter:''}],
+    active:0, ans:{}, texts:{}, view:'setup'
+  };
+}
+let S = blank();
+
+/* ---- Datenhelfer ---- */
+const form = () => FORMS[S.child.form];
+function items(aid){
+  const out=[]; let i=0;
+  form().areas[aid].blocks.forEach(b=>b.items.forEach(t=>out.push({text:t,group:b.group,idx:i++})));
+  return out;
+}
+function ensure(aid){
+  const n=items(aid).length;
+  if(!S.ans[aid]) S.ans[aid]=[];
+  while(S.ans[aid].length<n) S.ans[aid].push([null,null,null]);
+}
+const total = () => AREA_ORDER.reduce((s,a)=>s+items(a).length,0);
+function rated(round,aid){
+  ensure(aid);
+  return S.ans[aid].filter(v=>v[round]!=null).length;
+}
+const ratedAll = round => AREA_ORDER.reduce((s,a)=>s+rated(round,a),0);
+const hasData = round => ratedAll(round)>0;
+function areaMean(aid,round){
+  ensure(aid);
+  const vs=S.ans[aid].map(v=>v[round]).filter(v=>v!=null);
+  return vs.length? vs.reduce((a,b)=>a+b,0)/vs.length : null;
+}
+
+/* ---- Alter berechnen ---- */
+function ageAt(geb,date){
+  if(!geb||!date) return '';
+  const g=new Date(geb), d=new Date(date);
+  if(isNaN(g)||isNaN(d)||d<g) return '';
+  let y=d.getFullYear()-g.getFullYear(), m=d.getMonth()-g.getMonth();
+  if(d.getDate()<g.getDate()) m--;
+  if(m<0){y--;m+=12;}
+  return y+';'+m;
+}
+
+/* ===== Rendering ===== */
+function render(){ renderNav(); renderMain(); renderMob(); updateProg(); syncBrand(); }
+
+function syncBrand(){
+  $('brand-sub').textContent = S.child.name
+    ? S.child.name + ' · ' + form().label
+    : 'Entwicklungsbeobachtung · digital';
+}
+
+function renderNav(){
+  const setupReady = !!S.child.name;
+  let h = `<div class="nsec">Start</div>`;
+  h += navItem('setup','📋','Profildaten',false,'');
+  h += `<div class="nsec">Datenerhebung</div>`;
+  AREA_ORDER.forEach(aid=>{
+    const m=AREA_META[aid];
+    const checks=[0,1,2].map(r=>{
+      const on = S.rounds[r].date || hasData(r);
+      const done = rated(r,aid)===items(aid).length && items(aid).length>0;
+      return `<i style="background:${(on&&rated(r,aid))?PENS[r]:'var(--line)'};${done?'':''}"></i>`;
+    }).join('');
+    h += navItem(aid,m.emoji,m.title,!setupReady,`<span class="ncheck">${checks}</span>`);
+  });
+  h += navItem('abschluss','📝','Abschluss & Notizen',!setupReady,'');
+  h += `<div class="nsec">Auswertung</div>`;
+  h += navItem('aus','📊','Auswertung & Bericht',!setupReady,'');
+  $('nav').innerHTML=h;
+}
+function navItem(v,ico,label,dis,right){
+  const on = S.view===v;
+  return `<button class="nitem ${on?'on':''} ${dis?'dis':''}" onclick="go('${v}')">
+    <span class="nico">${ico}</span><span>${label}</span>${right||''}</button>`;
+}
+function renderMob(){
+  const setupReady=!!S.child.name;
+  const tabs=[['setup','📋'],...AREA_ORDER.map(a=>[a,AREA_META[a].emoji]),['abschluss','📝'],['aus','📊']];
+  $('mobnav').innerHTML=tabs.map(([v,ic])=>
+    `<button class="${S.view===v?'on':''}" ${(!setupReady&&v!=='setup')?'disabled':''} onclick="go('${v}')">${ic}</button>`).join('');
+}
+
+function go(v){ if(v!=='setup' && !S.child.name) return; S.view=v; render(); window.scrollTo(0,0); }
+
+function renderMain(){
+  if(S.view==='setup') return renderSetup();
+  if(S.view==='aus') return renderAus();
+  if(S.view==='abschluss') return renderAbschluss();
+  renderArea(S.view);
+}
+
+/* ---- Setup ---- */
+function renderSetup(){
+  const c=S.child;
+  let h=`<div class="wrap">
+    <div class="eyebrow">Profildaten</div>
+    <h2 class="h-lg">Kind &amp; Beobachtungen</h2>
+    <p class="lead">Grunddaten des Kindes und bis zu drei Beobachtungszeiträume. Jede Beobachtung hat – wie der Farbstift auf dem Papierbogen – eine feste Farbe.</p>
+
+    <div class="card">
+      <h3>Kind</h3>
+      <div class="hint">Diese Angaben bleiben auf deinem Gerät. Gespeichert wird als Datei.</div>
+      <div class="grid">
+        <div class="fld full"><label>Name, Vorname</label><input id="f-name" value="${esc(c.name)}" oninput="setChild('name',this.value)" placeholder="Mustermann, Mia"></div>
+        <div class="fld"><label>geboren am</label><input id="f-geb" type="date" value="${c.geb}" oninput="setChild('geb',this.value)"></div>
+        <div class="fld"><label>Erstsprache</label><input value="${esc(c.erstsprache)}" oninput="setChild('erstsprache',this.value)" placeholder="Deutsch"></div>
+        <div class="fld"><label>im Kindergarten seit</label><input type="date" value="${c.kigaSeit}" oninput="setChild('kigaSeit',this.value)"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Altersgruppe / Bogen</h3>
+      <div class="hint">Bestimmt, welche Merkmale erhoben werden.</div>
+      <div class="ages">
+        ${ageCard('2-3','🧸','2–3 Jahre','Bogen für 2- und 3-jährige Kinder')}
+        ${ageCard('4-6','🪁','4–6 Jahre','Bogen für 4- bis 6-jährige Kinder')}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Beobachtungen</h3>
+      <div class="hint">Mindestens eine. Das Alter wird automatisch aus Geburtsdatum und Beobachtungsdatum berechnet.</div>`;
+  for(let r=0;r<3;r++){
+    const rd=S.rounds[r];
+    h+=`<div class="row" style="margin-bottom:.7rem;align-items:flex-end">
+      <div style="display:flex;align-items:center;gap:.5rem;min-width:118px">
+        <span class="rdot" style="width:13px;height:13px;border-radius:50%;background:${PENS[r]};display:inline-block"></span>
+        <b style="font-size:.84rem">${r+1}. Beobachtung</b>
+      </div>
+      <div class="fld" style="flex:1;min-width:130px"><label>Zeitraum / Datum</label><input type="date" value="${rd.date}" oninput="setRound(${r},'date',this.value)"></div>
+      <div class="fld" style="flex:1;min-width:130px"><label>Beobachter/in</label><input value="${esc(rd.beobachter)}" oninput="setRound(${r},'beobachter',this.value)" placeholder="Name"></div>
+      <div class="fld" style="min-width:88px"><label>Alter (J;M)</label><input readonly value="${ageAt(c.geb,rd.date)}"></div>
+    </div>`;
+  }
+  h+=`</div>
+    <div class="row" style="justify-content:flex-end;margin-top:.4rem">
+      <button class="btn pri" ${c.name?'':'disabled'} onclick="go('${AREA_ORDER[0]}')">Zur Erhebung →</button>
+    </div>
+    <p class="lead" style="font-size:.74rem;margin-top:1.4rem;color:var(--faint)">Ravensburger Bogen zur Entwicklungsbeobachtung · © 2007 Fachberatungsstellen für Kindertageseinrichtungen im Landkreis Ravensburg. Diese App bildet den Bogen digital ab und ersetzt keine fachliche Bewertung.</p>
+  </div>`;
+  $('main').innerHTML=h;
+}
+function ageCard(id,e,t,s){
+  return `<button class="agec ${S.child.form===id?'sel':''}" onclick="setForm('${id}')">
+    <div class="ae">${e}</div><div class="at">${t}</div><div class="as">${s}</div></button>`;
+}
+function setChild(k,v){ S.child[k]=v; if(k==='name')syncBrand(); if(k==='geb'){ renderSetup(); } renderNav(); }
+function setRound(r,k,v){ S.rounds[r][k]=v; if(k==='date'){ const el=document.querySelectorAll('#main input[readonly]')[r]; if(el) el.value=ageAt(S.child.geb,v);} renderNav(); }
+function setForm(id){
+  if(id===S.child.form) return;
+  const answered = AREA_ORDER.some(a=>(S.ans[a]||[]).some(v=>v.some(x=>x!=null)));
+  const apply=()=>{ S.child.form=id; S.ans={}; renderSetup(); renderNav(); };
+  if(answered) modal('Altersgruppe wechseln?','Die Merkmale unterscheiden sich je Altersgruppe. Bereits gesetzte Einschätzungen gehen dabei verloren.',apply);
+  else apply();
+}
+
+/* ---- Bereich (Erhebung) ---- */
+function renderArea(aid){
+  const m=AREA_META[aid], A=form().areas[aid]; ensure(aid);
+  const its=items(aid);
+  let h=`<div class="ahead">
+      <span class="ae">${m.emoji}</span>
+      <div><div class="anum">${m.num} · BEREICH</div><h2>${m.title}</h2></div>
+    </div>`;
+
+  // Runden-Tabs
+  h+=`<div class="rounds" style="margin-top:1rem">`;
+  for(let r=0;r<3;r++){
+    h+=`<button class="rtab r${r} ${S.active===r?'on':''}" onclick="setActive(${r})">
+      <span class="rdot"></span>${r+1}. Beob.</button>`;
+  }
+  h+=`</div>`;
+  const rd=S.rounds[S.active];
+  h+=`<p class="rmeta">Aktive Beobachtung: <b>${S.active+1}.</b>${rd.date?' · '+fmtDate(rd.date):''}${rd.beobachter?' · '+esc(rd.beobachter):''} — Klick setzt die Markierung für diese Beobachtung.</p>`;
+
+  if(A.intro) h+=`<p class="aintro">${A.intro}</p>`;
+
+  // Tabelle
+  h+=`<div class="scaletbl">
+    <div class="colhead">
+      <div class="ch-sp"></div>
+      ${SCALE.map(s=>`<div class="ch">${s.label}</div>`).join('')}
+    </div>`;
+  let lastGroup=null;
+  its.forEach(it=>{
+    if(it.group && it.group!==lastGroup){ h+=`<div class="grouplbl" style="grid-column:1/-1">${it.group}</div>`; lastGroup=it.group; }
+    h+=`<div class="irow" id="row-${aid}-${it.idx}">
+        <div class="itxt">${it.text}</div>${cells(aid,it.idx)}</div>`;
+  });
+  h+=`</div>`;
+
+  // Freitexte
+  h+=`<div class="texts">`;
+  const tfields=[...STD_TEXTS, ...((A.extras)||[])];
+  tfields.forEach(f=>{
+    const key=aid+'.'+f.id, val=S.texts[key]||'';
+    h+=`<details class="tcard" ${val?'open':''}>
+      <summary>${f.label}${val?' <span class="filledtag">ausgefüllt</span>':''}<span class="chev">▶</span></summary>
+      <div class="tbody"><textarea oninput="setText('${key}',this.value,this)" placeholder="${f.placeholder||'Notizen …'}">${esc(val)}</textarea></div>
+    </details>`;
+  });
+  h+=`</div>`;
+
+  // Navigation
+  const i=AREA_ORDER.indexOf(aid);
+  const prev=i>0?AREA_ORDER[i-1]:'setup';
+  const next=i<AREA_ORDER.length-1?AREA_ORDER[i+1]:'abschluss';
+  h+=`<div class="anav">
+    <button class="btn ghost" onclick="go('${prev}')">← ${prev==='setup'?'Profildaten':AREA_META[prev].title}</button>
+    <button class="btn pri" onclick="go('${next}')">${next==='abschluss'?'Abschluss & Notizen':AREA_META[next].title} →</button>
+  </div>`;
+  $('main').innerHTML=h;
+}
+function cells(aid,idx){
+  const v=S.ans[aid][idx];
+  let out='';
+  for(let c=0;c<4;c++){
+    const val=CELLVAL[c];
+    const here=S.active!=null && v[S.active]===val;
+    let marks='';
+    for(let r=0;r<3;r++){
+      if(v[r]===val){
+        marks+=`<span class="mk r${r} ${r===S.active?'cur':'ghost'}"></span>`;
+      }
+    }
+    out+=`<div class="cell ${here?'act-here':''}" style="--cellc:${PENS[S.active]||'var(--pen1)'}" onclick="mark('${aid}',${idx},${c})">${marks}</div>`;
+  }
+  return out;
+}
+function mark(aid,idx,c){
+  const val=CELLVAL[c], v=S.ans[aid][idx];
+  v[S.active]= (v[S.active]===val)? null : val;
+  // nur Zeile + Nav + Progress aktualisieren (kein Scroll-Sprung)
+  const row=$('row-'+aid+'-'+idx);
+  if(row){ const txt=row.querySelector('.itxt'); row.innerHTML=txt.outerHTML+cells(aid,idx); }
+  renderNav(); updateProg();
+}
+function setActive(r){ S.active=r; if(AREA_ORDER.includes(S.view)) renderArea(S.view); renderNav(); updateProg(); }
+function setText(key,val,el){
+  S.texts[key]=val;
+  const sum=el.closest('details').querySelector('summary');
+  const tag=sum.querySelector('.filledtag');
+  if(val&&!tag){ sum.querySelector('.chev').insertAdjacentHTML('beforebegin',' <span class="filledtag">ausgefüllt</span>'); }
+  else if(!val&&tag){ tag.remove(); }
+}
+
+/* ---- Progress ---- */
+function updateProg(){
+  if(S.view==='setup'||!S.child.name){ $('prog').style.display='none'; return; }
+  $('prog').style.display='';
+  const t=total(), r=ratedAll(S.active);
+  const pct=t?Math.round(r/t*100):0;
+  $('prog-pct').textContent=pct+' %';
+  $('prog-round').textContent='('+(S.active+1)+'. Beob.)';
+  $('pfill').style.width=pct+'%';
+}
+
+/* ===== Auswertung ===== */
+function renderAus(){
+  const rounds=[0,1,2].filter(hasData);
+  if(!rounds.length){
+    $('main').innerHTML=`<div class="wrap"><div class="eyebrow">Auswertung</div><h2 class="h-lg">Noch keine Einschätzungen</h2>
+      <p class="lead">Sobald du im Erhebungsteil Merkmale markierst, entsteht hier automatisch das Entwicklungsprofil.</p>
+      <button class="btn pri" onclick="go('${AREA_ORDER[0]}')">Zur Erhebung →</button></div>`;
+    return;
+  }
+  const focusRound = rounds[rounds.length-1];
+  let h=`<div class="wrap"><div class="eyebrow">Auswertung</div>
+    <h2 class="h-lg">Entwicklungsprofil${S.child.name?' · '+esc(S.child.name):''}</h2>
+    <div class="note"><b>Kein Test, keine Note.</b> Der Ravensburger Bogen beschreibt Entwicklung qualitativ. Diese Übersicht fasst die Markierungen visuell zusammen – als Gesprächsgrundlage fürs Team und Elterngespräch, nicht als Diagnose. Auffälligkeiten gehören immer ins Gespräch und ggf. zu einem Fachdienst.</div>`;
+
+  // Legende Runden
+  h+=`<div class="legend">`+rounds.map(r=>`<span><i style="background:${PENHEX[r]}"></i>${r+1}. Beobachtung${S.rounds[r].date?' · '+fmtDate(S.rounds[r].date):''}</span>`).join('')+`</div>`;
+
+  // Profil
+  h+=`<div class="card profile"><h3>Bereichsprofil</h3><div class="hint">Mittelwert je Bereich auf der Skala „trifft noch nicht zu“ (links) bis „trifft zu“ (rechts).</div>`;
+  AREA_ORDER.forEach(aid=>{
+    h+=`<div class="prow"><div class="pname">${AREA_META[aid].emoji} ${SHORT[aid]}</div><div class="ptrack">`;
+    [25,50,75].forEach(p=>h+=`<span class="ptick" style="left:${p}%"></span>`);
+    rounds.forEach((r,k)=>{
+      const mn=areaMean(aid,r);
+      if(mn==null) return;
+      const w=(mn-1)/3*100;
+      const top=4 + k*9;
+      h+=`<span class="pbarv r${r}" style="width:${w}%;top:${top}px" title="${r+1}. Beob.: ${mn.toFixed(1)}"></span>`;
+    });
+    h+=`</div></div>`;
+  });
+  h+=`</div>`;
+
+  // Radar
+  h+=`<div class="card"><h3>Stärkenprofil (Netzdiagramm)</h3><div class="hint">Alle Beobachtungen übereinander – so wird der Verlauf sichtbar.</div>
+      <canvas id="radar" width="640" height="440" style="display:block;margin:.4rem auto 0"></canvas></div>`;
+
+  // Stärken & Schwerpunkte
+  h+=`<div class="card"><div class="row" style="justify-content:space-between">
+      <h3 style="margin:0">Stärken &amp; Beobachtungsschwerpunkte</h3>
+      <div class="fld" style="min-width:150px"><label>Grundlage</label>
+        <select onchange="S._focus=+this.value;renderAus()">${rounds.map(r=>`<option value="${r}" ${(+(S._focus??focusRound)===r)?'selected':''}>${r+1}. Beobachtung</option>`).join('')}</select></div>
+      </div>
+      <div class="cols2" style="margin-top:.8rem">${chipsCol('str',S._focus??focusRound)}${chipsCol('foc',S._focus??focusRound)}</div>
+  </div>`;
+
+  h+=`<div class="row" style="justify-content:flex-end;margin-top:.4rem">
+      <button class="btn ghost" onclick="window.print()">Diese Seite drucken</button>
+      <button class="btn pri" onclick="printReport()">Bericht erstellen (PDF/Druck)</button>
+  </div></div>`;
+  $('main').innerHTML=h;
+  requestAnimationFrame(()=>drawRadar($('radar'),rounds));
+}
+
+function chipsCol(kind,round){
+  const want = kind==='str'? (v=>v===4) : (v=>v!=null&&v<=2);
+  const title = kind==='str'?'Stärken (trifft zu)':'Beobachtungsschwerpunkte (trifft weniger / noch nicht zu)';
+  const tag = kind==='str'?'+':'•';
+  let rows='';
+  AREA_ORDER.forEach(aid=>{
+    items(aid).forEach(it=>{
+      const v=S.ans[aid][it.idx][round];
+      if(want(v)) rows+=`<div class="chip ${kind}"><span class="ci">${tag}</span><div>${it.text}<span class="ca">${AREA_META[aid].emoji} ${SHORT[aid]}</span></div></div>`;
+    });
+  });
+  if(!rows) rows=`<div class="emptyc">– keine –</div>`;
+  return `<div><div class="eyebrow" style="margin-bottom:.5rem">${title}</div><div class="chips">${rows}</div></div>`;
+}
+
+/* ---- Radar zeichnen ---- */
+function drawRadar(cv,rounds){
+  if(!cv) return;
+  const dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth||cv.width, H=440;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.height=H+'px';
+  const x=cv.getContext('2d'); x.scale(dpr,dpr);
+  x.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2+6, R=Math.min(W,H)/2-58, N=AREA_ORDER.length;
+  const ang=i=>-Math.PI/2 + i*2*Math.PI/N;
+  // Gitter
+  for(let g=1;g<=4;g++){
+    const rr=R*g/4;
+    x.beginPath();
+    for(let i=0;i<=N;i++){ const a=ang(i%N); const px=cx+rr*Math.cos(a), py=cy+rr*Math.sin(a); i?x.lineTo(px,py):x.moveTo(px,py); }
+    x.closePath(); x.strokeStyle = g===4?'#D8D2C5':'#E9E4D8'; x.lineWidth=1; x.stroke();
+  }
+  // Achsen + Labels
+  x.fillStyle='#6E6B63'; x.font='600 12px Inter,sans-serif'; x.textAlign='center'; x.textBaseline='middle';
+  for(let i=0;i<N;i++){
+    const a=ang(i), ex=cx+R*Math.cos(a), ey=cy+R*Math.sin(a);
+    x.beginPath(); x.moveTo(cx,cy); x.lineTo(ex,ey); x.strokeStyle='#E9E4D8'; x.stroke();
+    const lx=cx+(R+30)*Math.cos(a), ly=cy+(R+22)*Math.sin(a);
+    x.fillText(AREA_META[AREA_ORDER[i]].emoji+' '+SHORT[AREA_ORDER[i]], lx, ly);
+  }
+  // Daten je Runde
+  rounds.forEach(r=>{
+    const pts=AREA_ORDER.map((aid,i)=>{
+      const mn=areaMean(aid,r); const a=ang(i);
+      const val = mn==null?0:(mn-1)/3; // 0..1
+      const rad=R*Math.max(.04,val);
+      return [cx+rad*Math.cos(a), cy+rad*Math.sin(a), mn];
+    });
+    x.beginPath();
+    pts.forEach((p,i)=> i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));
+    x.closePath();
+    x.fillStyle=hexA(PENHEX[r],.13); x.fill();
+    x.strokeStyle=PENHEX[r]; x.lineWidth=2; x.stroke();
+    pts.forEach(p=>{ if(p[2]==null)return; x.beginPath(); x.arc(p[0],p[1],3.2,0,7); x.fillStyle=PENHEX[r]; x.fill(); });
+  });
+}
+function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+
+/* ===== Speichern / Öffnen / Neu ===== */
+function saveFile(){
+  if(!S.child.name){ toast('Bitte zuerst einen Namen eingeben.'); return; }
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const a=document.createElement('a');
+  const safe=(S.child.name||'kind').replace(/[^\wäöüÄÖÜß -]/g,'').replace(/[ ,]+/g,'_');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Ravensburger_${safe}_${new Date().toISOString().slice(0,10)}.rbb`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Gespeichert ✓');
+}
+function openFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{ try{
+      const d=JSON.parse(rd.result);
+      if(!d.child||!d.ans){ throw 0; }
+      S=Object.assign(blank(),d); S.view='setup'; render();
+      toast('Geöffnet: '+(S.child.name||'Datei'));
+    }catch(_){ toast('Datei konnte nicht gelesen werden.'); }
+    e.target.value='';
+  };
+  rd.readAsText(f);
+}
+function confirmNew(){
+  modal('Neue Erhebung?','Aktuelle Eingaben werden verworfen. Vorher speichern, falls du sie behalten möchtest.',()=>{ S=blank(); render(); });
+}
+
+/* ===== Modal / Toast ===== */
+function modal(t,p,ok){ $('modal-t').textContent=t; $('modal-p').textContent=p; $('modal').classList.add('open');
+  $('modal-ok').onclick=()=>{ closeModal(); ok&&ok(); };
+}
+function closeModal(){ $('modal').classList.remove('open'); }
+let toT;
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toT); toT=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ===== Helfer ===== */
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function fmtDate(d){ if(!d)return''; const x=new Date(d); return isNaN(x)?d:x.toLocaleDateString('de-DE'); }
+
+/* ===== Druckbericht ===== */
+function printReport(){
+  const rounds=[0,1,2].filter(hasData);
+  const focus=S._focus??rounds[rounds.length-1];
+  const radar=$('radar');
+  const radarImg = radar && radar.width>10 ? radar.toDataURL('image/png') : '';
+  const c=S.child;
+  let p=`<div class="hd"><div class="dots"><i style="background:${PENHEX[0]}"></i><i style="background:${PENHEX[1]}"></i><i style="background:${PENHEX[2]}"></i></div>
+    <div><h1>Ravensburger Bogen zur Entwicklungsbeobachtung</h1><div class="meta">${form().label} · erstellt ${new Date().toLocaleDateString('de-DE')}</div></div></div>`;
+
+  p+=`<table class="kv"><tr><td>Name</td><th>${esc(c.name)||'—'}</th><td>geboren</td><th>${fmtDate(c.geb)||'—'}</th></tr>
+    <tr><td>Erstsprache</td><th>${esc(c.erstsprache)||'—'}</th><td>im Kindergarten seit</td><th>${fmtDate(c.kigaSeit)||'—'}</th></tr></table>`;
+
+  p+=`<table class="kv"><tr><th>Beobachtung</th><th>Zeitraum / Datum</th><th>Alter (J;M)</th><th>Beobachter/in</th></tr>`;
+  rounds.forEach(r=>p+=`<tr><td><span class="pdot" style="background:${PENHEX[r]}"></span>${r+1}.</td><td>${fmtDate(S.rounds[r].date)||'—'}</td><td>${ageAt(c.geb,S.rounds[r].date)||'—'}</td><td>${esc(S.rounds[r].beobachter)||'—'}</td></tr>`);
+  p+=`</table>`;
+
+  p+=`<div class="disc"><b>Hinweis:</b> Der Ravensburger Bogen beschreibt Entwicklung qualitativ. Diese Auswertung ist eine visuelle Zusammenfassung als Gesprächsgrundlage – kein Testergebnis und keine Diagnose.</div>`;
+
+  // Profil
+  p+=`<h2>Bereichsprofil</h2><table class="prof"><tr><th>Bereich</th>${rounds.map(r=>`<th>${r+1}. Beob.</th>`).join('')}<th>Verlauf</th></tr>`;
+  AREA_ORDER.forEach(aid=>{
+    p+=`<tr><td>${AREA_META[aid].emoji} ${SHORT[aid]}</td>`;
+    rounds.forEach(r=>{ const m=areaMean(aid,r); p+=`<td>${m==null?'—':m.toFixed(1)}</td>`; });
+    p+=`<td class="bars">`;
+    rounds.forEach(r=>{ const m=areaMean(aid,r); if(m!=null) p+=`<span class="bv" style="background:${PENHEX[r]};width:${(m-1)/3*90+6}px"></span>`; });
+    p+=`</td></tr>`;
+  });
+  p+=`</table>`;
+
+  if(radarImg) p+=`<h2>Netzdiagramm</h2><img class="radar" src="${radarImg}">`;
+
+  // Stärken / Schwerpunkte
+  const collect=(test)=>{ let a=''; AREA_ORDER.forEach(aid=>items(aid).forEach(it=>{ const v=S.ans[aid][it.idx][focus]; if(test(v)) a+=`<li>${it.text} <span class="src">${SHORT[aid]}</span></li>`; })); return a||'<li class="non">– keine –</li>'; };
+  p+=`<div class="two"><div><h2>Stärken</h2><ul class="lst str">${collect(v=>v===4)}</ul></div>
+      <div><h2>Beobachtungsschwerpunkte</h2><ul class="lst foc">${collect(v=>v!=null&&v<=2)}</ul></div></div>
+      <div class="srcnote">Grundlage: ${focus+1}. Beobachtung</div>`;
+
+  // Freitexte
+  let ft='';
+  AREA_ORDER.forEach(aid=>{
+    const A=form().areas[aid]; const fields=[...STD_TEXTS,...((A.extras)||[])];
+    let block='';
+    fields.forEach(f=>{ const val=S.texts[aid+'.'+f.id]; if(val) block+=`<div class="fx"><div class="fxl">${f.label}</div><div>${esc(val).replace(/\n/g,'<br>')}</div></div>`; });
+    if(block) ft+=`<h3>${AREA_META[aid].num} · ${AREA_META[aid].title}</h3>${block}`;
+  });
+  (form().abschluss||[]).forEach(f=>{ const val=S.texts['_abschluss.'+f.id]; if(val) ft+=`<div class="fx"><div class="fxl">${f.label}</div><div>${esc(val).replace(/\n/g,'<br>')}</div></div>`; });
+  if(ft) p+=`<h2>Notizen &amp; Beobachtungsbeispiele</h2>${ft}`;
+
+  p+=`<div class="foot">Ravensburger Bogen zur Entwicklungsbeobachtung · © 2007 Fachberatungsstellen für Kindertageseinrichtungen im Landkreis Ravensburg · Digital erfasst</div>`;
+
+  const css=`*{box-sizing:border-box}body{font:13px/1.5 'Inter',Arial,sans-serif;color:#2B3043;margin:0;padding:30px 34px;background:#fff}
+    .hd{display:flex;gap:12px;align-items:center;border-bottom:2px solid #2B3043;padding-bottom:10px;margin-bottom:14px}
+    .dots i{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:2px}
+    h1{font:600 17px 'Fraunces',Georgia,serif;margin:0}.meta{font-size:11px;color:#6E6B63}
+    h2{font:600 14px 'Fraunces',Georgia,serif;margin:20px 0 7px;border-bottom:1px solid #E5E0D4;padding-bottom:3px}
+    h3{font:600 12px 'Fraunces',Georgia,serif;margin:12px 0 4px;color:#2B3043}
+    table{border-collapse:collapse;width:100%;margin-bottom:8px}
+    .kv td,.kv th{border:1px solid #E5E0D4;padding:4px 8px;font-size:12px;text-align:left}
+    .kv td{background:#F8F5EE;color:#6E6B63;width:120px}.kv th{font-weight:600}
+    .pdot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+    .disc{background:#F8F5EE;border-left:3px solid #C77B30;padding:7px 10px;font-size:11px;color:#6E6B63;margin:10px 0}
+    .prof td,.prof th{border-bottom:1px solid #EEEAE0;padding:5px 8px;font-size:12px;text-align:left}
+    .prof th{font-size:11px;color:#6E6B63;border-bottom:1px solid #E5E0D4}
+    .bars{white-space:nowrap}.bv{display:inline-block;height:8px;border-radius:4px;margin-right:3px;vertical-align:middle}
+    .radar{display:block;max-width:480px;margin:4px auto}
+    .two{display:flex;gap:20px}.two>div{flex:1}
+    .lst{list-style:none;padding:0;margin:0}.lst li{font-size:11.5px;padding:3px 0 3px 14px;position:relative;border-bottom:1px solid #F0ECE2}
+    .lst.str li::before{content:'+';position:absolute;left:0;color:#33786A;font-weight:700}
+    .lst.foc li::before{content:'•';position:absolute;left:0;color:#B5664B;font-weight:700}
+    .lst .src{color:#9A968C;font-size:10px} .lst .non{color:#9A968C}.lst .non::before{content:''!important}
+    .srcnote{font-size:10px;color:#9A968C;margin-top:4px}
+    .fx{margin:4px 0 8px}.fxl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9A968C;font-weight:600}
+    .foot{margin-top:24px;border-top:1px solid #E5E0D4;padding-top:8px;font-size:10px;color:#9A968C;text-align:center}
+    @media print{body{padding:0}h2{page-break-after:avoid}.fx,.lst li{page-break-inside:avoid}}`;
+
+  const w=window.open('','_blank');
+  if(!w){ toast('Bitte Pop-ups erlauben, um den Bericht zu öffnen.'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Bericht ${esc(c.name)}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>${css}</style></head><body>${p}</body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),500);
+}
+
+/* Abschluss-Notizen */
+function renderAbschluss(){
+  const fields=form().abschluss||[];
+  let h=`<div class="wrap">
+    <div class="eyebrow">Abschluss</div>
+    <h2 class="h-lg">Abschluss &amp; Notizen</h2>
+    <p class="lead">Allgemeine Beobachtungen zum Abschluss der Beobachtungsphase – z. B. zur Vorbereitung eines Elterngesprächs.</p>`;
+  fields.forEach(f=>{
+    const key='_abschluss.'+f.id, val=S.texts[key]||'';
+    h+=`<div class="card">
+      <h3 style="font-size:.95rem">${f.label}${val?' <span class="filledtag">ausgefüllt</span>':''}</h3>
+      <textarea style="width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:.6rem .7rem;font-size:.88rem;line-height:1.55;resize:vertical;min-height:96px;font-family:inherit;color:var(--ink)" oninput="S.texts['${key}']=this.value" placeholder="${esc(f.placeholder||'')}">${esc(val)}</textarea>
+    </div>`;
+  });
+  h+=`<div class="anav">
+    <button class="btn ghost" onclick="go('${AREA_ORDER[AREA_ORDER.length-1]}')">← ${AREA_META[AREA_ORDER[AREA_ORDER.length-1]].title}</button>
+    <button class="btn pri" onclick="go('aus')">Zur Auswertung →</button>
+  </div></div>`;
+  $('main').innerHTML=h;
+}
+
+render();
+
+</script>
+</body>
+</html>
