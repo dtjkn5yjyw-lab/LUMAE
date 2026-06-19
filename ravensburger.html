@@ -1558,7 +1558,9 @@ function printReport(){
   const c=S.child;
   const T=(k)=>t(k,L); const X=(de)=>tx(de,L);
 
-  let p=`<div class="hd"><div class="dots"><i style="background:${PENHEX[0]}"></i><i style="background:${PENHEX[1]}"></i><i style="background:${PENHEX[2]}"></i></div>
+  const iconEl=document.querySelector('link[rel="apple-touch-icon"]');
+  const brandMark=(iconEl&&iconEl.href)?`<img class="ic" src="${iconEl.href}" alt="">`:`<div class="dots"><i style="background:${PENHEX[0]}"></i><i style="background:${PENHEX[1]}"></i><i style="background:${PENHEX[2]}"></i></div>`;
+  let p=`<div class="hd">${brandMark}
     <div><h1>${T('rep_title')}</h1><div class="meta">${form().label} · ${T('rep_created')} ${new Date().toLocaleDateString(locale(L))}</div></div></div>`;
 
   if(L!=='de') p+=`<div class="inoffbox">ⓘ ${T('inoffiziell')}</div>`;
@@ -1617,6 +1619,7 @@ function printReport(){
   const css=`*{box-sizing:border-box}body{font:13px/1.5 'Inter',Arial,sans-serif;color:#2B3043;margin:0;padding:30px 34px;background:#fff}
     .hd{display:flex;gap:12px;align-items:center;border-bottom:2px solid #2B3043;padding-bottom:10px;margin-bottom:14px}
     .dots i{width:11px;height:11px;border-radius:50%;display:inline-block;margin-right:2px}
+    .ic{width:40px;height:40px;border-radius:9px;display:block;flex:0 0 auto}
     h1{font:600 17px 'Fraunces',Georgia,serif;margin:0}.meta{font-size:11px;color:#6E6B63}
     h2{font:600 14px 'Fraunces',Georgia,serif;margin:20px 0 7px;border-bottom:1px solid #E5E0D4;padding-bottom:3px}
     h3{font:600 12px 'Fraunces',Georgia,serif;margin:12px 0 4px;color:#2B3043}
