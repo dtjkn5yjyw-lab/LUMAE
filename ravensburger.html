@@ -200,6 +200,13 @@ canvas{max-width:100%}
   .mobnav button{flex:0 0 auto;background:transparent;border:0;border-radius:8px;padding:.4rem .55rem;font-size:1.1rem;opacity:.5}
   .mobnav button.on{opacity:1;background:var(--surface2)}
 }
+#langsel{appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.12);color:#F3EFE6;border:1px solid rgba(255,255,255,.22);border-radius:9px;padding:.42rem 1.7rem .42rem .6rem;font-family:inherit;font-size:.8rem;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23F3EFE6' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .55rem center}
+#langsel option{color:#2B3043;background:#FCFBF7}
+.inoff{font-size:.74rem;color:#9A7B4F;background:#FBF6EE;border:1px solid #EAD9C2;border-radius:9px;padding:.45rem .7rem;margin:.7rem 0 .2rem}
+.orig{display:block;font-size:.74rem;line-height:1.4;color:var(--faint);margin-top:.18rem;font-style:italic}
+.checks{display:flex;flex-direction:column;gap:.55rem;margin-top:.3rem}
+.chk{display:flex;align-items:center;gap:.6rem;font-size:.9rem;cursor:pointer;line-height:1.35}
+.chk input{width:18px;height:18px;accent-color:var(--pen1);flex:0 0 auto;cursor:pointer}
 @media print{header,nav,.mobnav,.anav,.rounds,.hbtns{display:none!important}}
 </style>
 </head>
@@ -219,6 +226,7 @@ canvas{max-width:100%}
       <div class="pbar"><div class="pfill" id="pfill"></div></div>
     </div>
     <div class="hbtns">
+      <select id="langsel" onchange="setLang(this.value)" title="Sprache / Language" aria-label="Sprache"></select>
       <button class="hb pri" onclick="saveFile()" title="Als Datei speichern">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
         <span class="lbl">Speichern</span>
@@ -248,7 +256,7 @@ canvas{max-width:100%}
     <h3 id="modal-t"></h3>
     <p id="modal-p"></p>
     <div class="mrow">
-      <button class="btn ghost" onclick="closeModal()">Abbrechen</button>
+      <button class="btn ghost" id="modal-cancel" onclick="closeModal()">Abbrechen</button>
       <button class="btn pri" id="modal-ok">OK</button>
     </div>
   </div>
@@ -581,19 +589,510 @@ const STD_TEXTS = [
 
 </script>
 <script>
-/* ===== Ravensburger Bogen – App-Logik ===== */
+/* ===== Oberflächentexte (UI) in 7 Sprachen ===== */
+const UI = {
+de:{
+ nav_start:'Start', nav_profil:'Profildaten', nav_erhebung:'Datenerhebung', nav_abschluss:'Abschluss & Notizen',
+ nav_auswertung_sec:'Auswertung', nav_auswertung:'Auswertung', nav_bericht:'Bericht',
+ brand_sub:'Entwicklungsbeobachtung · digital', beobachtung:'Beobachtung', beob_short:'Beob.',
+ setup_h:'Kind & Beobachtungen', setup_lead:'Grunddaten des Kindes und bis zu drei Beobachtungszeiträume. Jede Beobachtung hat – wie der Farbstift auf dem Papierbogen – eine feste Farbe.',
+ card_child:'Kind', child_hint:'Diese Angaben bleiben auf deinem Gerät. Gespeichert wird als Datei.',
+ f_name:'Name, Vorname', ph_name:'Mustermann, Mia', f_geb:'geboren am', f_erst:'Erstsprache', ph_erst:'Deutsch', f_kiga:'im Kindergarten seit',
+ card_age:'Altersgruppe / Bogen', age_hint:'Bestimmt, welche Merkmale erhoben werden.',
+ age23_t:'2–3 Jahre', age23_s:'Bogen für 2- und 3-jährige Kinder', age46_t:'4–6 Jahre', age46_s:'Bogen für 4- bis 6-jährige Kinder',
+ card_beob:'Beobachtungen', beob_hint:'Mindestens eine. Das Alter wird automatisch aus Geburtsdatum und Beobachtungsdatum berechnet.',
+ col_zeitraum:'Zeitraum / Datum', col_beob:'Beobachter/in', ph_beob:'Name', col_alter:'Alter (J;M)',
+ to_erhebung:'Zur Erhebung →',
+ footer_src:'Ravensburger Bogen zur Entwicklungsbeobachtung · © 2007 Fachberatungsstellen für Kindertageseinrichtungen im Landkreis Ravensburg. Diese App bildet den Bogen digital ab und ersetzt keine fachliche Bewertung.',
+ area_bereich:'BEREICH', active_obs:'Aktive Beobachtung:', active_hint:'Klick setzt die Markierung für diese Beobachtung.',
+ inoffiziell:'Inoffizielle Übersetzung – verbindlich ist der deutsche Originalbogen.', merkmal:'Merkmal',
+ scale_zu:'trifft zu', scale_eher:'trifft eher zu', scale_weniger:'trifft weniger zu', scale_nochnicht:'trifft noch nicht zu',
+ text_fortschritte:'Entwicklungsfortschritte', text_beispiele:'Beobachtungsbeispiele', text_foerder:'Fördermöglichkeiten / Vereinbarungen',
+ filled:'ausgefüllt', ph_notes:'Notizen …',
+ abschluss_eyebrow:'Abschluss', abschluss_lead:'Allgemeine Beobachtungen zum Abschluss der Beobachtungsphase – z. B. zur Vorbereitung eines Elterngesprächs.',
+ aus_empty_h:'Noch keine Einschätzungen', aus_empty_p:'Sobald du im Erhebungsteil Merkmale markierst, entsteht hier automatisch das Entwicklungsprofil.',
+ aus_h:'Entwicklungsprofil', note_title:'Kein Test, keine Note.',
+ note_body:'Der Ravensburger Bogen beschreibt Entwicklung qualitativ. Diese Übersicht fasst die Markierungen visuell zusammen – als Gesprächsgrundlage fürs Team und Elterngespräch, nicht als Diagnose. Auffälligkeiten gehören immer ins Gespräch und ggf. zu einem Fachdienst.',
+ profile_h:'Bereichsprofil', profile_hint:'Mittelwert je Bereich auf der Skala „trifft noch nicht zu“ (links) bis „trifft zu“ (rechts).',
+ radar_h:'Stärkenprofil (Netzdiagramm)', radar_hint:'Alle Beobachtungen übereinander – so wird der Verlauf sichtbar.',
+ sw_h:'Stärken & Beobachtungsschwerpunkte', grundlage:'Grundlage',
+ staerken_title:'Stärken (trifft zu)', schwer_title:'Beobachtungsschwerpunkte (trifft weniger / noch nicht zu)', none:'– keine –', to_bericht:'Zum Bericht',
+ bericht_empty_p:'Es liegen noch keine Einschätzungen vor. Markiere zuerst Merkmale in der Erhebung.',
+ bericht_h:'Bericht zusammenstellen', bericht_lead:'Wähle aus, welche Inhalte der Bericht enthalten soll und in welcher Sprache. Danach „Bericht erstellen“ für Druck oder PDF.',
+ bericht_sections:'Inhalte', sec_stamm:'Stammdaten & Beobachtungen', sec_profil:'Bereichsprofil', sec_radar:'Netzdiagramm', sec_staerken:'Stärken', sec_schwer:'Beobachtungsschwerpunkte', sec_texte:'Freitexte je Bereich', sec_abschluss:'Abschluss-Notizen',
+ bericht_rounds:'Beobachtungen', bericht_rounds_hint:'Welche Beobachtungen sollen einfließen?',
+ bericht_lang:'Sprache des Berichts', bericht_lang_hint:'Für das Elterngespräch – z. B. in der Familiensprache.', bericht_make:'Bericht erstellen (PDF/Druck)',
+ toast_needname:'Bitte zuerst einen Namen eingeben.', toast_saved:'Gespeichert ✓', toast_opened:'Geöffnet', toast_badfile:'Datei konnte nicht gelesen werden.', toast_norounds:'Bitte mindestens eine Beobachtung auswählen.', toast_popup:'Bitte Pop-ups erlauben, um den Bericht zu öffnen.',
+ m_switch_t:'Altersgruppe wechseln?', m_switch_p:'Die Merkmale unterscheiden sich je Altersgruppe. Bereits gesetzte Einschätzungen gehen dabei verloren.',
+ m_new_t:'Neue Erhebung?', m_new_p:'Aktuelle Eingaben werden verworfen. Vorher speichern, falls du sie behalten möchtest.', cancel:'Abbrechen',
+ rep_title:'Ravensburger Bogen zur Entwicklungsbeobachtung', rep_created:'erstellt', rep_hinweis_t:'Hinweis:',
+ rep_hinweis:'Der Ravensburger Bogen beschreibt Entwicklung qualitativ. Diese Auswertung ist eine visuelle Zusammenfassung als Gesprächsgrundlage – kein Testergebnis und keine Diagnose.',
+ rep_bereich:'Bereich', rep_verlauf:'Verlauf', rep_texte:'Notizen & Beobachtungsbeispiele', rep_digital:'Digital erfasst'
+},
+en:{
+ nav_start:'Start', nav_profil:'Profile', nav_erhebung:'Observation', nav_abschluss:'Summary & notes',
+ nav_auswertung_sec:'Evaluation', nav_auswertung:'Evaluation', nav_bericht:'Report',
+ brand_sub:'Developmental observation · digital', beobachtung:'Observation', beob_short:'Obs.',
+ setup_h:'Child & observations', setup_lead:'Basic details of the child and up to three observation periods. Each observation has a fixed colour – like the coloured pen on the paper form.',
+ card_child:'Child', child_hint:'This information stays on your device. It is saved as a file.',
+ f_name:'Surname, first name', ph_name:'Smith, Mia', f_geb:'date of birth', f_erst:'First language', ph_erst:'German', f_kiga:'at kindergarten since',
+ card_age:'Age group / form', age_hint:'Determines which characteristics are recorded.',
+ age23_t:'2–3 years', age23_s:'Form for 2- and 3-year-old children', age46_t:'4–6 years', age46_s:'Form for children aged 4 to 6',
+ card_beob:'Observations', beob_hint:'At least one. The age is calculated automatically from the date of birth and the observation date.',
+ col_zeitraum:'Period / date', col_beob:'Observer', ph_beob:'Name', col_alter:'Age (Y;M)',
+ to_erhebung:'To observation →',
+ footer_src:'Ravensburg form for developmental observation · © 2007 Advisory services for day-care centres in the district of Ravensburg. This app is a digital version of the form and does not replace professional assessment.',
+ area_bereich:'AREA', active_obs:'Active observation:', active_hint:'A tap sets the mark for this observation.',
+ inoffiziell:'Unofficial translation – the German original form is authoritative.', merkmal:'Characteristic',
+ scale_zu:'applies', scale_eher:'rather applies', scale_weniger:'applies less', scale_nochnicht:'does not yet apply',
+ text_fortschritte:'Developmental progress', text_beispiele:'Observation examples', text_foerder:'Support options / agreements',
+ filled:'filled in', ph_notes:'Notes …',
+ abschluss_eyebrow:'Summary', abschluss_lead:'General observations at the end of the observation phase – e.g. to prepare a parent meeting.',
+ aus_empty_h:'No assessments yet', aus_empty_p:'As soon as you mark characteristics in the observation section, the developmental profile appears here automatically.',
+ aus_h:'Developmental profile', note_title:'Not a test, not a grade.',
+ note_body:'The Ravensburg form describes development qualitatively. This overview summarises the marks visually – as a basis for discussion in the team and with parents, not as a diagnosis. Anything striking should always be discussed and, if needed, referred to a specialist service.',
+ profile_h:'Area profile', profile_hint:'Average per area on the scale from “does not yet apply” (left) to “applies” (right).',
+ radar_h:'Strengths profile (radar chart)', radar_hint:'All observations layered – making the development over time visible.',
+ sw_h:'Strengths & focus areas', grundlage:'Based on',
+ staerken_title:'Strengths (applies)', schwer_title:'Focus areas (applies less / not yet)', none:'– none –', to_bericht:'To report',
+ bericht_empty_p:'There are no assessments yet. Mark characteristics in the observation section first.',
+ bericht_h:'Compile report', bericht_lead:'Choose which content the report should contain and in which language. Then “Create report” for printing or PDF.',
+ bericht_sections:'Content', sec_stamm:'Basic data & observations', sec_profil:'Area profile', sec_radar:'Radar chart', sec_staerken:'Strengths', sec_schwer:'Focus areas', sec_texte:'Free text per area', sec_abschluss:'Summary notes',
+ bericht_rounds:'Observations', bericht_rounds_hint:'Which observations should be included?',
+ bericht_lang:'Report language', bericht_lang_hint:'For the parent meeting – e.g. in the family language.', bericht_make:'Create report (PDF/print)',
+ toast_needname:'Please enter a name first.', toast_saved:'Saved ✓', toast_opened:'Opened', toast_badfile:'The file could not be read.', toast_norounds:'Please select at least one observation.', toast_popup:'Please allow pop-ups to open the report.',
+ m_switch_t:'Change age group?', m_switch_p:'The characteristics differ by age group. Assessments already entered will be lost.',
+ m_new_t:'New observation?', m_new_p:'Current entries will be discarded. Save first if you want to keep them.', cancel:'Cancel',
+ rep_title:'Ravensburg form for developmental observation', rep_created:'created', rep_hinweis_t:'Note:',
+ rep_hinweis:'The Ravensburg form describes development qualitatively. This evaluation is a visual summary as a basis for discussion – not a test result and not a diagnosis.',
+ rep_bereich:'Area', rep_verlauf:'Trend', rep_texte:'Notes & observation examples', rep_digital:'Recorded digitally'
+},
+fr:{
+ nav_start:'Début', nav_profil:'Profil', nav_erhebung:'Observation', nav_abschluss:'Bilan & notes',
+ nav_auswertung_sec:'Analyse', nav_auswertung:'Analyse', nav_bericht:'Rapport',
+ brand_sub:'Observation du développement · numérique', beobachtung:'Observation', beob_short:'Obs.',
+ setup_h:'Enfant & observations', setup_lead:'Données de base de l’enfant et jusqu’à trois périodes d’observation. Chaque observation a une couleur fixe – comme le crayon de couleur sur la fiche papier.',
+ card_child:'Enfant', child_hint:'Ces données restent sur votre appareil. L’enregistrement se fait sous forme de fichier.',
+ f_name:'Nom, prénom', ph_name:'Dupont, Mia', f_geb:'date de naissance', f_erst:'Langue première', ph_erst:'Allemand', f_kiga:'au jardin d’enfants depuis',
+ card_age:'Groupe d’âge / fiche', age_hint:'Détermine quelles caractéristiques sont relevées.',
+ age23_t:'2–3 ans', age23_s:'Fiche pour les enfants de 2 et 3 ans', age46_t:'4–6 ans', age46_s:'Fiche pour les enfants de 4 à 6 ans',
+ card_beob:'Observations', beob_hint:'Au moins une. L’âge est calculé automatiquement à partir de la date de naissance et de la date d’observation.',
+ col_zeitraum:'Période / date', col_beob:'Observateur/trice', ph_beob:'Nom', col_alter:'Âge (A;M)',
+ to_erhebung:'Vers l’observation →',
+ footer_src:'Fiche de Ravensburg pour l’observation du développement · © 2007 Services de conseil pour les structures d’accueil de la petite enfance de l’arrondissement de Ravensburg. Cette application reproduit la fiche sous forme numérique et ne remplace pas une évaluation professionnelle.',
+ area_bereich:'DOMAINE', active_obs:'Observation active :', active_hint:'Un clic place la marque pour cette observation.',
+ inoffiziell:'Traduction non officielle – la fiche originale allemande fait foi.', merkmal:'Caractéristique',
+ scale_zu:'s’applique', scale_eher:'s’applique plutôt', scale_weniger:'s’applique moins', scale_nochnicht:'ne s’applique pas encore',
+ text_fortschritte:'Progrès de développement', text_beispiele:'Exemples d’observation', text_foerder:'Possibilités de soutien / accords',
+ filled:'rempli', ph_notes:'Notes …',
+ abschluss_eyebrow:'Bilan', abschluss_lead:'Observations générales à la fin de la phase d’observation – p. ex. pour préparer un entretien avec les parents.',
+ aus_empty_h:'Aucune évaluation pour l’instant', aus_empty_p:'Dès que vous cochez des caractéristiques dans la partie observation, le profil de développement apparaît ici automatiquement.',
+ aus_h:'Profil de développement', note_title:'Ni test, ni note.',
+ note_body:'La fiche de Ravensburg décrit le développement de façon qualitative. Cet aperçu résume visuellement les marques – comme base d’échange pour l’équipe et l’entretien avec les parents, non comme un diagnostic. Tout élément marquant doit toujours être abordé en entretien et, si besoin, avec un service spécialisé.',
+ profile_h:'Profil par domaine', profile_hint:'Moyenne par domaine sur l’échelle de « ne s’applique pas encore » (gauche) à « s’applique » (droite).',
+ radar_h:'Profil des points forts (diagramme en toile)', radar_hint:'Toutes les observations superposées – l’évolution devient visible.',
+ sw_h:'Points forts & axes d’observation', grundlage:'Base',
+ staerken_title:'Points forts (s’applique)', schwer_title:'Axes d’observation (s’applique moins / pas encore)', none:'– aucun –', to_bericht:'Vers le rapport',
+ bericht_empty_p:'Aucune évaluation pour l’instant. Cochez d’abord des caractéristiques dans l’observation.',
+ bericht_h:'Composer le rapport', bericht_lead:'Choisissez le contenu du rapport et sa langue. Ensuite « Créer le rapport » pour l’impression ou le PDF.',
+ bericht_sections:'Contenu', sec_stamm:'Données de base & observations', sec_profil:'Profil par domaine', sec_radar:'Diagramme en toile', sec_staerken:'Points forts', sec_schwer:'Axes d’observation', sec_texte:'Texte libre par domaine', sec_abschluss:'Notes de bilan',
+ bericht_rounds:'Observations', bericht_rounds_hint:'Quelles observations inclure ?',
+ bericht_lang:'Langue du rapport', bericht_lang_hint:'Pour l’entretien avec les parents – p. ex. dans la langue familiale.', bericht_make:'Créer le rapport (PDF/impression)',
+ toast_needname:'Veuillez d’abord saisir un nom.', toast_saved:'Enregistré ✓', toast_opened:'Ouvert', toast_badfile:'Le fichier n’a pas pu être lu.', toast_norounds:'Veuillez sélectionner au moins une observation.', toast_popup:'Veuillez autoriser les fenêtres pop-up pour ouvrir le rapport.',
+ m_switch_t:'Changer de groupe d’âge ?', m_switch_p:'Les caractéristiques diffèrent selon le groupe d’âge. Les évaluations déjà saisies seront perdues.',
+ m_new_t:'Nouvelle observation ?', m_new_p:'Les saisies actuelles seront supprimées. Enregistrez d’abord si vous souhaitez les conserver.', cancel:'Annuler',
+ rep_title:'Fiche de Ravensburg pour l’observation du développement', rep_created:'créé le', rep_hinweis_t:'Remarque :',
+ rep_hinweis:'La fiche de Ravensburg décrit le développement de façon qualitative. Cette analyse est un résumé visuel servant de base d’échange – ni résultat de test, ni diagnostic.',
+ rep_bereich:'Domaine', rep_verlauf:'Évolution', rep_texte:'Notes & exemples d’observation', rep_digital:'Saisi numériquement'
+},
+it:{
+ nav_start:'Avvio', nav_profil:'Profilo', nav_erhebung:'Osservazione', nav_abschluss:'Conclusione & note',
+ nav_auswertung_sec:'Valutazione', nav_auswertung:'Valutazione', nav_bericht:'Relazione',
+ brand_sub:'Osservazione dello sviluppo · digitale', beobachtung:'Osservazione', beob_short:'Oss.',
+ setup_h:'Bambino & osservazioni', setup_lead:'Dati di base del bambino e fino a tre periodi di osservazione. Ogni osservazione ha un colore fisso – come la matita colorata sulla scheda cartacea.',
+ card_child:'Bambino', child_hint:'Questi dati restano sul tuo dispositivo. Il salvataggio avviene come file.',
+ f_name:'Cognome, nome', ph_name:'Rossi, Mia', f_geb:'data di nascita', f_erst:'Prima lingua', ph_erst:'Tedesco', f_kiga:'all’asilo da',
+ card_age:'Fascia d’età / scheda', age_hint:'Determina quali caratteristiche vengono rilevate.',
+ age23_t:'2–3 anni', age23_s:'Scheda per bambini di 2 e 3 anni', age46_t:'4–6 anni', age46_s:'Scheda per bambini dai 4 ai 6 anni',
+ card_beob:'Osservazioni', beob_hint:'Almeno una. L’età viene calcolata automaticamente dalla data di nascita e dalla data di osservazione.',
+ col_zeitraum:'Periodo / data', col_beob:'Osservatore/trice', ph_beob:'Nome', col_alter:'Età (A;M)',
+ to_erhebung:'All’osservazione →',
+ footer_src:'Scheda di Ravensburg per l’osservazione dello sviluppo · © 2007 Servizi di consulenza per i servizi educativi per l’infanzia del distretto di Ravensburg. Questa app riproduce la scheda in forma digitale e non sostituisce una valutazione professionale.',
+ area_bereich:'AMBITO', active_obs:'Osservazione attiva:', active_hint:'Un tocco imposta il segno per questa osservazione.',
+ inoffiziell:'Traduzione non ufficiale – fa fede la scheda originale tedesca.', merkmal:'Caratteristica',
+ scale_zu:'corrisponde', scale_eher:'corrisponde abbastanza', scale_weniger:'corrisponde poco', scale_nochnicht:'non corrisponde ancora',
+ text_fortschritte:'Progressi nello sviluppo', text_beispiele:'Esempi di osservazione', text_foerder:'Possibilità di sostegno / accordi',
+ filled:'compilato', ph_notes:'Note …',
+ abschluss_eyebrow:'Conclusione', abschluss_lead:'Osservazioni generali al termine della fase di osservazione – ad es. per preparare un colloquio con i genitori.',
+ aus_empty_h:'Ancora nessuna valutazione', aus_empty_p:'Non appena segni delle caratteristiche nella parte di osservazione, qui compare automaticamente il profilo di sviluppo.',
+ aus_h:'Profilo di sviluppo', note_title:'Non è un test, non è un voto.',
+ note_body:'La scheda di Ravensburg descrive lo sviluppo in modo qualitativo. Questa panoramica riassume visivamente i segni – come base di confronto per l’équipe e il colloquio con i genitori, non come diagnosi. Gli aspetti particolari vanno sempre discussi e, se necessario, segnalati a un servizio specialistico.',
+ profile_h:'Profilo per ambito', profile_hint:'Media per ambito sulla scala da “non corrisponde ancora” (sinistra) a “corrisponde” (destra).',
+ radar_h:'Profilo dei punti di forza (diagramma a rete)', radar_hint:'Tutte le osservazioni sovrapposte – l’andamento diventa visibile.',
+ sw_h:'Punti di forza & aree di osservazione', grundlage:'Base',
+ staerken_title:'Punti di forza (corrisponde)', schwer_title:'Aree di osservazione (corrisponde poco / non ancora)', none:'– nessuno –', to_bericht:'Alla relazione',
+ bericht_empty_p:'Non ci sono ancora valutazioni. Segna prima delle caratteristiche nell’osservazione.',
+ bericht_h:'Comporre la relazione', bericht_lead:'Scegli quali contenuti deve contenere la relazione e in quale lingua. Poi “Crea relazione” per stampa o PDF.',
+ bericht_sections:'Contenuti', sec_stamm:'Dati anagrafici & osservazioni', sec_profil:'Profilo per ambito', sec_radar:'Diagramma a rete', sec_staerken:'Punti di forza', sec_schwer:'Aree di osservazione', sec_texte:'Testo libero per ambito', sec_abschluss:'Note conclusive',
+ bericht_rounds:'Osservazioni', bericht_rounds_hint:'Quali osservazioni includere?',
+ bericht_lang:'Lingua della relazione', bericht_lang_hint:'Per il colloquio con i genitori – ad es. nella lingua di famiglia.', bericht_make:'Crea relazione (PDF/stampa)',
+ toast_needname:'Inserisci prima un nome.', toast_saved:'Salvato ✓', toast_opened:'Aperto', toast_badfile:'Impossibile leggere il file.', toast_norounds:'Seleziona almeno un’osservazione.', toast_popup:'Consenti i pop-up per aprire la relazione.',
+ m_switch_t:'Cambiare fascia d’età?', m_switch_p:'Le caratteristiche differiscono per fascia d’età. Le valutazioni già inserite andranno perse.',
+ m_new_t:'Nuova osservazione?', m_new_p:'Le voci attuali verranno eliminate. Salva prima se vuoi conservarle.', cancel:'Annulla',
+ rep_title:'Scheda di Ravensburg per l’osservazione dello sviluppo', rep_created:'creato il', rep_hinweis_t:'Nota:',
+ rep_hinweis:'La scheda di Ravensburg descrive lo sviluppo in modo qualitativo. Questa valutazione è un riepilogo visivo come base di confronto – non un risultato di test né una diagnosi.',
+ rep_bereich:'Ambito', rep_verlauf:'Andamento', rep_texte:'Note & esempi di osservazione', rep_digital:'Rilevato in digitale'
+},
+es:{
+ nav_start:'Inicio', nav_profil:'Perfil', nav_erhebung:'Observación', nav_abschluss:'Cierre y notas',
+ nav_auswertung_sec:'Evaluación', nav_auswertung:'Evaluación', nav_bericht:'Informe',
+ brand_sub:'Observación del desarrollo · digital', beobachtung:'Observación', beob_short:'Obs.',
+ setup_h:'Niño/a y observaciones', setup_lead:'Datos básicos del niño o la niña y hasta tres periodos de observación. Cada observación tiene un color fijo, como el lápiz de color en la hoja de papel.',
+ card_child:'Niño/a', child_hint:'Estos datos permanecen en tu dispositivo. Se guardan como archivo.',
+ f_name:'Apellido, nombre', ph_name:'García, Mía', f_geb:'fecha de nacimiento', f_erst:'Primera lengua', ph_erst:'Alemán', f_kiga:'en la guardería desde',
+ card_age:'Grupo de edad / hoja', age_hint:'Determina qué características se registran.',
+ age23_t:'2–3 años', age23_s:'Hoja para niños de 2 y 3 años', age46_t:'4–6 años', age46_s:'Hoja para niños de 4 a 6 años',
+ card_beob:'Observaciones', beob_hint:'Al menos una. La edad se calcula automáticamente a partir de la fecha de nacimiento y la fecha de observación.',
+ col_zeitraum:'Periodo / fecha', col_beob:'Observador/a', ph_beob:'Nombre', col_alter:'Edad (A;M)',
+ to_erhebung:'A la observación →',
+ footer_src:'Hoja de Ravensburg para la observación del desarrollo · © 2007 Servicios de asesoramiento para centros de educación infantil del distrito de Ravensburg. Esta aplicación reproduce la hoja en formato digital y no sustituye una valoración profesional.',
+ area_bereich:'ÁREA', active_obs:'Observación activa:', active_hint:'Un toque coloca la marca para esta observación.',
+ inoffiziell:'Traducción no oficial: la hoja original en alemán es la versión vinculante.', merkmal:'Característica',
+ scale_zu:'se cumple', scale_eher:'se cumple bastante', scale_weniger:'se cumple poco', scale_nochnicht:'aún no se cumple',
+ text_fortschritte:'Avances en el desarrollo', text_beispiele:'Ejemplos de observación', text_foerder:'Opciones de apoyo / acuerdos',
+ filled:'rellenado', ph_notes:'Notas …',
+ abschluss_eyebrow:'Cierre', abschluss_lead:'Observaciones generales al final de la fase de observación, p. ej. para preparar una reunión con las familias.',
+ aus_empty_h:'Aún no hay valoraciones', aus_empty_p:'En cuanto marques características en la parte de observación, aquí aparecerá automáticamente el perfil de desarrollo.',
+ aus_h:'Perfil de desarrollo', note_title:'Ni examen ni nota.',
+ note_body:'La hoja de Ravensburg describe el desarrollo de forma cualitativa. Este resumen recoge las marcas de forma visual, como base de diálogo para el equipo y la reunión con las familias, no como un diagnóstico. Lo que llame la atención debe tratarse siempre en la conversación y, si procede, con un servicio especializado.',
+ profile_h:'Perfil por área', profile_hint:'Promedio por área en la escala de «aún no se cumple» (izquierda) a «se cumple» (derecha).',
+ radar_h:'Perfil de fortalezas (diagrama de red)', radar_hint:'Todas las observaciones superpuestas: así se ve la evolución.',
+ sw_h:'Fortalezas y focos de observación', grundlage:'Base',
+ staerken_title:'Fortalezas (se cumple)', schwer_title:'Focos de observación (se cumple poco / aún no)', none:'– ninguno –', to_bericht:'Al informe',
+ bericht_empty_p:'Todavía no hay valoraciones. Marca primero características en la observación.',
+ bericht_h:'Componer el informe', bericht_lead:'Elige qué contenidos debe incluir el informe y en qué idioma. Después «Crear informe» para impresión o PDF.',
+ bericht_sections:'Contenidos', sec_stamm:'Datos básicos y observaciones', sec_profil:'Perfil por área', sec_radar:'Diagrama de red', sec_staerken:'Fortalezas', sec_schwer:'Focos de observación', sec_texte:'Texto libre por área', sec_abschluss:'Notas de cierre',
+ bericht_rounds:'Observaciones', bericht_rounds_hint:'¿Qué observaciones deben incluirse?',
+ bericht_lang:'Idioma del informe', bericht_lang_hint:'Para la reunión con las familias, p. ej. en la lengua familiar.', bericht_make:'Crear informe (PDF/impresión)',
+ toast_needname:'Introduce primero un nombre.', toast_saved:'Guardado ✓', toast_opened:'Abierto', toast_badfile:'No se pudo leer el archivo.', toast_norounds:'Selecciona al menos una observación.', toast_popup:'Permite las ventanas emergentes para abrir el informe.',
+ m_switch_t:'¿Cambiar de grupo de edad?', m_switch_p:'Las características difieren según el grupo de edad. Las valoraciones ya introducidas se perderán.',
+ m_new_t:'¿Nueva observación?', m_new_p:'Se descartarán las entradas actuales. Guarda antes si quieres conservarlas.', cancel:'Cancelar',
+ rep_title:'Hoja de Ravensburg para la observación del desarrollo', rep_created:'creado el', rep_hinweis_t:'Nota:',
+ rep_hinweis:'La hoja de Ravensburg describe el desarrollo de forma cualitativa. Esta evaluación es un resumen visual como base de diálogo, no un resultado de examen ni un diagnóstico.',
+ rep_bereich:'Área', rep_verlauf:'Evolución', rep_texte:'Notas y ejemplos de observación', rep_digital:'Registrado digitalmente'
+},
+tr:{
+ nav_start:'Başlangıç', nav_profil:'Profil', nav_erhebung:'Gözlem', nav_abschluss:'Sonuç & notlar',
+ nav_auswertung_sec:'Değerlendirme', nav_auswertung:'Değerlendirme', nav_bericht:'Rapor',
+ brand_sub:'Gelişim gözlemi · dijital', beobachtung:'Gözlem', beob_short:'Gözl.',
+ setup_h:'Çocuk & gözlemler', setup_lead:'Çocuğun temel bilgileri ve en fazla üç gözlem dönemi. Her gözlemin – kâğıt formdaki renkli kalem gibi – sabit bir rengi vardır.',
+ card_child:'Çocuk', child_hint:'Bu bilgiler cihazınızda kalır. Dosya olarak kaydedilir.',
+ f_name:'Soyadı, adı', ph_name:'Yılmaz, Mia', f_geb:'doğum tarihi', f_erst:'Ana dil', ph_erst:'Almanca', f_kiga:'anaokulunda şu tarihten beri',
+ card_age:'Yaş grubu / form', age_hint:'Hangi özelliklerin kaydedileceğini belirler.',
+ age23_t:'2–3 yaş', age23_s:'2 ve 3 yaş çocuklar için form', age46_t:'4–6 yaş', age46_s:'4 ila 6 yaş çocuklar için form',
+ card_beob:'Gözlemler', beob_hint:'En az bir tane. Yaş, doğum tarihi ve gözlem tarihinden otomatik hesaplanır.',
+ col_zeitraum:'Dönem / tarih', col_beob:'Gözlemci', ph_beob:'Ad', col_alter:'Yaş (Y;A)',
+ to_erhebung:'Gözleme →',
+ footer_src:'Gelişim gözlemi için Ravensburg formu · © 2007 Ravensburg ilçesi çocuk gündüz bakım kurumları danışma birimleri. Bu uygulama formu dijital olarak yansıtır ve uzman değerlendirmesinin yerini tutmaz.',
+ area_bereich:'ALAN', active_obs:'Etkin gözlem:', active_hint:'Tıklama, bu gözlem için işareti koyar.',
+ inoffiziell:'Resmî olmayan çeviri – bağlayıcı olan Almanca orijinal formdur.', merkmal:'Özellik',
+ scale_zu:'uygun', scale_eher:'oldukça uygun', scale_weniger:'az uygun', scale_nochnicht:'henüz uygun değil',
+ text_fortschritte:'Gelişim ilerlemeleri', text_beispiele:'Gözlem örnekleri', text_foerder:'Destek olanakları / anlaşmalar',
+ filled:'dolduruldu', ph_notes:'Notlar …',
+ abschluss_eyebrow:'Sonuç', abschluss_lead:'Gözlem aşamasının sonundaki genel gözlemler – ör. veli görüşmesine hazırlık için.',
+ aus_empty_h:'Henüz değerlendirme yok', aus_empty_p:'Gözlem bölümünde özellikleri işaretler işaretlemez gelişim profili burada otomatik olarak oluşur.',
+ aus_h:'Gelişim profili', note_title:'Test değil, not değil.',
+ note_body:'Ravensburg formu gelişimi nitel olarak betimler. Bu genel bakış, işaretleri görsel olarak özetler – ekip ve veli görüşmesi için bir konuşma temeli olarak, tanı olarak değil. Dikkat çeken durumlar her zaman görüşmede ele alınmalı ve gerekirse bir uzmanlık birimine yönlendirilmelidir.',
+ profile_h:'Alan profili', profile_hint:'“Henüz uygun değil” (sol) ile “uygun” (sağ) arasındaki ölçekte alan başına ortalama.',
+ radar_h:'Güçlü yönler profili (ağ diyagramı)', radar_hint:'Tüm gözlemler üst üste – böylece gelişim süreci görünür olur.',
+ sw_h:'Güçlü yönler & gözlem odakları', grundlage:'Temel',
+ staerken_title:'Güçlü yönler (uygun)', schwer_title:'Gözlem odakları (az uygun / henüz değil)', none:'– yok –', to_bericht:'Rapora',
+ bericht_empty_p:'Henüz değerlendirme yok. Önce gözlemde özellikleri işaretleyin.',
+ bericht_h:'Raporu oluştur', bericht_lead:'Raporun hangi içerikleri ve hangi dili içereceğini seçin. Ardından yazdırma veya PDF için “Rapor oluştur”.',
+ bericht_sections:'İçerik', sec_stamm:'Temel veriler & gözlemler', sec_profil:'Alan profili', sec_radar:'Ağ diyagramı', sec_staerken:'Güçlü yönler', sec_schwer:'Gözlem odakları', sec_texte:'Alan başına serbest metin', sec_abschluss:'Sonuç notları',
+ bericht_rounds:'Gözlemler', bericht_rounds_hint:'Hangi gözlemler dâhil edilsin?',
+ bericht_lang:'Rapor dili', bericht_lang_hint:'Veli görüşmesi için – ör. aile dilinde.', bericht_make:'Rapor oluştur (PDF/yazdır)',
+ toast_needname:'Lütfen önce bir ad girin.', toast_saved:'Kaydedildi ✓', toast_opened:'Açıldı', toast_badfile:'Dosya okunamadı.', toast_norounds:'Lütfen en az bir gözlem seçin.', toast_popup:'Raporu açmak için lütfen pop-up’lara izin verin.',
+ m_switch_t:'Yaş grubu değiştirilsin mi?', m_switch_p:'Özellikler yaş grubuna göre farklıdır. Girilen değerlendirmeler kaybolur.',
+ m_new_t:'Yeni gözlem mi?', m_new_p:'Mevcut girişler silinecek. Saklamak istiyorsanız önce kaydedin.', cancel:'İptal',
+ rep_title:'Gelişim gözlemi için Ravensburg formu', rep_created:'oluşturuldu', rep_hinweis_t:'Not:',
+ rep_hinweis:'Ravensburg formu gelişimi nitel olarak betimler. Bu değerlendirme, bir konuşma temeli olarak görsel bir özettir – test sonucu veya tanı değildir.',
+ rep_bereich:'Alan', rep_verlauf:'Seyir', rep_texte:'Notlar & gözlem örnekleri', rep_digital:'Dijital olarak kaydedildi'
+},
+ru:{
+ nav_start:'Начало', nav_profil:'Профиль', nav_erhebung:'Наблюдение', nav_abschluss:'Итог и заметки',
+ nav_auswertung_sec:'Анализ', nav_auswertung:'Анализ', nav_bericht:'Отчёт',
+ brand_sub:'Наблюдение за развитием · цифровое', beobachtung:'Наблюдение', beob_short:'Набл.',
+ setup_h:'Ребёнок и наблюдения', setup_lead:'Основные данные ребёнка и до трёх периодов наблюдения. У каждого наблюдения свой постоянный цвет — как цветной карандаш на бумажном бланке.',
+ card_child:'Ребёнок', child_hint:'Эти данные остаются на вашем устройстве. Сохранение — в виде файла.',
+ f_name:'Фамилия, имя', ph_name:'Иванова, Мия', f_geb:'дата рождения', f_erst:'Родной язык', ph_erst:'Немецкий', f_kiga:'в детском саду с',
+ card_age:'Возрастная группа / бланк', age_hint:'Определяет, какие признаки фиксируются.',
+ age23_t:'2–3 года', age23_s:'Бланк для детей 2 и 3 лет', age46_t:'4–6 лет', age46_s:'Бланк для детей от 4 до 6 лет',
+ card_beob:'Наблюдения', beob_hint:'Минимум одно. Возраст вычисляется автоматически из даты рождения и даты наблюдения.',
+ col_zeitraum:'Период / дата', col_beob:'Наблюдатель', ph_beob:'Имя', col_alter:'Возраст (Г;М)',
+ to_erhebung:'К наблюдению →',
+ footer_src:'Равенсбургский бланк наблюдения за развитием · © 2007 Консультационные службы для детских дошкольных учреждений района Равенсбург. Это приложение воспроизводит бланк в цифровом виде и не заменяет профессиональную оценку.',
+ area_bereich:'ОБЛАСТЬ', active_obs:'Активное наблюдение:', active_hint:'Нажатие ставит отметку для этого наблюдения.',
+ inoffiziell:'Неофициальный перевод — обязательную силу имеет немецкий оригинал бланка.', merkmal:'Признак',
+ scale_zu:'соответствует', scale_eher:'скорее соответствует', scale_weniger:'мало соответствует', scale_nochnicht:'пока не соответствует',
+ text_fortschritte:'Достижения в развитии', text_beispiele:'Примеры наблюдений', text_foerder:'Возможности поддержки / договорённости',
+ filled:'заполнено', ph_notes:'Заметки …',
+ abschluss_eyebrow:'Итог', abschluss_lead:'Общие наблюдения по завершении этапа наблюдения — например, для подготовки беседы с родителями.',
+ aus_empty_h:'Пока нет оценок', aus_empty_p:'Как только вы отметите признаки в разделе наблюдения, здесь автоматически появится профиль развития.',
+ aus_h:'Профиль развития', note_title:'Не тест и не оценка.',
+ note_body:'Равенсбургский бланк описывает развитие качественно. Этот обзор наглядно обобщает отметки — как основу для обсуждения в команде и с родителями, а не как диагноз. Всё, что обращает на себя внимание, следует обязательно обсудить и при необходимости направить в профильную службу.',
+ profile_h:'Профиль по областям', profile_hint:'Среднее по области по шкале от «пока не соответствует» (слева) до «соответствует» (справа).',
+ radar_h:'Профиль сильных сторон (лепестковая диаграмма)', radar_hint:'Все наблюдения наложены друг на друга — так виден ход развития.',
+ sw_h:'Сильные стороны и зоны внимания', grundlage:'Основа',
+ staerken_title:'Сильные стороны (соответствует)', schwer_title:'Зоны внимания (мало / пока не соответствует)', none:'– нет –', to_bericht:'К отчёту',
+ bericht_empty_p:'Оценок пока нет. Сначала отметьте признаки в наблюдении.',
+ bericht_h:'Составить отчёт', bericht_lead:'Выберите, какое содержание должен включать отчёт и на каком языке. Затем «Создать отчёт» для печати или PDF.',
+ bericht_sections:'Содержание', sec_stamm:'Основные данные и наблюдения', sec_profil:'Профиль по областям', sec_radar:'Лепестковая диаграмма', sec_staerken:'Сильные стороны', sec_schwer:'Зоны внимания', sec_texte:'Свободный текст по областям', sec_abschluss:'Итоговые заметки',
+ bericht_rounds:'Наблюдения', bericht_rounds_hint:'Какие наблюдения включить?',
+ bericht_lang:'Язык отчёта', bericht_lang_hint:'Для беседы с родителями — например, на языке семьи.', bericht_make:'Создать отчёт (PDF/печать)',
+ toast_needname:'Сначала введите имя.', toast_saved:'Сохранено ✓', toast_opened:'Открыто', toast_badfile:'Не удалось прочитать файл.', toast_norounds:'Выберите хотя бы одно наблюдение.', toast_popup:'Разрешите всплывающие окна, чтобы открыть отчёт.',
+ m_switch_t:'Сменить возрастную группу?', m_switch_p:'Признаки различаются по возрастным группам. Уже введённые оценки будут потеряны.',
+ m_new_t:'Новое наблюдение?', m_new_p:'Текущие записи будут удалены. Сначала сохраните, если хотите их оставить.', cancel:'Отмена',
+ rep_title:'Равенсбургский бланк наблюдения за развитием', rep_created:'создано', rep_hinweis_t:'Примечание:',
+ rep_hinweis:'Равенсбургский бланк описывает развитие качественно. Этот анализ — наглядное обобщение как основа для беседы, а не результат теста и не диагноз.',
+ rep_bereich:'Область', rep_verlauf:'Динамика', rep_texte:'Заметки и примеры наблюдений', rep_digital:'Зафиксировано в цифровом виде'
+}
+};
+
+/* ===== Bereichsnamen (Name + Kurzform) ===== */
+const AREATR = {
+ sozial:{ en:{name:'Social behaviour',short:'Social'}, fr:{name:'Comportement social',short:'Social'}, it:{name:'Comportamento sociale',short:'Sociale'}, es:{name:'Comportamiento social',short:'Social'}, tr:{name:'Sosyal davranış',short:'Sosyal'}, ru:{name:'Социальное поведение',short:'Социальн.'} },
+ emotional:{ en:{name:'Emotional development',short:'Emotion'}, fr:{name:'Développement émotionnel',short:'Émotion'}, it:{name:'Sviluppo emotivo',short:'Emotivo'}, es:{name:'Desarrollo emocional',short:'Emoción'}, tr:{name:'Duygusal gelişim',short:'Duygu'}, ru:{name:'Эмоциональное развитие',short:'Эмоции'} },
+ lernen:{ en:{name:'Learning (cognitive development)',short:'Learning'}, fr:{name:'Apprentissage (développement cognitif)',short:'Apprent.'}, it:{name:'Apprendimento (sviluppo cognitivo)',short:'Apprend.'}, es:{name:'Aprendizaje (desarrollo cognitivo)',short:'Aprendiz.'}, tr:{name:'Öğrenme (bilişsel gelişim)',short:'Öğrenme'}, ru:{name:'Обучение (когнитивное развитие)',short:'Обучение'} },
+ sprache:{ en:{name:'Language development',short:'Language'}, fr:{name:'Développement du langage',short:'Langage'}, it:{name:'Sviluppo linguistico',short:'Linguagg.'}, es:{name:'Desarrollo del lenguaje',short:'Lenguaje'}, tr:{name:'Dil gelişimi',short:'Dil'}, ru:{name:'Речевое развитие',short:'Речь'} },
+ kreativ:{ en:{name:'Creativity',short:'Creativity'}, fr:{name:'Créativité',short:'Créativ.'}, it:{name:'Creatività',short:'Creatività'}, es:{name:'Creatividad',short:'Creativid.'}, tr:{name:'Yaratıcılık',short:'Yaratıcı'}, ru:{name:'Креативность',short:'Креатив.'} },
+ spiel:{ en:{name:'Play behaviour',short:'Play'}, fr:{name:'Comportement de jeu',short:'Jeu'}, it:{name:'Comportamento di gioco',short:'Gioco'}, es:{name:'Comportamiento de juego',short:'Juego'}, tr:{name:'Oyun davranışı',short:'Oyun'}, ru:{name:'Игровое поведение',short:'Игра'} },
+ koerper:{ en:{name:'Physical development',short:'Physical'}, fr:{name:'Développement physique',short:'Physique'}, it:{name:'Sviluppo fisico',short:'Fisico'}, es:{name:'Desarrollo físico',short:'Físico'}, tr:{name:'Bedensel gelişim',short:'Beden'}, ru:{name:'Физическое развитие',short:'Физич.'} }
+};
+
+/* ===== Item-Übersetzungen, Teil A (Schlüssel = deutscher Originalsatz) ===== */
+const TR = {};
+Object.assign(TR, {
+
+/* --- I. Sozialverhalten --- */
+"Das Kind nimmt von sich aus positive Kontakte zu anderen Kindern auf.":{en:"The child makes positive contact with other children on its own initiative.",fr:"L’enfant établit de lui-même des contacts positifs avec d’autres enfants.",it:"Il bambino instaura di sua iniziativa contatti positivi con gli altri bambini.",es:"El niño establece por iniciativa propia contactos positivos con otros niños.",tr:"Çocuk kendiliğinden diğer çocuklarla olumlu ilişki kurar.",ru:"Ребёнок сам устанавливает положительные контакты с другими детьми."},
+"Es hat positive Kontakte zu Kindern und Erwachsenen in der Gruppe.":{en:"It has positive contact with children and adults in the group.",fr:"Il a des contacts positifs avec les enfants et les adultes du groupe.",it:"Ha contatti positivi con bambini e adulti del gruppo.",es:"Tiene contactos positivos con niños y adultos del grupo.",tr:"Gruptaki çocuklarla ve yetişkinlerle olumlu ilişkileri vardır.",ru:"У него положительные контакты с детьми и взрослыми в группе."},
+"Andere Kinder suchen gern die Gesellschaft des Kindes.":{en:"Other children like to seek the child’s company.",fr:"Les autres enfants recherchent volontiers la compagnie de l’enfant.",it:"Gli altri bambini cercano volentieri la compagnia del bambino.",es:"Otros niños buscan con gusto la compañía del niño.",tr:"Diğer çocuklar bu çocuğun yanında olmaktan hoşlanır.",ru:"Другие дети охотно ищут общества этого ребёнка."},
+"Im Spiel mit anderen Kindern verhält es sich kooperativ.":{en:"When playing with other children it behaves cooperatively.",fr:"Dans le jeu avec d’autres enfants, il se comporte de façon coopérative.",it:"Nel gioco con altri bambini si comporta in modo collaborativo.",es:"En el juego con otros niños se comporta de forma cooperativa.",tr:"Diğer çocuklarla oyunda işbirlikçi davranır.",ru:"В игре с другими детьми ведёт себя готов к сотрудничеству."},
+"Das Kind gliedert sich in die Gruppe ein (es hält sich an Regeln).":{en:"The child fits into the group (it follows rules).",fr:"L’enfant s’intègre au groupe (il respecte les règles).",it:"Il bambino si inserisce nel gruppo (rispetta le regole).",es:"El niño se integra en el grupo (cumple las reglas).",tr:"Çocuk gruba uyum sağlar (kurallara uyar).",ru:"Ребёнок вписывается в группу (соблюдает правила)."},
+"Das Kind achtet auf das Einhalten der Regeln bei anderen.":{en:"The child pays attention to others keeping the rules.",fr:"L’enfant veille à ce que les autres respectent les règles.",it:"Il bambino bada che anche gli altri rispettino le regole.",es:"El niño se fija en que los demás cumplan las reglas.",tr:"Çocuk başkalarının da kurallara uymasına dikkat eder.",ru:"Ребёнок следит за соблюдением правил другими."},
+"Das Kind trägt bei Konflikten zu positiven Lösungsmöglichkeiten bei.":{en:"In conflicts the child contributes to positive solutions.",fr:"En cas de conflit, l’enfant contribue à des solutions positives.",it:"Nei conflitti il bambino contribuisce a soluzioni positive.",es:"En los conflictos, el niño contribuye a soluciones positivas.",tr:"Çatışmalarda çocuk olumlu çözümlere katkıda bulunur.",ru:"В конфликтах ребёнок способствует положительным решениям."},
+"Das Kind geht Kompromisse ein.":{en:"The child is willing to compromise.",fr:"L’enfant accepte des compromis.",it:"Il bambino accetta compromessi.",es:"El niño llega a compromisos.",tr:"Çocuk uzlaşmaya açıktır.",ru:"Ребёнок идёт на компромиссы."},
+"Es verträgt sich wieder.":{en:"It makes up again.",fr:"Il se réconcilie.",it:"Fa di nuovo pace.",es:"Vuelve a reconciliarse.",tr:"Yeniden barışır.",ru:"Он снова мирится."},
+"Das Kind hört anderen Kindern zu.":{en:"The child listens to other children.",fr:"L’enfant écoute les autres enfants.",it:"Il bambino ascolta gli altri bambini.",es:"El niño escucha a otros niños.",tr:"Çocuk diğer çocukları dinler.",ru:"Ребёнок слушает других детей."},
+"Es hilft anderen Kindern, wenn sie Aufmerksamkeit benötigen.":{en:"It helps other children when they need attention.",fr:"Il aide les autres enfants lorsqu’ils ont besoin d’attention.",it:"Aiuta gli altri bambini quando hanno bisogno di attenzione.",es:"Ayuda a otros niños cuando necesitan atención.",tr:"İlgiye ihtiyaç duyduklarında diğer çocuklara yardım eder.",ru:"Он помогает другим детям, когда им нужно внимание."},
+"Es trägt Streit verbal und lösungsorientiert aus.":{en:"It settles disputes verbally and in a solution-oriented way.",fr:"Il règle les disputes verbalement et de manière constructive.",it:"Risolve i litigi a parole e in modo orientato alla soluzione.",es:"Resuelve las disputas verbalmente y orientado a la solución.",tr:"Anlaşmazlıkları sözlü ve çözüm odaklı biçimde halleder.",ru:"Он разрешает споры словами и нацелен на решение."},
+"Es versetzt sich in andere Kinder hinein.":{en:"It puts itself in other children’s shoes.",fr:"Il se met à la place des autres enfants.",it:"Si mette nei panni degli altri bambini.",es:"Se pone en el lugar de otros niños.",tr:"Kendini diğer çocukların yerine koyar.",ru:"Он ставит себя на место других детей."},
+"Es hilft anderen Kindern, wenn diese Aufmerksamkeit benötigen.":{en:"It helps other children when they need attention.",fr:"Il aide les autres enfants lorsque ceux-ci ont besoin d’attention.",it:"Aiuta gli altri bambini quando questi hanno bisogno di attenzione.",es:"Ayuda a otros niños cuando estos necesitan atención.",tr:"Bu çocuklar ilgiye ihtiyaç duyduğunda onlara yardım eder.",ru:"Он помогает другим детям, когда тем нужно внимание."},
+
+/* --- II. Emotionale Entwicklung --- */
+"Das Kind wirkt insgesamt ausgeglichen und zufrieden.":{en:"Overall the child seems balanced and content.",fr:"Dans l’ensemble, l’enfant paraît équilibré et satisfait.",it:"Nel complesso il bambino appare equilibrato e sereno.",es:"En general, el niño parece equilibrado y satisfecho.",tr:"Çocuk genel olarak dengeli ve hoşnut görünür.",ru:"В целом ребёнок выглядит уравновешенным и довольным."},
+"Das Kind drückt negative Gefühle aus (Ärger, Wut, Angst).":{en:"The child expresses negative feelings (annoyance, anger, fear).",fr:"L’enfant exprime des émotions négatives (contrariété, colère, peur).",it:"Il bambino esprime emozioni negative (fastidio, rabbia, paura).",es:"El niño expresa sentimientos negativos (enfado, ira, miedo).",tr:"Çocuk olumsuz duyguları ifade eder (kızgınlık, öfke, korku).",ru:"Ребёнок выражает отрицательные чувства (досаду, гнев, страх)."},
+"Das Kind drückt positive Gefühle aus (Freude, Zärtlichkeit, Mitgefühl).":{en:"The child expresses positive feelings (joy, tenderness, compassion).",fr:"L’enfant exprime des émotions positives (joie, tendresse, compassion).",it:"Il bambino esprime emozioni positive (gioia, tenerezza, compassione).",es:"El niño expresa sentimientos positivos (alegría, ternura, compasión).",tr:"Çocuk olumlu duyguları ifade eder (sevinç, şefkat, merhamet).",ru:"Ребёнок выражает положительные чувства (радость, нежность, сочувствие)."},
+"Das Kind reguliert Gefühle seinem Alter angemessen (lässt sich trösten).":{en:"The child regulates feelings appropriately for its age (can be comforted).",fr:"L’enfant régule ses émotions de façon adaptée à son âge (se laisse consoler).",it:"Il bambino regola le emozioni in modo adeguato all’età (si lascia consolare).",es:"El niño regula sus emociones de forma adecuada a su edad (se deja consolar).",tr:"Çocuk duygularını yaşına uygun düzenler (teselli edilebilir).",ru:"Ребёнок регулирует чувства соответственно возрасту (его можно утешить)."},
+"Das Kind kann sich Hilfe holen.":{en:"The child is able to seek help.",fr:"L’enfant sait demander de l’aide.",it:"Il bambino sa chiedere aiuto.",es:"El niño es capaz de buscar ayuda.",tr:"Çocuk yardım isteyebilir.",ru:"Ребёнок умеет обратиться за помощью."},
+"Das Kind ist selbstbewusst; es äußert und vertritt seine eigene Meinung.":{en:"The child is self-confident; it voices and stands up for its own opinion.",fr:"L’enfant a confiance en lui ; il exprime et défend sa propre opinion.",it:"Il bambino è sicuro di sé; esprime e sostiene la propria opinione.",es:"El niño tiene confianza en sí mismo; expresa y defiende su propia opinión.",tr:"Çocuk özgüvenlidir; kendi görüşünü dile getirir ve savunur.",ru:"Ребёнок уверен в себе; высказывает и отстаивает своё мнение."},
+"Das Kind übernimmt Verantwortung für sich („Was tut mir gut?“).":{en:"The child takes responsibility for itself (“What is good for me?”).",fr:"L’enfant assume la responsabilité de lui-même (« Qu’est-ce qui me fait du bien ? »).",it:"Il bambino si assume la responsabilità di sé («Che cosa mi fa bene?»).",es:"El niño asume la responsabilidad de sí mismo («¿Qué me hace bien?»).",tr:"Çocuk kendisi için sorumluluk alır („Bana ne iyi gelir?“).",ru:"Ребёнок берёт ответственность за себя («Что для меня хорошо?»)."},
+"Das Kind reguliert Emotionen seinem Alter angemessen (Frustrationstoleranz).":{en:"The child regulates emotions appropriately for its age (frustration tolerance).",fr:"L’enfant régule ses émotions de façon adaptée à son âge (tolérance à la frustration).",it:"Il bambino regola le emozioni in modo adeguato all’età (tolleranza alla frustrazione).",es:"El niño regula sus emociones de forma adecuada a su edad (tolerancia a la frustración).",tr:"Çocuk duygularını yaşına uygun düzenler (hayal kırıklığına dayanma).",ru:"Ребёнок регулирует эмоции соответственно возрасту (переносит фрустрацию)."},
+"Das Kind zeigt Sinn für Humor.":{en:"The child shows a sense of humour.",fr:"L’enfant montre le sens de l’humour.",it:"Il bambino mostra senso dell’umorismo.",es:"El niño muestra sentido del humor.",tr:"Çocuk mizah duygusu gösterir.",ru:"Ребёнок проявляет чувство юмора."},
+"Das Kind hat eine Vertrauensbeziehung zu einer/mehreren Fachkräften.":{en:"The child has a trusting relationship with one or more staff members.",fr:"L’enfant a une relation de confiance avec un ou plusieurs professionnels.",it:"Il bambino ha un rapporto di fiducia con uno o più operatori.",es:"El niño tiene una relación de confianza con uno o varios profesionales.",tr:"Çocuğun bir veya birden çok uzmanla güven ilişkisi vardır.",ru:"У ребёнка доверительные отношения с одним или несколькими педагогами."},
+
+/* --- III. Lernen (Kognitive Entwicklung) --- */
+"Das Kind konzentriert sich eine Zeit lang auf ein Spiel oder eine Aufgabe (allein/mit anderen Kindern/in der Gruppe).":{en:"The child concentrates for a while on a game or task (alone/with other children/in the group).",fr:"L’enfant se concentre un certain temps sur un jeu ou une tâche (seul/avec d’autres enfants/en groupe).",it:"Il bambino si concentra per un po’ su un gioco o un compito (da solo/con altri bambini/in gruppo).",es:"El niño se concentra durante un rato en un juego o una tarea (solo/con otros niños/en grupo).",tr:"Çocuk bir süre bir oyuna veya göreve odaklanır (tek başına/diğer çocuklarla/grupta).",ru:"Ребёнок какое-то время сосредоточен на игре или задании (один/с другими детьми/в группе)."},
+"Das Kind hat eigene Ideen (beim Konstruieren, Gestalten, Probleme lösen).":{en:"The child has its own ideas (when building, creating, solving problems).",fr:"L’enfant a ses propres idées (pour construire, créer, résoudre des problèmes).",it:"Il bambino ha idee proprie (nel costruire, creare, risolvere problemi).",es:"El niño tiene ideas propias (al construir, crear, resolver problemas).",tr:"Çocuğun kendi fikirleri vardır (inşa ederken, tasarlarken, sorun çözerken).",ru:"У ребёнка есть собственные идеи (при конструировании, творчестве, решении задач)."},
+"Das Kind zeigt vielfältiges Interesse und Neugier an seiner Umgebung (Materialien, Natur, Technik, Erlebnisse) und geht den Dingen experimentierend und forschend auf den Grund.":{en:"The child shows wide-ranging interest and curiosity about its surroundings (materials, nature, technology, experiences) and gets to the bottom of things by experimenting and exploring.",fr:"L’enfant montre un intérêt et une curiosité variés pour son environnement (matériaux, nature, technique, expériences) et approfondit les choses en expérimentant et en explorant.",it:"Il bambino mostra molteplici interessi e curiosità per l’ambiente (materiali, natura, tecnica, esperienze) e indaga le cose sperimentando ed esplorando.",es:"El niño muestra un interés y una curiosidad variados por su entorno (materiales, naturaleza, técnica, experiencias) y profundiza en las cosas experimentando e investigando.",tr:"Çocuk çevresine (malzemeler, doğa, teknik, deneyimler) çok yönlü ilgi ve merak gösterir ve deneyerek, araştırarak işin özüne iner.",ru:"Ребёнок проявляет разнообразный интерес и любопытство к окружению (материалы, природа, техника, впечатления) и докапывается до сути, экспериментируя и исследуя."},
+"Das Kind lässt sich motivieren, ist begeisterungsfähig, macht gerne mit.":{en:"The child can be motivated, is enthusiastic, joins in willingly.",fr:"L’enfant se laisse motiver, est enthousiaste, participe volontiers.",it:"Il bambino si lascia motivare, è entusiasta, partecipa volentieri.",es:"El niño se deja motivar, es entusiasta, participa con gusto.",tr:"Çocuk motive olabilir, heveslidir, seve seve katılır.",ru:"Ребёнка можно мотивировать, он увлекается, охотно участвует."},
+"Das Kind kann mit Erfolg und Misserfolg umgehen.":{en:"The child can deal with success and failure.",fr:"L’enfant sait gérer le succès et l’échec.",it:"Il bambino sa gestire successo e insuccesso.",es:"El niño sabe manejar el éxito y el fracaso.",tr:"Çocuk başarı ve başarısızlıkla baş edebilir.",ru:"Ребёнок умеет справляться с успехом и неудачей."},
+"Das Kind setzt seine Energie ein, um ans Ziel zu kommen.":{en:"The child uses its energy to reach the goal.",fr:"L’enfant mobilise son énergie pour atteindre son but.",it:"Il bambino impiega le proprie energie per raggiungere l’obiettivo.",es:"El niño emplea su energía para alcanzar la meta.",tr:"Çocuk hedefe ulaşmak için enerjisini kullanır.",ru:"Ребёнок направляет силы на достижение цели."},
+"Das Kind verschafft sich Ruhepausen.":{en:"The child takes breaks to rest.",fr:"L’enfant s’accorde des pauses.",it:"Il bambino si concede delle pause.",es:"El niño se procura pausas de descanso.",tr:"Çocuk kendine dinlenme molaları verir.",ru:"Ребёнок устраивает себе передышки."},
+"Das Kind entwickelt Strategien, um etwas zu erreichen (Sachen „abluchsen“).":{en:"The child develops strategies to achieve something (to wangle things).",fr:"L’enfant développe des stratégies pour obtenir quelque chose (« soutirer » des choses).",it:"Il bambino sviluppa strategie per ottenere qualcosa (per «strappare» le cose).",es:"El niño desarrolla estrategias para conseguir algo («sonsacar» cosas).",tr:"Çocuk bir şeyi elde etmek için stratejiler geliştirir (bir şeyleri „koparmak“).",ru:"Ребёнок вырабатывает стратегии, чтобы добиться своего («выманить» что-то)."},
+"Das Kind erkennt Gedichte, Lieder, Memorykärtchen usw. wieder.":{en:"The child recognises poems, songs, memory cards, etc.",fr:"L’enfant reconnaît des poèmes, des chansons, des cartes de memory, etc.",it:"Il bambino riconosce poesie, canzoni, carte del memory, ecc.",es:"El niño reconoce poemas, canciones, cartas de memory, etc.",tr:"Çocuk şiirleri, şarkıları, hafıza kartlarını vb. tanır.",ru:"Ребёнок узнаёт стихи, песни, карточки мемори и т. д."},
+"Das Kind erinnert sich an besondere Erlebnisse, Ereignisse.":{en:"The child remembers special experiences and events.",fr:"L’enfant se souvient d’expériences et d’événements particuliers.",it:"Il bambino ricorda esperienze ed eventi particolari.",es:"El niño recuerda vivencias y acontecimientos especiales.",tr:"Çocuk özel deneyimleri ve olayları hatırlar.",ru:"Ребёнок помнит особые впечатления и события."},
+"Das Kind versteht Spielregeln sowie Umgangsregeln.":{en:"The child understands game rules and rules of conduct.",fr:"L’enfant comprend les règles du jeu et les règles de comportement.",it:"Il bambino comprende le regole del gioco e di comportamento.",es:"El niño entiende las reglas del juego y de convivencia.",tr:"Çocuk oyun kurallarını ve davranış kurallarını anlar.",ru:"Ребёнок понимает правила игры и правила поведения."},
+"Das Kind kann einfache Regeln befolgen.":{en:"The child can follow simple rules.",fr:"L’enfant sait suivre des règles simples.",it:"Il bambino sa seguire regole semplici.",es:"El niño sabe seguir reglas sencillas.",tr:"Çocuk basit kurallara uyabilir.",ru:"Ребёнок может соблюдать простые правила."},
+"Das Kind stellt Fragen (zu Beobachtungen oder Situationen).":{en:"The child asks questions (about observations or situations).",fr:"L’enfant pose des questions (sur des observations ou des situations).",it:"Il bambino fa domande (su osservazioni o situazioni).",es:"El niño hace preguntas (sobre observaciones o situaciones).",tr:"Çocuk sorular sorar (gözlemler veya durumlar hakkında).",ru:"Ребёнок задаёт вопросы (о наблюдениях или ситуациях)."},
+"Das Kind unterscheidet Dinge nach Merkmalen (Farbe, Form, Größe, Gewicht).":{en:"The child distinguishes things by features (colour, shape, size, weight).",fr:"L’enfant distingue les objets selon leurs caractéristiques (couleur, forme, taille, poids).",it:"Il bambino distingue le cose in base alle caratteristiche (colore, forma, dimensione, peso).",es:"El niño distingue las cosas por características (color, forma, tamaño, peso).",tr:"Çocuk nesneleri özelliklerine göre ayırt eder (renk, biçim, boyut, ağırlık).",ru:"Ребёнок различает предметы по признакам (цвет, форма, размер, вес)."},
+"Das Kind konzentriert sich eine Zeit lang auf ein Spiel oder auf eine Aufgabe (allein/mit anderen Kindern/in der Gruppe).":{en:"The child concentrates for a while on a game or on a task (alone/with other children/in the group).",fr:"L’enfant se concentre un certain temps sur un jeu ou sur une tâche (seul/avec d’autres enfants/en groupe).",it:"Il bambino si concentra per un po’ su un gioco o su un compito (da solo/con altri bambini/in gruppo).",es:"El niño se concentra durante un rato en un juego o en una tarea (solo/con otros niños/en grupo).",tr:"Çocuk bir süre bir oyuna veya bir göreve odaklanır (tek başına/diğer çocuklarla/grupta).",ru:"Ребёнок какое-то время сосредоточен на игре или на задании (один/с другими детьми/в группе)."},
+"Das Kind hat eigene Ideen und entwickelt Problemlösungen (beim Konstruieren, Gestalten).":{en:"The child has its own ideas and develops solutions to problems (when building, creating).",fr:"L’enfant a ses propres idées et développe des solutions (pour construire, créer).",it:"Il bambino ha idee proprie e sviluppa soluzioni ai problemi (nel costruire, creare).",es:"El niño tiene ideas propias y desarrolla soluciones a problemas (al construir, crear).",tr:"Çocuğun kendi fikirleri vardır ve sorunlara çözümler geliştirir (inşa ederken, tasarlarken).",ru:"У ребёнка есть собственные идеи, и он находит решения задач (при конструировании, творчестве)."},
+"Das Kind braucht selten oder nie die Unterstützung der Erzieherin oder anderer Kinder.":{en:"The child rarely or never needs support from the educator or other children.",fr:"L’enfant a rarement ou jamais besoin du soutien de l’éducatrice ou d’autres enfants.",it:"Il bambino ha raramente o mai bisogno del sostegno dell’educatrice o di altri bambini.",es:"El niño rara vez o nunca necesita el apoyo de la educadora o de otros niños.",tr:"Çocuğun eğitmenin veya diğer çocukların desteğine nadiren ya da hiç ihtiyacı olmaz.",ru:"Ребёнку редко или никогда не нужна поддержка воспитательницы или других детей."},
+"Das Kind merkt sich Gedichte, Lieder, Memorykärtchen usw.":{en:"The child memorises poems, songs, memory cards, etc.",fr:"L’enfant retient des poèmes, des chansons, des cartes de memory, etc.",it:"Il bambino memorizza poesie, canzoni, carte del memory, ecc.",es:"El niño memoriza poemas, canciones, cartas de memory, etc.",tr:"Çocuk şiirleri, şarkıları, hafıza kartlarını vb. ezberler.",ru:"Ребёнок запоминает стихи, песни, карточки мемори и т. д."},
+"Es versteht den Sinn von Geschichten, Liedtexten und Spielen.":{en:"It understands the meaning of stories, song lyrics and games.",fr:"Il comprend le sens des histoires, des paroles de chansons et des jeux.",it:"Comprende il significato di storie, testi di canzoni e giochi.",es:"Entiende el sentido de cuentos, letras de canciones y juegos.",tr:"Hikâyelerin, şarkı sözlerinin ve oyunların anlamını kavrar.",ru:"Он понимает смысл рассказов, текстов песен и игр."},
+"Das Kind beschreibt eine Reihenfolge von Schritten, die zu einer Aktivität gehören („Was muss ich alles tun, wenn ich malen oder etwas basteln will?“).":{en:"The child describes a sequence of steps belonging to an activity (“What do I need to do if I want to paint or make something?”).",fr:"L’enfant décrit une suite d’étapes liées à une activité (« Que dois-je faire pour peindre ou bricoler quelque chose ? »).",it:"Il bambino descrive una sequenza di passaggi legati a un’attività («Che cosa devo fare se voglio dipingere o costruire qualcosa?»).",es:"El niño describe una secuencia de pasos de una actividad («¿Qué tengo que hacer si quiero pintar o construir algo?»).",tr:"Çocuk bir etkinliğe ait adımların sırasını anlatır („Boyamak ya da bir şey yapmak istersem neler yapmam gerekir?“).",ru:"Ребёнок описывает последовательность шагов в каком-то деле («Что мне нужно сделать, если я хочу порисовать или что-то смастерить?»)."},
+"Das Kind fragt danach, wie Dinge funktionieren bzw. bietet eigene Erklärungen an.":{en:"The child asks how things work or offers its own explanations.",fr:"L’enfant demande comment les choses fonctionnent ou propose ses propres explications.",it:"Il bambino chiede come funzionano le cose oppure propone proprie spiegazioni.",es:"El niño pregunta cómo funcionan las cosas u ofrece sus propias explicaciones.",tr:"Çocuk şeylerin nasıl işlediğini sorar ya da kendi açıklamalarını sunar.",ru:"Ребёнок спрашивает, как всё устроено, или предлагает собственные объяснения."},
+"Das Kind zieht logische Schlüsse (wenn …, dann …).":{en:"The child draws logical conclusions (if …, then …).",fr:"L’enfant tire des conclusions logiques (si …, alors …).",it:"Il bambino trae conclusioni logiche (se …, allora …).",es:"El niño extrae conclusiones lógicas (si …, entonces …).",tr:"Çocuk mantıklı sonuçlar çıkarır (eğer …, o zaman …).",ru:"Ребёнок делает логические выводы (если …, то …)."},
+"Das Kind zeigt Interesse an Zahlen, Zeichen, Buchstaben usw.":{en:"The child shows interest in numbers, signs, letters, etc.",fr:"L’enfant montre de l’intérêt pour les chiffres, les signes, les lettres, etc.",it:"Il bambino mostra interesse per numeri, segni, lettere, ecc.",es:"El niño muestra interés por números, signos, letras, etc.",tr:"Çocuk sayılara, işaretlere, harflere vb. ilgi gösterir.",ru:"Ребёнок проявляет интерес к цифрам, знакам, буквам и т. д."},
+"Das Kind unterscheidet und benennt Farben, Formen und Mengen.":{en:"The child distinguishes and names colours, shapes and quantities.",fr:"L’enfant distingue et nomme les couleurs, les formes et les quantités.",it:"Il bambino distingue e nomina colori, forme e quantità.",es:"El niño distingue y nombra colores, formas y cantidades.",tr:"Çocuk renkleri, biçimleri ve miktarları ayırt eder ve adlandırır.",ru:"Ребёнок различает и называет цвета, формы и количества."},
+"Das Kind unterscheidet Geräusche und Klänge.":{en:"The child distinguishes noises and sounds.",fr:"L’enfant distingue les bruits et les sons.",it:"Il bambino distingue rumori e suoni.",es:"El niño distingue ruidos y sonidos.",tr:"Çocuk sesleri ve tınıları ayırt eder.",ru:"Ребёнок различает шумы и звуки."},
+"Es sortiert Objekte nach ihren Merkmalen (Farbe, Form, Größe, Gewicht).":{en:"It sorts objects by their features (colour, shape, size, weight).",fr:"Il trie les objets selon leurs caractéristiques (couleur, forme, taille, poids).",it:"Ordina gli oggetti in base alle caratteristiche (colore, forma, dimensione, peso).",es:"Ordena los objetos según sus características (color, forma, tamaño, peso).",tr:"Nesneleri özelliklerine göre sınıflar (renk, biçim, boyut, ağırlık).",ru:"Он сортирует предметы по их признакам (цвет, форма, размер, вес)."},
+
+/* --- IV. Sprachliche Entwicklung --- */
+"Der Wortschatz des Kindes ist altersentsprechend. Das Kind spricht in Ein-/Zwei-/Dreiwortsätzen (bitte Zutreffendes markieren).":{en:"The child’s vocabulary is age-appropriate. The child speaks in one-/two-/three-word sentences (please mark what applies).",fr:"Le vocabulaire de l’enfant correspond à son âge. L’enfant parle par phrases d’un/deux/trois mots (cocher ce qui convient).",it:"Il vocabolario del bambino è adeguato all’età. Il bambino parla con frasi di una/due/tre parole (segnare ciò che corrisponde).",es:"El vocabulario del niño es acorde a su edad. El niño habla con frases de una/dos/tres palabras (marcar lo que corresponda).",tr:"Çocuğun söz dağarcığı yaşına uygundur. Çocuk bir/iki/üç sözcüklü cümlelerle konuşur (uygun olanı işaretleyin).",ru:"Словарный запас ребёнка соответствует возрасту. Ребёнок говорит фразами из одного/двух/трёх слов (отметьте подходящее)."},
+"Das Kind ersetzt nicht einzelne Buchstaben durch andere.":{en:"The child does not replace individual letters with others.",fr:"L’enfant ne remplace pas certaines lettres par d’autres.",it:"Il bambino non sostituisce singole lettere con altre.",es:"El niño no sustituye unas letras por otras.",tr:"Çocuk tek tek harfleri başkalarıyla değiştirmez.",ru:"Ребёнок не заменяет отдельные звуки другими."},
+"Das Kind spricht deutlich (Aussprache, Artikulation).":{en:"The child speaks clearly (pronunciation, articulation).",fr:"L’enfant parle distinctement (prononciation, articulation).",it:"Il bambino parla in modo chiaro (pronuncia, articolazione).",es:"El niño habla con claridad (pronunciación, articulación).",tr:"Çocuk net konuşur (söyleyiş, telaffuz).",ru:"Ребёнок говорит чётко (произношение, артикуляция)."},
+"Das Kind hat eine angemessene sprachliche Lautstärke.":{en:"The child speaks at an appropriate volume.",fr:"L’enfant parle avec un volume approprié.",it:"Il bambino ha un volume di voce adeguato.",es:"El niño habla con un volumen adecuado.",tr:"Çocuğun konuşma sesi uygun düzeydedir.",ru:"Ребёнок говорит с подходящей громкостью."},
+"Das Kind spricht gerne und viel (Sprechfreudigkeit).":{en:"The child likes to talk and talks a lot (eagerness to speak).",fr:"L’enfant aime parler et parle beaucoup (plaisir de parler).",it:"Il bambino parla volentieri e molto (piacere di parlare).",es:"Al niño le gusta hablar y habla mucho (ganas de hablar).",tr:"Çocuk konuşmayı sever ve çok konuşur (konuşma isteği).",ru:"Ребёнок охотно и много говорит (речевая активность)."},
+"Das Kind kann seine Anliegen sprachlich mitteilen.":{en:"The child can express its needs in words.",fr:"L’enfant sait exprimer ses besoins par la parole.",it:"Il bambino sa comunicare a parole le proprie esigenze.",es:"El niño sabe comunicar verbalmente lo que necesita.",tr:"Çocuk isteklerini sözle iletebilir.",ru:"Ребёнок может выразить свои нужды словами."},
+"Das Kind versteht Anweisungen, Aufforderungen und Begriffe.":{en:"The child understands instructions, requests and terms.",fr:"L’enfant comprend les consignes, les demandes et les notions.",it:"Il bambino comprende istruzioni, richieste e termini.",es:"El niño entiende instrucciones, peticiones y conceptos.",tr:"Çocuk yönergeleri, istekleri ve kavramları anlar.",ru:"Ребёнок понимает указания, просьбы и понятия."},
+"Das Kind beteiligt sich an Fingerspielen und Reimen.":{en:"The child joins in finger games and rhymes.",fr:"L’enfant participe aux jeux de doigts et aux comptines.",it:"Il bambino partecipa ai giochi con le dita e alle filastrocche.",es:"El niño participa en juegos de dedos y rimas.",tr:"Çocuk parmak oyunlarına ve tekerlemelere katılır.",ru:"Ребёнок участвует в пальчиковых играх и потешках."},
+"Das Kind bildet alle Laute.":{en:"The child produces all speech sounds.",fr:"L’enfant produit tous les sons.",it:"Il bambino produce tutti i suoni.",es:"El niño produce todos los sonidos.",tr:"Çocuk bütün sesleri çıkarır.",ru:"Ребёнок произносит все звуки."},
+"Auffälligkeiten im Wortschatz des Kindes sind nicht festzustellen.":{en:"No abnormalities can be found in the child’s vocabulary.",fr:"Aucune particularité n’est constatée dans le vocabulaire de l’enfant.",it:"Non si riscontrano anomalie nel vocabolario del bambino.",es:"No se observan anomalías en el vocabulario del niño.",tr:"Çocuğun söz dağarcığında dikkat çekici bir durum yoktur.",ru:"Особенностей в словарном запасе ребёнка не отмечается."},
+"Das Kind spricht in der Ich-Form.":{en:"The child speaks using the first person (“I”).",fr:"L’enfant parle à la première personne (« je »).",it:"Il bambino parla in prima persona (io).",es:"El niño habla en primera persona (yo).",tr:"Çocuk birinci tekil şahısla (ben) konuşur.",ru:"Ребёнок говорит от первого лица («я»)."},
+"Es spricht in korrekten zeitlichen Zusammenhängen (gestern/heute/morgen).":{en:"It speaks using correct time references (yesterday/today/tomorrow).",fr:"Il parle en respectant les repères temporels (hier/aujourd’hui/demain).",it:"Parla con corretti riferimenti temporali (ieri/oggi/domani).",es:"Habla con referencias temporales correctas (ayer/hoy/mañana).",tr:"Doğru zaman ilişkileriyle konuşur (dün/bugün/yarın).",ru:"Он говорит, правильно используя время (вчера/сегодня/завтра)."},
+"Das Kind spricht grammatikalisch richtig.":{en:"The child speaks grammatically correctly.",fr:"L’enfant parle de façon grammaticalement correcte.",it:"Il bambino parla in modo grammaticalmente corretto.",es:"El niño habla gramaticalmente correcto.",tr:"Çocuk dilbilgisi açısından doğru konuşur.",ru:"Ребёнок говорит грамматически правильно."},
+"Das Kind bildet ganze Sätze (Satzstruktur).":{en:"The child forms complete sentences (sentence structure).",fr:"L’enfant forme des phrases complètes (structure de la phrase).",it:"Il bambino forma frasi complete (struttura della frase).",es:"El niño forma frases completas (estructura de la oración).",tr:"Çocuk tam cümleler kurar (cümle yapısı).",ru:"Ребёнок строит целые предложения (структура предложения)."},
+"Das Kind stottert, stammelt oder poltert nicht.":{en:"The child does not stutter, stammer or clutter.",fr:"L’enfant ne bégaie pas, ne balbutie pas et ne bredouille pas.",it:"Il bambino non balbetta, non tartaglia e non parla in modo precipitoso.",es:"El niño no tartamudea, no balbucea ni habla atropelladamente.",tr:"Çocuk kekelemez, peltek konuşmaz veya çok hızlı konuşmaz.",ru:"Ребёнок не заикается, не запинается и не тараторит."},
+"Das Kind spricht in angemessenem Tempo.":{en:"The child speaks at an appropriate pace.",fr:"L’enfant parle à un rythme approprié.",it:"Il bambino parla a un ritmo adeguato.",es:"El niño habla a un ritmo adecuado.",tr:"Çocuk uygun bir hızla konuşur.",ru:"Ребёнок говорит в подходящем темпе."},
+"Es gibt Erlebnisse und Geschichten wieder (zusammenhängendes Nacherzählen).":{en:"It recounts experiences and stories (coherent retelling).",fr:"Il restitue des expériences et des histoires (récit cohérent).",it:"Riferisce esperienze e storie (racconto coerente).",es:"Reproduce vivencias e historias (relato coherente).",tr:"Deneyimleri ve hikâyeleri aktarır (tutarlı biçimde yeniden anlatma).",ru:"Он передаёт впечатления и истории (связный пересказ)."},
+"Das Kind interessiert sich für Schriftzeichen (Buchstaben, Zahlen).":{en:"The child is interested in written characters (letters, numbers).",fr:"L’enfant s’intéresse aux signes écrits (lettres, chiffres).",it:"Il bambino si interessa ai segni scritti (lettere, numeri).",es:"El niño se interesa por los signos escritos (letras, números).",tr:"Çocuk yazı işaretlerine ilgi duyar (harfler, sayılar).",ru:"Ребёнок интересуется письменными знаками (буквы, цифры)."},
+"Das Kind interessiert sich für Bilderbücher.":{en:"The child is interested in picture books.",fr:"L’enfant s’intéresse aux livres d’images.",it:"Il bambino si interessa ai libri illustrati.",es:"El niño se interesa por los libros de imágenes.",tr:"Çocuk resimli kitaplara ilgi duyar.",ru:"Ребёнок интересуется книжками с картинками."}
+
+});
+
+/* ===== Item-Übersetzungen, Teil B (Schlüssel = deutscher Originaltext) ===== */
+Object.assign(TR, {
+
+/* --- Gruppenüberschriften --- */
+"1. Lernverhalten":{en:"1. Learning behaviour",fr:"1. Comportement d’apprentissage",it:"1. Atteggiamento verso l’apprendimento",es:"1. Conducta de aprendizaje",tr:"1. Öğrenme davranışı",ru:"1. Учебное поведение"},
+"2. Merkfähigkeit":{en:"2. Memory",fr:"2. Mémoire",it:"2. Capacità di memoria",es:"2. Memoria",tr:"2. Belleğe alma",ru:"2. Запоминание"},
+"3. Auffassung, logisches Denken":{en:"3. Comprehension, logical thinking",fr:"3. Compréhension, pensée logique",it:"3. Comprensione, pensiero logico",es:"3. Comprensión, pensamiento lógico",tr:"3. Kavrama, mantıksal düşünme",ru:"3. Восприятие, логическое мышление"},
+"4. Ordnen und Unterscheiden":{en:"4. Ordering and distinguishing",fr:"4. Classer et distinguer",it:"4. Ordinare e distinguere",es:"4. Ordenar y distinguir",tr:"4. Sıralama ve ayırt etme",ru:"4. Упорядочивание и различение"},
+"1. im kreativen Rollenspiel":{en:"1. in creative role play",fr:"1. dans le jeu de rôle créatif",it:"1. nel gioco di ruolo creativo",es:"1. en el juego de rol creativo",tr:"1. yaratıcı rol oyununda",ru:"1. в творческой ролевой игре"},
+"2. im Gestalten (Malen, Zeichnen, Basteln, Werken)":{en:"2. in making things (painting, drawing, crafting, woodwork)",fr:"2. dans la création (peindre, dessiner, bricoler, travaux manuels)",it:"2. nel creare (dipingere, disegnare, lavoretti, manualità)",es:"2. en la creación (pintar, dibujar, manualidades, trabajos manuales)",tr:"2. tasarımda (boyama, çizim, el işi, atölye)",ru:"2. в творчестве (рисование, черчение, поделки, труд)"},
+"3. in musikalischer Improvisation":{en:"3. in musical improvisation",fr:"3. dans l’improvisation musicale",it:"3. nell’improvvisazione musicale",es:"3. en la improvisación musical",tr:"3. müzikal doğaçlamada",ru:"3. в музыкальной импровизации"},
+"4. in Gesprächen und Erzählungen":{en:"4. in conversations and storytelling",fr:"4. dans les conversations et les récits",it:"4. nelle conversazioni e nei racconti",es:"4. en conversaciones y relatos",tr:"4. konuşmalarda ve anlatılarda",ru:"4. в беседах и рассказах"},
+"1. im Spiel":{en:"1. in play",fr:"1. dans le jeu",it:"1. nel gioco",es:"1. en el juego",tr:"1. oyunda",ru:"1. в игре"},
+"2. im Gestalten (Bauen, Legen, Malen, Werken etc.)":{en:"2. in making things (building, arranging, painting, woodwork, etc.)",fr:"2. dans la création (construire, assembler, peindre, travaux manuels, etc.)",it:"2. nel creare (costruire, comporre, dipingere, manualità, ecc.)",es:"2. en la creación (construir, componer, pintar, trabajos manuales, etc.)",tr:"2. tasarımda (inşa etme, dizme, boyama, atölye vb.)",ru:"2. в творчестве (строительство, выкладывание, рисование, труд и т. д.)"},
+"1. Allgemeine körperliche Entwicklung":{en:"1. General physical development",fr:"1. Développement physique général",it:"1. Sviluppo fisico generale",es:"1. Desarrollo físico general",tr:"1. Genel bedensel gelişim",ru:"1. Общее физическое развитие"},
+"2. Feinmotorik":{en:"2. Fine motor skills",fr:"2. Motricité fine",it:"2. Motricità fine",es:"2. Motricidad fina",tr:"2. İnce motor beceriler",ru:"2. Мелкая моторика"},
+"3. Grobmotorik":{en:"3. Gross motor skills",fr:"3. Motricité globale",it:"3. Motricità grossolana",es:"3. Motricidad gruesa",tr:"3. Kaba motor beceriler",ru:"3. Крупная моторика"},
+"4. Mundmotorik":{en:"4. Oral motor skills",fr:"4. Motricité bucco-faciale",it:"4. Motricità orale",es:"4. Motricidad oral",tr:"4. Ağız motoru becerileri",ru:"4. Моторика речевого аппарата"},
+
+/* --- Bereichs-Einleitung Kreativität --- */
+"Das Kind entwickelt eigene Ideen und drückt diese aus …":{en:"The child develops its own ideas and expresses them …",fr:"L’enfant développe ses propres idées et les exprime …",it:"Il bambino sviluppa idee proprie e le esprime …",es:"El niño desarrolla ideas propias y las expresa …",tr:"Çocuk kendi fikirlerini geliştirir ve bunları ifade eder …",ru:"Ребёнок развивает собственные идеи и выражает их …"},
+
+/* --- V. Kreativität --- */
+"Es hat eigene Spielideen und setzt diese unter Zuhilfenahme von Materialien und Spielpartnern um.":{en:"It has its own play ideas and realises them with the help of materials and play partners.",fr:"Il a ses propres idées de jeu et les réalise à l’aide de matériaux et de partenaires de jeu.",it:"Ha idee di gioco proprie e le realizza con l’aiuto di materiali e compagni di gioco.",es:"Tiene ideas de juego propias y las realiza con ayuda de materiales y compañeros de juego.",tr:"Kendi oyun fikirleri vardır ve bunları malzemeler ve oyun arkadaşları yardımıyla gerçekleştirir.",ru:"У него есть собственные игровые идеи, и он воплощает их с помощью материалов и партнёров по игре."},
+"Es gibt Dingen im Spiel neue Bedeutung („tun, als ob“).":{en:"In play it gives things new meaning (“pretending”).",fr:"Dans le jeu, il donne un nouveau sens aux objets (« faire semblant »).",it:"Nel gioco dà nuovo significato alle cose («far finta»).",es:"En el juego da nuevo significado a las cosas («hacer como si»).",tr:"Oyunda nesnelere yeni anlamlar yükler („-mış gibi yapmak“).",ru:"В игре он наделяет предметы новым смыслом («понарошку»)."},
+"Es begeistert sich für eine Spielidee, entwickelt diese weiter und bringt dabei weitere neue Ideen ein.":{en:"It gets excited about a play idea, develops it further and brings in further new ideas.",fr:"Il s’enthousiasme pour une idée de jeu, la développe et y apporte de nouvelles idées.",it:"Si entusiasma per un’idea di gioco, la sviluppa e vi aggiunge altre idee nuove.",es:"Se entusiasma con una idea de juego, la desarrolla y aporta más ideas nuevas.",tr:"Bir oyun fikrine heveslenir, onu geliştirir ve buna yeni fikirler katar.",ru:"Он увлекается игровой идеей, развивает её и привносит новые идеи."},
+"Es hat Freude daran, unterschiedliche Materialien auszuprobieren.":{en:"It enjoys trying out different materials.",fr:"Il prend plaisir à essayer différents matériaux.",it:"Prova piacere a sperimentare materiali diversi.",es:"Disfruta probando distintos materiales.",tr:"Farklı malzemeleri denemekten keyif alır.",ru:"Ему нравится пробовать разные материалы."},
+"Es lernt gern neue Techniken und probiert diese selbst aus.":{en:"It likes to learn new techniques and tries them out itself.",fr:"Il aime apprendre de nouvelles techniques et les essayer lui-même.",it:"Impara volentieri nuove tecniche e le prova da sé.",es:"Aprende con gusto nuevas técnicas y las prueba por sí mismo.",tr:"Yeni teknikleri seve seve öğrenir ve kendisi dener.",ru:"Он охотно осваивает новые техники и пробует их сам."},
+"Es hat Freude an Musik und Geräuschen.":{en:"It enjoys music and sounds.",fr:"Il aime la musique et les bruits.",it:"Prova piacere per la musica e i rumori.",es:"Disfruta de la música y los sonidos.",tr:"Müzikten ve seslerden hoşlanır.",ru:"Ему нравятся музыка и звуки."},
+"Es singt gern mit.":{en:"It likes to sing along.",fr:"Il aime chanter avec les autres.",it:"Canta volentieri insieme.",es:"Canta con gusto.",tr:"Eşlik ederek seve seve şarkı söyler.",ru:"Он охотно подпевает."},
+"Es singt, summt, lallt vor sich hin.":{en:"It sings, hums and babbles to itself.",fr:"Il chante, fredonne et babille tout seul.",it:"Canta, canticchia e balbetta tra sé.",es:"Canta, tararea y balbucea para sí.",tr:"Kendi kendine şarkı söyler, mırıldanır, agular.",ru:"Он поёт, напевает и лепечет про себя."},
+"Es reagiert auf Wechsel im Rhythmus oder im Tempo von Musikstücken oder auf Wechsel in der Lautstärke.":{en:"It reacts to changes in rhythm or tempo of music or to changes in volume.",fr:"Il réagit aux changements de rythme ou de tempo des morceaux ou aux changements de volume.",it:"Reagisce ai cambi di ritmo o di tempo dei brani o ai cambi di volume.",es:"Reacciona a los cambios de ritmo o tempo de las piezas o a los cambios de volumen.",tr:"Müzik parçalarındaki ritim veya tempo değişimlerine ya da ses yüksekliği değişimlerine tepki verir.",ru:"Он реагирует на изменения ритма или темпа музыки и на изменения громкости."},
+"Es hat Spaß an Variationen in Rhythmus und Lautstärke von Musikstücken.":{en:"It enjoys variations in rhythm and volume of music.",fr:"Il aime les variations de rythme et de volume des morceaux.",it:"Si diverte con le variazioni di ritmo e di volume dei brani.",es:"Disfruta de las variaciones de ritmo y volumen de las piezas.",tr:"Müzik parçalarındaki ritim ve ses yüksekliği değişimlerinden keyif alır.",ru:"Ему нравятся изменения ритма и громкости в музыке."},
+"Es zeigt Interesse an Klängen, die mit verschiedenen Gegenständen erzeugt werden können, und experimentiert gerne mit diesen Klängen.":{en:"It shows interest in sounds that can be made with various objects and likes to experiment with them.",fr:"Il montre de l’intérêt pour les sons que l’on peut produire avec différents objets et aime expérimenter avec ces sons.",it:"Mostra interesse per i suoni producibili con vari oggetti e sperimenta volentieri con questi suoni.",es:"Muestra interés por los sonidos que pueden producirse con distintos objetos y experimenta con gusto con ellos.",tr:"Çeşitli nesnelerle çıkarılabilen seslere ilgi gösterir ve bu seslerle seve seve denemeler yapar.",ru:"Он интересуется звуками, которые можно извлечь из разных предметов, и охотно экспериментирует с ними."},
+"Es erzählt gern Geschichten über eigene Abenteuer oder selbst erfundene Geschichten.":{en:"It likes to tell stories about its own adventures or stories it has made up.",fr:"Il aime raconter des histoires sur ses propres aventures ou des histoires inventées.",it:"Racconta volentieri storie sulle proprie avventure o storie inventate.",es:"Le gusta contar historias sobre sus propias aventuras o historias inventadas.",tr:"Kendi maceraları hakkında ya da kendi uydurduğu hikâyeleri anlatmayı sever.",ru:"Он охотно рассказывает истории о своих приключениях или придуманные им истории."},
+"Es benutzt manchmal fantasievolle Sprachbilder.":{en:"It sometimes uses imaginative figures of speech.",fr:"Il utilise parfois des images de langage pleines d’imagination.",it:"A volte usa immagini linguistiche fantasiose.",es:"A veces usa imágenes lingüísticas llenas de fantasía.",tr:"Bazen hayal gücü yüksek dil imgeleri kullanır.",ru:"Иногда он использует образные, фантазийные выражения."},
+"Es ist in der Lage, Dinge je nach Spielidee umzufunktionieren und ihnen neue Bedeutung zu geben.":{en:"It is able to repurpose things according to the play idea and give them new meaning.",fr:"Il est capable de détourner les objets selon l’idée de jeu et de leur donner un nouveau sens.",it:"È in grado di riconvertire le cose a seconda dell’idea di gioco e di dare loro nuovo significato.",es:"Es capaz de reconvertir las cosas según la idea de juego y darles un nuevo significado.",tr:"Nesneleri oyun fikrine göre yeniden işlevlendirebilir ve onlara yeni anlam verebilir.",ru:"Он способен переосмыслять предметы в зависимости от игровой идеи и наделять их новым смыслом."},
+"Es lässt sich im „Tun-als-ob-Spiel“ auf die Ideen anderer Kinder ein.":{en:"In pretend play it engages with other children’s ideas.",fr:"Dans le jeu de « faire semblant », il entre dans les idées des autres enfants.",it:"Nel gioco del «far finta» accoglie le idee degli altri bambini.",es:"En el juego de «hacer como si» se suma a las ideas de otros niños.",tr:"„-mış gibi“ oyununda diğer çocukların fikirlerine açık olur.",ru:"В игре «понарошку» он подхватывает идеи других детей."},
+"Es entwickelt einen eigenen Plan und versucht ihn umzusetzen.":{en:"It develops its own plan and tries to carry it out.",fr:"Il élabore son propre plan et tente de le réaliser.",it:"Sviluppa un proprio piano e cerca di realizzarlo.",es:"Desarrolla su propio plan e intenta llevarlo a cabo.",tr:"Kendi planını geliştirir ve onu uygulamaya çalışır.",ru:"Он составляет собственный план и пытается его осуществить."},
+"Es hat Freude daran, Selbsthergestelltes auszustellen.":{en:"It enjoys displaying things it has made itself.",fr:"Il prend plaisir à exposer ce qu’il a fait lui-même.",it:"Prova piacere a esporre ciò che ha realizzato.",es:"Disfruta exponiendo lo que ha hecho él mismo.",tr:"Kendi yaptığı şeyleri sergilemekten keyif alır.",ru:"Ему нравится выставлять то, что он сделал сам."},
+"Es experimentiert mit unterschiedlichen Materialien und entwickelt Ideen.":{en:"It experiments with different materials and develops ideas.",fr:"Il expérimente avec différents matériaux et développe des idées.",it:"Sperimenta con materiali diversi e sviluppa idee.",es:"Experimenta con distintos materiales y desarrolla ideas.",tr:"Farklı malzemelerle denemeler yapar ve fikirler geliştirir.",ru:"Он экспериментирует с разными материалами и придумывает идеи."},
+"Es erlernt neue Techniken und probiert diese selbst aus.":{en:"It learns new techniques and tries them out itself.",fr:"Il apprend de nouvelles techniques et les essaie lui-même.",it:"Apprende nuove tecniche e le prova da sé.",es:"Aprende nuevas técnicas y las prueba por sí mismo.",tr:"Yeni teknikler öğrenir ve bunları kendisi dener.",ru:"Он осваивает новые техники и пробует их сам."},
+"Es versucht neue Melodien/Lieder und Rhythmen wiederzugeben.":{en:"It tries to reproduce new melodies/songs and rhythms.",fr:"Il essaie de reproduire de nouvelles mélodies/chansons et de nouveaux rythmes.",it:"Cerca di riprodurre nuove melodie/canzoni e ritmi.",es:"Intenta reproducir nuevas melodías/canciones y ritmos.",tr:"Yeni ezgileri/şarkıları ve ritimleri yeniden seslendirmeye çalışır.",ru:"Он пытается воспроизводить новые мелодии/песни и ритмы."},
+"Es hat Freude an Musik.":{en:"It enjoys music.",fr:"Il aime la musique.",it:"Prova piacere per la musica.",es:"Disfruta de la música.",tr:"Müzikten hoşlanır.",ru:"Ему нравится музыка."},
+"Es hält einen Rhythmus oder ein Tempo (durch Klopfen, Stampfen oder Vokalisationen).":{en:"It keeps a rhythm or tempo (by tapping, stamping or vocalising).",fr:"Il garde un rythme ou un tempo (en tapant, en martelant ou par des vocalises).",it:"Mantiene un ritmo o un tempo (battendo, pestando o vocalizzando).",es:"Mantiene un ritmo o un tempo (golpeando, pisando o con vocalizaciones).",tr:"Bir ritmi veya tempoyu korur (vurarak, ayak vurarak ya da seslendirerek).",ru:"Он держит ритм или темп (постукивая, топая или вокализируя)."},
+"Es hat Spaß daran, den Klang einzelner Instrumente zu unterscheiden und sie auch zu benennen (nur bei älteren Kindern).":{en:"It enjoys distinguishing the sound of individual instruments and naming them (only with older children).",fr:"Il aime distinguer le son de différents instruments et les nommer (uniquement chez les enfants plus âgés).",it:"Si diverte a distinguere il suono dei singoli strumenti e a nominarli (solo nei bambini più grandi).",es:"Disfruta distinguiendo el sonido de cada instrumento y nombrándolos (solo en niños mayores).",tr:"Tek tek çalgıların sesini ayırt etmekten ve onları adlandırmaktan keyif alır (yalnızca büyük çocuklarda).",ru:"Ему нравится различать звучание отдельных инструментов и называть их (только у детей постарше)."},
+
+/* --- VI. Spielverhalten --- */
+"Das Kind ist an Neuem interessiert und probiert gerne etwas aus.":{en:"The child is interested in new things and likes to try things out.",fr:"L’enfant s’intéresse à la nouveauté et aime essayer des choses.",it:"Il bambino è interessato alle novità e prova volentieri cose nuove.",es:"El niño se interesa por lo nuevo y le gusta probar cosas.",tr:"Çocuk yeniliklere ilgi duyar ve seve seve bir şeyler dener.",ru:"Ребёнок интересуется новым и охотно пробует."},
+"Das Kind beteiligt sich häufig an Gruppenaktivitäten.":{en:"The child often takes part in group activities.",fr:"L’enfant participe souvent aux activités de groupe.",it:"Il bambino partecipa spesso alle attività di gruppo.",es:"El niño participa con frecuencia en actividades de grupo.",tr:"Çocuk grup etkinliklerine sık sık katılır.",ru:"Ребёнок часто участвует в групповых занятиях."},
+"Das Kind spielt unterschiedliche Spiele.":{en:"The child plays different games.",fr:"L’enfant joue à différents jeux.",it:"Il bambino gioca a giochi diversi.",es:"El niño juega a juegos distintos.",tr:"Çocuk farklı oyunlar oynar.",ru:"Ребёнок играет в разные игры."},
+"Das Kind zeigt Ausdauer.":{en:"The child shows perseverance.",fr:"L’enfant fait preuve de persévérance.",it:"Il bambino mostra perseveranza.",es:"El niño muestra perseverancia.",tr:"Çocuk sebat gösterir.",ru:"Ребёнок проявляет настойчивость."},
+"Das Kind geht sorgfältig mit Materialien um.":{en:"The child handles materials carefully.",fr:"L’enfant manipule le matériel avec soin.",it:"Il bambino tratta i materiali con cura.",es:"El niño trata los materiales con cuidado.",tr:"Çocuk malzemeleri özenle kullanır.",ru:"Ребёнок бережно обращается с материалами."},
+"Das Kind kann sich auf eine Sache konzentrieren.":{en:"The child can concentrate on one thing.",fr:"L’enfant sait se concentrer sur une chose.",it:"Il bambino sa concentrarsi su una cosa.",es:"El niño sabe concentrarse en una cosa.",tr:"Çocuk bir şeye odaklanabilir.",ru:"Ребёнок умеет сосредоточиться на одном деле."},
+"Das Kind motiviert andere Kinder zum Mitspielen.":{en:"The child motivates other children to join in.",fr:"L’enfant incite les autres enfants à jouer avec lui.",it:"Il bambino motiva gli altri bambini a giocare insieme.",es:"El niño anima a otros niños a jugar con él.",tr:"Çocuk diğer çocukları oyuna katılmaya teşvik eder.",ru:"Ребёнок побуждает других детей играть вместе."},
+"Das Kind braucht keine Aufforderung zum Spiel.":{en:"The child needs no prompting to play.",fr:"L’enfant n’a pas besoin d’être incité à jouer.",it:"Il bambino non ha bisogno di essere sollecitato a giocare.",es:"El niño no necesita que lo inviten a jugar.",tr:"Çocuğun oyun oynaması için teşvik edilmesine gerek yoktur.",ru:"Ребёнка не нужно побуждать к игре."},
+"Das Kind zeigt Ausdauer. Es bringt angefangene Dinge zu Ende.":{en:"The child shows perseverance. It finishes what it has started.",fr:"L’enfant fait preuve de persévérance. Il termine ce qu’il a commencé.",it:"Il bambino mostra perseveranza. Porta a termine ciò che inizia.",es:"El niño muestra perseverancia. Termina lo que empieza.",tr:"Çocuk sebat gösterir. Başladığı işleri bitirir.",ru:"Ребёнок проявляет настойчивость. Он доводит начатое до конца."},
+"Es konzentriert sich in Freispiel und Gruppenaktivitäten auf eine Sache.":{en:"In free play and group activities it concentrates on one thing.",fr:"Dans le jeu libre et les activités de groupe, il se concentre sur une chose.",it:"Nel gioco libero e nelle attività di gruppo si concentra su una cosa.",es:"En el juego libre y las actividades de grupo se concentra en una cosa.",tr:"Serbest oyunda ve grup etkinliklerinde bir şeye odaklanır.",ru:"В свободной игре и групповых занятиях он сосредоточен на одном деле."},
+"Das Kind bewältigt den Alltag selbstständig (Anziehen, auf die Toilette gehen, Spiele finden, Aufräumen).":{en:"The child manages everyday tasks independently (getting dressed, going to the toilet, finding games, tidying up).",fr:"L’enfant gère le quotidien de façon autonome (s’habiller, aller aux toilettes, trouver des jeux, ranger).",it:"Il bambino gestisce la quotidianità in autonomia (vestirsi, andare in bagno, trovare giochi, riordinare).",es:"El niño se desenvuelve solo en la vida diaria (vestirse, ir al baño, buscar juegos, recoger).",tr:"Çocuk günlük işleri kendi başına yapar (giyinme, tuvalete gitme, oyun bulma, toplama).",ru:"Ребёнок самостоятельно справляется с повседневными делами (одевание, туалет, поиск игр, уборка)."},
+"Das Kind braucht selten die Unterstützung der Erzieherin oder eines anderen Kindes.":{en:"The child rarely needs support from the educator or another child.",fr:"L’enfant a rarement besoin du soutien de l’éducatrice ou d’un autre enfant.",it:"Il bambino ha raramente bisogno del sostegno dell’educatrice o di un altro bambino.",es:"El niño rara vez necesita el apoyo de la educadora o de otro niño.",tr:"Çocuğun eğitmenin veya başka bir çocuğun desteğine nadiren ihtiyacı olur.",ru:"Ребёнку редко нужна поддержка воспитательницы или другого ребёнка."},
+
+/* --- VII. Körperliche Entwicklung --- */
+"Die Körpergröße des Kindes ist altersentsprechend.":{en:"The child’s height is appropriate for its age.",fr:"La taille de l’enfant correspond à son âge.",it:"La statura del bambino è adeguata all’età.",es:"La estatura del niño es acorde a su edad.",tr:"Çocuğun boyu yaşına uygundur.",ru:"Рост ребёнка соответствует возрасту."},
+"Der gesundheitliche Zustand ist gut und altersentsprechend.":{en:"The state of health is good and appropriate for the age.",fr:"L’état de santé est bon et correspond à l’âge.",it:"Lo stato di salute è buono e adeguato all’età.",es:"El estado de salud es bueno y acorde a la edad.",tr:"Sağlık durumu iyi ve yaşına uygundur.",ru:"Состояние здоровья хорошее и соответствует возрасту."},
+"Das äußere Erscheinungsbild ist angenehm, positiv.":{en:"The outward appearance is pleasant and positive.",fr:"L’apparence extérieure est agréable et positive.",it:"L’aspetto esteriore è gradevole e positivo.",es:"El aspecto externo es agradable y positivo.",tr:"Dış görünüş hoş ve olumludur.",ru:"Внешний вид приятный, положительный."},
+"Das Essverhalten ist altersentsprechend.":{en:"Eating behaviour is appropriate for the age.",fr:"Le comportement alimentaire correspond à l’âge.",it:"Il comportamento alimentare è adeguato all’età.",es:"La conducta alimentaria es acorde a la edad.",tr:"Yeme davranışı yaşına uygundur.",ru:"Пищевое поведение соответствует возрасту."},
+"Das Kind ortet akustische Signale (Beispiel: Hörkim).":{en:"The child locates acoustic signals (e.g. a listening game).",fr:"L’enfant localise des signaux acoustiques (ex. : jeu d’écoute).",it:"Il bambino localizza segnali acustici (es.: gioco d’ascolto).",es:"El niño localiza señales acústicas (p. ej., un juego de escucha).",tr:"Çocuk işitsel sinyalleri yerini belirler (örn.: işitme oyunu).",ru:"Ребёнок определяет, откуда идёт звук (например, игра на слух)."},
+"Das Kind erkennt visuelle Reize (hell-dunkel, grelles Licht).":{en:"The child perceives visual stimuli (light–dark, bright light).",fr:"L’enfant perçoit les stimuli visuels (clair-foncé, lumière vive).",it:"Il bambino percepisce gli stimoli visivi (chiaro-scuro, luce intensa).",es:"El niño percibe estímulos visuales (claro-oscuro, luz intensa).",tr:"Çocuk görsel uyaranları algılar (aydınlık-karanlık, parlak ışık).",ru:"Ребёнок воспринимает зрительные раздражители (светло–тёмно, яркий свет)."},
+"Das Kind ertastet Gegenstände und unterscheidet diese.":{en:"The child feels objects and distinguishes them.",fr:"L’enfant palpe les objets et les distingue.",it:"Il bambino tasta gli oggetti e li distingue.",es:"El niño palpa objetos y los distingue.",tr:"Çocuk nesneleri dokunarak yoklar ve ayırt eder.",ru:"Ребёнок ощупывает предметы и различает их."},
+"Das Kind matscht und knetet.":{en:"The child mucks about with materials and kneads.",fr:"L’enfant patouille et malaxe.",it:"Il bambino pasticcia e impasta.",es:"El niño chapotea con materiales y amasa.",tr:"Çocuk malzemelerle oynar ve hamur yoğurur.",ru:"Ребёнок возится с материалами и мнёт их."},
+"Das Kind ahmt Fingerspiele nach.":{en:"The child imitates finger games.",fr:"L’enfant imite les jeux de doigts.",it:"Il bambino imita i giochi con le dita.",es:"El niño imita juegos de dedos.",tr:"Çocuk parmak oyunlarını taklit eder.",ru:"Ребёнок повторяет пальчиковые игры."},
+"Das Kind hat feinmotorische Fähigkeiten (Dinge greifen, stecken, kneten).":{en:"The child has fine motor skills (grasping, inserting, kneading).",fr:"L’enfant a des compétences de motricité fine (saisir, emboîter, malaxer).",it:"Il bambino ha capacità di motricità fine (afferrare, incastrare, impastare).",es:"El niño tiene destrezas de motricidad fina (agarrar, encajar, amasar).",tr:"Çocuğun ince motor becerileri vardır (kavrama, geçirme, yoğurma).",ru:"У ребёнка есть навыки мелкой моторики (хватать, вставлять, мять)."},
+"Das Kind hält das Gleichgewicht im Sitzen, Stehen, Laufen (Zutreffendes markieren).":{en:"The child keeps its balance when sitting, standing, walking (mark what applies).",fr:"L’enfant garde l’équilibre assis, debout, en marchant (cocher ce qui convient).",it:"Il bambino mantiene l’equilibrio da seduto, in piedi, camminando (segnare ciò che corrisponde).",es:"El niño mantiene el equilibrio sentado, de pie y al caminar (marcar lo que corresponda).",tr:"Çocuk otururken, ayakta dururken, yürürken dengesini korur (uygun olanı işaretleyin).",ru:"Ребёнок удерживает равновесие сидя, стоя, при ходьбе (отметьте подходящее)."},
+"Das Kind setzt seinen Körper und seine Kräfte gezielt ein (wälzen, rückwärts gehen, rollen, auf den Zehenspitzen gehen).":{en:"The child uses its body and strength purposefully (rolling, walking backwards, rolling over, walking on tiptoe).",fr:"L’enfant utilise son corps et ses forces de façon ciblée (se rouler, marcher à reculons, rouler, marcher sur la pointe des pieds).",it:"Il bambino usa il corpo e le forze in modo mirato (rotolarsi, camminare all’indietro, rotolare, camminare in punta di piedi).",es:"El niño usa su cuerpo y sus fuerzas de forma intencionada (revolcarse, andar hacia atrás, rodar, andar de puntillas).",tr:"Çocuk bedenini ve gücünü hedefe yönelik kullanır (yuvarlanma, geri geri yürüme, yuvarlama, parmak ucunda yürüme).",ru:"Ребёнок целенаправленно использует тело и силы (кататься, идти назад, перекатываться, ходить на цыпочках)."},
+"Das Kind kreuzt die Körpermitte (Hampelmann, Schneidersitz).":{en:"The child crosses the body’s midline (jumping jacks, cross-legged sitting).",fr:"L’enfant croise la ligne médiane du corps (jumping jacks, assis en tailleur).",it:"Il bambino incrocia la linea mediana del corpo (jumping jack, seduto a gambe incrociate).",es:"El niño cruza la línea media del cuerpo (saltos de tijera, sentarse con las piernas cruzadas).",tr:"Çocuk vücut orta hattını çaprazlar (jumping jack, bağdaş kurma).",ru:"Ребёнок пересекает среднюю линию тела (прыжки «звёздочка», поза «по-турецки»)."},
+"Das Kind bewegt sich gern, häufig und zeigt dabei Ausdauer (krabbelt, schaukelt, steigt Treppen, klettert, balanciert).":{en:"The child likes to move, does so often and with stamina (crawls, swings, climbs stairs, climbs, balances).",fr:"L’enfant aime bouger, le fait souvent et avec endurance (rampe, se balance, monte les escaliers, grimpe, fait de l’équilibre).",it:"Il bambino si muove volentieri, spesso e con resistenza (gattona, dondola, sale le scale, si arrampica, sta in equilibrio).",es:"Al niño le gusta moverse, lo hace con frecuencia y con resistencia (gatea, se columpia, sube escaleras, trepa, hace equilibrio).",tr:"Çocuk hareket etmeyi sever, sık yapar ve bunu sebatla sürdürür (emekler, sallanır, merdiven çıkar, tırmanır, denge kurar).",ru:"Ребёнок любит двигаться, делает это часто и выносливо (ползает, качается, поднимается по лестнице, лазает, балансирует)."},
+"Das Kind bewegt sich sicher.":{en:"The child moves with assurance.",fr:"L’enfant se déplace avec assurance.",it:"Il bambino si muove con sicurezza.",es:"El niño se mueve con seguridad.",tr:"Çocuk emin biçimde hareket eder.",ru:"Ребёнок движется уверенно."},
+"Das Kind kann seine Bewegung einem vorgegebenen Rhythmus anpassen (Musik, Takt, Sprache).":{en:"The child can adapt its movement to a given rhythm (music, beat, speech).",fr:"L’enfant sait adapter ses mouvements à un rythme donné (musique, mesure, parole).",it:"Il bambino sa adattare i movimenti a un ritmo dato (musica, battito, parola).",es:"El niño sabe adaptar su movimiento a un ritmo dado (música, compás, habla).",tr:"Çocuk hareketlerini verilen bir ritme uyarlayabilir (müzik, tempo, konuşma).",ru:"Ребёнок умеет подстраивать движения под заданный ритм (музыка, такт, речь)."},
+"Die Zungenmotorik des Kindes ist unauffällig.":{en:"The child’s tongue motor function is unremarkable.",fr:"La motricité de la langue de l’enfant est sans particularité.",it:"La motricità della lingua del bambino non presenta anomalie.",es:"La motricidad de la lengua del niño no presenta anomalías.",tr:"Çocuğun dil motoru becerileri olağandır.",ru:"Моторика языка ребёнка без особенностей."},
+"Das Kind schließt den Mund beim Essen oder Trinken aus dem Glas.":{en:"The child closes its mouth when eating or drinking from a glass.",fr:"L’enfant ferme la bouche en mangeant ou en buvant au verre.",it:"Il bambino chiude la bocca mentre mangia o beve dal bicchiere.",es:"El niño cierra la boca al comer o beber del vaso.",tr:"Çocuk yerken veya bardaktan içerken ağzını kapatır.",ru:"Ребёнок закрывает рот, когда ест или пьёт из стакана."},
+"Das Kind kann eine Kerze ausblasen (auspusten).":{en:"The child can blow out a candle.",fr:"L’enfant sait souffler une bougie.",it:"Il bambino sa soffiare e spegnere una candela.",es:"El niño sabe apagar una vela soplando.",tr:"Çocuk bir mumu üfleyerek söndürebilir.",ru:"Ребёнок может задуть свечу."},
+"Das Kind kann Eis schlecken.":{en:"The child can lick an ice cream.",fr:"L’enfant sait lécher une glace.",it:"Il bambino sa leccare un gelato.",es:"El niño sabe lamer un helado.",tr:"Çocuk dondurma yalayabilir.",ru:"Ребёнок может лизать мороженое."},
+"Das Kind ortet akustische Signale (Bsp. Hörkim).":{en:"The child locates acoustic signals (e.g. a listening game).",fr:"L’enfant localise des signaux acoustiques (ex. jeu d’écoute).",it:"Il bambino localizza segnali acustici (es. gioco d’ascolto).",es:"El niño localiza señales acústicas (p. ej. un juego de escucha).",tr:"Çocuk işitsel sinyallerin yerini belirler (örn. işitme oyunu).",ru:"Ребёнок определяет, откуда идёт звук (напр., игра на слух)."},
+"Das Kind findet sich in den Räumen zurecht (erkennt oben-unten, rechts-links).":{en:"The child finds its way around the rooms (recognises up–down, right–left).",fr:"L’enfant se repère dans les pièces (reconnaît haut-bas, droite-gauche).",it:"Il bambino si orienta negli ambienti (riconosce sopra-sotto, destra-sinistra).",es:"El niño se orienta en los espacios (reconoce arriba-abajo, derecha-izquierda).",tr:"Çocuk mekânlarda yolunu bulur (üst-alt, sağ-sol ayırt eder).",ru:"Ребёнок ориентируется в помещениях (различает верх–низ, право–лево)."},
+"Das Kind verarbeitet und benennt visuelle Reize (hell-dunkel, grelles Licht).":{en:"The child processes and names visual stimuli (light–dark, bright light).",fr:"L’enfant traite et nomme les stimuli visuels (clair-foncé, lumière vive).",it:"Il bambino elabora e nomina gli stimoli visivi (chiaro-scuro, luce intensa).",es:"El niño procesa y nombra estímulos visuales (claro-oscuro, luz intensa).",tr:"Çocuk görsel uyaranları işler ve adlandırır (aydınlık-karanlık, parlak ışık).",ru:"Ребёнок обрабатывает и называет зрительные раздражители (светло–тёмно, яркий свет)."},
+"Das Kind erkennt verschiedene Geschmacksrichtungen und Gerüche.":{en:"The child recognises different tastes and smells.",fr:"L’enfant reconnaît différents goûts et odeurs.",it:"Il bambino riconosce sapori e odori diversi.",es:"El niño reconoce distintos sabores y olores.",tr:"Çocuk farklı tatları ve kokuları tanır.",ru:"Ребёнок различает разные вкусы и запахи."},
+"Das Kind hat ein Körperempfinden für Gesundheit und Krankheit.":{en:"The child has a bodily sense of health and illness.",fr:"L’enfant a une perception corporelle de la santé et de la maladie.",it:"Il bambino ha una percezione corporea di salute e malattia.",es:"El niño tiene una percepción corporal de la salud y la enfermedad.",tr:"Çocuğun sağlık ve hastalığa dair bedensel bir algısı vardır.",ru:"Ребёнок телесно ощущает здоровье и болезнь."},
+"Das Kind hat feinmotorische Fähigkeiten (kleine Dinge greifen, Stift halten, stecken, falten, schneiden, kneten, fädeln).":{en:"The child has fine motor skills (grasping small things, holding a pen, inserting, folding, cutting, kneading, threading).",fr:"L’enfant a des compétences de motricité fine (saisir de petits objets, tenir un crayon, emboîter, plier, découper, malaxer, enfiler).",it:"Il bambino ha capacità di motricità fine (afferrare piccoli oggetti, tenere la matita, incastrare, piegare, tagliare, impastare, infilare).",es:"El niño tiene destrezas de motricidad fina (agarrar cosas pequeñas, sostener el lápiz, encajar, doblar, cortar, amasar, ensartar).",tr:"Çocuğun ince motor becerileri vardır (küçük şeyleri kavrama, kalem tutma, geçirme, katlama, kesme, yoğurma, ipe dizme).",ru:"У ребёнка есть навыки мелкой моторики (брать мелкие предметы, держать карандаш, вставлять, складывать, резать, мять, нанизывать)."},
+"Das Kind koordiniert Augen und Hände (gerade schneiden, Nagel einschlagen).":{en:"The child coordinates eyes and hands (cutting straight, hammering in a nail).",fr:"L’enfant coordonne les yeux et les mains (couper droit, planter un clou).",it:"Il bambino coordina occhi e mani (tagliare dritto, piantare un chiodo).",es:"El niño coordina ojos y manos (cortar recto, clavar un clavo).",tr:"Çocuk göz ve elleri eşgüdümler (düz kesme, çivi çakma).",ru:"Ребёнок координирует глаза и руки (резать прямо, забивать гвоздь)."},
+"Das Kind hält das Gleichgewicht.":{en:"The child keeps its balance.",fr:"L’enfant garde l’équilibre.",it:"Il bambino mantiene l’equilibrio.",es:"El niño mantiene el equilibrio.",tr:"Çocuk dengesini korur.",ru:"Ребёнок удерживает равновесие."},
+"Es schaukelt, steigt Treppen, hüpft auf einem Bein, klettert (Klettergerüst).":{en:"It swings, climbs stairs, hops on one leg, climbs (climbing frame).",fr:"Il se balance, monte les escaliers, saute à cloche-pied, grimpe (cage à grimper).",it:"Dondola, sale le scale, salta su un piede, si arrampica (struttura per arrampicarsi).",es:"Se columpia, sube escaleras, salta a la pata coja, trepa (estructura de trepa).",tr:"Sallanır, merdiven çıkar, tek ayak üstünde zıplar, tırmanır (tırmanma kulesi).",ru:"Он качается, поднимается по лестнице, прыгает на одной ноге, лазает (лазалка)."},
+"Das Kind setzt seinen Körper und seine Kräfte gezielt ein (wälzen, rückwärtsgehen, rollen, auf den Zehenspitzen gehen).":{en:"The child uses its body and strength purposefully (rolling, walking backwards, rolling over, walking on tiptoe).",fr:"L’enfant utilise son corps et ses forces de façon ciblée (se rouler, marcher à reculons, rouler, marcher sur la pointe des pieds).",it:"Il bambino usa il corpo e le forze in modo mirato (rotolarsi, camminare all’indietro, rotolare, camminare in punta di piedi).",es:"El niño usa su cuerpo y sus fuerzas de forma intencionada (revolcarse, andar hacia atrás, rodar, andar de puntillas).",tr:"Çocuk bedenini ve gücünü hedefe yönelik kullanır (yuvarlanma, geri geri yürüme, yuvarlama, parmak ucunda yürüme).",ru:"Ребёнок целенаправленно использует тело и силы (кататься, идти назад, перекатываться, ходить на цыпочках)."},
+"Das Kind bewegt sich gern, häufig und zeigt dabei Ausdauer.":{en:"The child likes to move, does so often and shows stamina.",fr:"L’enfant aime bouger, le fait souvent et fait preuve d’endurance.",it:"Il bambino si muove volentieri, spesso e con resistenza.",es:"Al niño le gusta moverse, lo hace con frecuencia y con resistencia.",tr:"Çocuk hareket etmeyi sever, sık yapar ve bunu sebatla sürdürür.",ru:"Ребёнок любит двигаться, делает это часто и выносливо."},
+"Das Kind hat einen flüssigen, runden Bewegungsablauf.":{en:"The child has a fluid, smooth pattern of movement.",fr:"L’enfant a des mouvements fluides et harmonieux.",it:"Il bambino ha movimenti fluidi e armoniosi.",es:"El niño tiene un patrón de movimiento fluido y armónico.",tr:"Çocuğun akıcı, uyumlu bir hareket örüntüsü vardır.",ru:"У ребёнка плавные, складные движения."},
+"Das Kind koordiniert Augen und Hände (Ball fangen, Getränk eingießen).":{en:"The child coordinates eyes and hands (catching a ball, pouring a drink).",fr:"L’enfant coordonne les yeux et les mains (attraper une balle, verser une boisson).",it:"Il bambino coordina occhi e mani (prendere la palla, versare da bere).",es:"El niño coordina ojos y manos (atrapar una pelota, servir una bebida).",tr:"Çocuk göz ve elleri eşgüdümler (top yakalama, içecek doldurma).",ru:"Ребёнок координирует глаза и руки (ловить мяч, наливать напиток)."},
+"Das Kind schließt den Mund beim Essen und Trinken aus dem Glas.":{en:"The child closes its mouth when eating and drinking from a glass.",fr:"L’enfant ferme la bouche en mangeant et en buvant au verre.",it:"Il bambino chiude la bocca mentre mangia e beve dal bicchiere.",es:"El niño cierra la boca al comer y beber del vaso.",tr:"Çocuk yerken ve bardaktan içerken ağzını kapatır.",ru:"Ребёнок закрывает рот, когда ест и пьёт из стакана."},
+
+/* --- Extra-Felder Spielverhalten --- */
+"Spielpartner / Spielbereiche":{en:"Play partners / play areas",fr:"Partenaires de jeu / espaces de jeu",it:"Compagni di gioco / aree di gioco",es:"Compañeros de juego / zonas de juego",tr:"Oyun arkadaşları / oyun alanları",ru:"Партнёры по игре / игровые зоны"},
+"Interessen / Vorlieben":{en:"Interests / preferences",fr:"Intérêts / préférences",it:"Interessi / preferenze",es:"Intereses / preferencias",tr:"İlgiler / tercihler",ru:"Интересы / предпочтения"},
+"Spielpartner":{en:"Play partners",fr:"Partenaires de jeu",it:"Compagni di gioco",es:"Compañeros de juego",tr:"Oyun arkadaşları",ru:"Партнёры по игре"},
+"Spielbereiche":{en:"Play areas",fr:"Espaces de jeu",it:"Aree di gioco",es:"Zonas de juego",tr:"Oyun alanları",ru:"Игровые зоны"},
+
+/* --- Abschluss-Felder --- */
+"Eingewöhnungsphase":{en:"Settling-in phase",fr:"Phase d’adaptation",it:"Fase di ambientamento",es:"Periodo de adaptación",tr:"Alıştırma aşaması",ru:"Период адаптации"},
+"Wie verlief die Eingewöhnung? Wie hat sich das Kind in der Gruppe entwickelt? Zu welchen Bezugspersonen besteht eine positive Bindung?":{en:"How did the settling-in go? How has the child developed in the group? With which key persons is there a positive bond?",fr:"Comment s’est déroulée l’adaptation ? Comment l’enfant s’est-il développé dans le groupe ? Avec quelles personnes de référence existe-t-il un lien positif ?",it:"Come si è svolto l’ambientamento? Come si è sviluppato il bambino nel gruppo? Con quali figure di riferimento esiste un legame positivo?",es:"¿Cómo fue el periodo de adaptación? ¿Cómo se ha desarrollado el niño en el grupo? ¿Con qué personas de referencia existe un vínculo positivo?",tr:"Alıştırma nasıl geçti? Çocuk grup içinde nasıl gelişti? Hangi güven kişileriyle olumlu bir bağ var?",ru:"Как прошла адаптация? Как ребёнок развивался в группе? С кем из близких взрослых есть положительная привязанность?"},
+"Angaben der Eltern":{en:"Information from the parents",fr:"Indications des parents",it:"Indicazioni dei genitori",es:"Información de los padres",tr:"Ebeveynlerin bildirdikleri",ru:"Сведения от родителей"},
+"Was berichten die Eltern über das Kind (familiäres Umfeld, Verhalten zu Hause)?":{en:"What do the parents report about the child (family environment, behaviour at home)?",fr:"Que rapportent les parents au sujet de l’enfant (environnement familial, comportement à la maison) ?",it:"Che cosa riferiscono i genitori sul bambino (ambiente familiare, comportamento a casa)?",es:"¿Qué cuentan los padres sobre el niño (entorno familiar, comportamiento en casa)?",tr:"Ebeveynler çocuk hakkında ne anlatıyor (aile ortamı, evdeki davranış)?",ru:"Что рассказывают родители о ребёнке (семейная обстановка, поведение дома)?"},
+"Allgemeine Anmerkungen nach Abschluss der Beobachtung":{en:"General notes after completing the observation",fr:"Remarques générales après la fin de l’observation",it:"Annotazioni generali al termine dell’osservazione",es:"Observaciones generales tras finalizar la observación",tr:"Gözlemin tamamlanmasından sonra genel notlar",ru:"Общие замечания по завершении наблюдения"},
+"z. B. zur Vorbereitung eines Elterngesprächs":{en:"e.g. to prepare a parent meeting",fr:"p. ex. pour préparer un entretien avec les parents",it:"ad es. per preparare un colloquio con i genitori",es:"p. ej., para preparar una reunión con las familias",tr:"ör. bir veli görüşmesine hazırlık için",ru:"например, для подготовки беседы с родителями"}
+
+});
+
+/* ===== Ravensburger Bogen – App-Logik (mehrsprachig) ===== */
 const PENS = ['var(--pen1)','var(--pen2)','var(--pen3)'];
 const PENHEX = ['#2F7E86','#C77B30','#A8456B'];
-const SHORT = {sozial:'Sozial',emotional:'Emotion',lernen:'Lernen',sprache:'Sprache',kreativ:'Kreativ',spiel:'Spiel',koerper:'Körper'};
-const CELLVAL = [4,3,2,1]; // Spalte 0..3 -> trifft zu .. noch nicht
+const CELLVAL = [4,3,2,1];
 const $ = id => document.getElementById(id);
+const LANGS = ['de','en','fr','it','es','tr','ru'];
+const LANGMETA = {
+  de:{flag:'🇩🇪',label:'Deutsch'}, en:{flag:'🇬🇧',label:'English'}, fr:{flag:'🇫🇷',label:'Français'},
+  it:{flag:'🇮🇹',label:'Italiano'}, es:{flag:'🇪🇸',label:'Español'}, tr:{flag:'🇹🇷',label:'Türkçe'}, ru:{flag:'🇷🇺',label:'Русский'}
+};
+let LANG = 'de';
+
+/* i18n-Helfer (UI, AREATR, TR stammen aus i18n.js) */
+function t(k,l){ l=l||LANG; return (UI[l]&&UI[l][k]) || UI.de[k] || k; }
+function tx(de,l){ l=l||LANG; if(l==='de'||!de) return de; return (TR[de]&&TR[de][l]) || de; }
+function areaName(aid,l){ l=l||LANG; return (l!=='de'&&AREATR[aid]&&AREATR[aid][l]&&AREATR[aid][l].name) || AREA_META[aid].title; }
+function areaShort(aid,l){ l=l||LANG; return (l!=='de'&&AREATR[aid]&&AREATR[aid][l]&&AREATR[aid][l].short) || SHORT_DE[aid]; }
+function scaleLabel(i,l){ return t('scale_'+SCALE[i].key,l); }
+const SHORT_DE = {sozial:'Sozial',emotional:'Emotion',lernen:'Lernen',sprache:'Sprache',kreativ:'Kreativ',spiel:'Spiel',koerper:'Körper'};
 
 function blank(){
   return {
-    v:1,
+    v:2, lang:'de',
     child:{name:'',geb:'',erstsprache:'',kigaSeit:'',form:'4-6'},
     rounds:[{date:'',beobachter:''},{date:'',beobachter:''},{date:'',beobachter:''}],
-    active:0, ans:{}, texts:{}, view:'setup'
+    active:0, ans:{}, texts:{}, view:'setup',
+    bericht:{ sections:{stamm:true,profil:true,radar:true,staerken:true,schwer:true,texte:true,abschluss:true}, rounds:null, lang:null }
   };
 }
 let S = blank();
@@ -602,7 +1101,7 @@ let S = blank();
 const form = () => FORMS[S.child.form];
 function items(aid){
   const out=[]; let i=0;
-  form().areas[aid].blocks.forEach(b=>b.items.forEach(t=>out.push({text:t,group:b.group,idx:i++})));
+  form().areas[aid].blocks.forEach(b=>b.items.forEach(tt=>out.push({text:tt,group:b.group,idx:i++})));
   return out;
 }
 function ensure(aid){
@@ -611,10 +1110,7 @@ function ensure(aid){
   while(S.ans[aid].length<n) S.ans[aid].push([null,null,null]);
 }
 const total = () => AREA_ORDER.reduce((s,a)=>s+items(a).length,0);
-function rated(round,aid){
-  ensure(aid);
-  return S.ans[aid].filter(v=>v[round]!=null).length;
-}
+function rated(round,aid){ ensure(aid); return S.ans[aid].filter(v=>v[round]!=null).length; }
 const ratedAll = round => AREA_ORDER.reduce((s,a)=>s+rated(round,a),0);
 const hasData = round => ratedAll(round)>0;
 function areaMean(aid,round){
@@ -623,7 +1119,7 @@ function areaMean(aid,round){
   return vs.length? vs.reduce((a,b)=>a+b,0)/vs.length : null;
 }
 
-/* ---- Alter berechnen ---- */
+/* ---- Alter ---- */
 function ageAt(geb,date){
   if(!geb||!date) return '';
   const g=new Date(geb), d=new Date(date);
@@ -633,33 +1129,31 @@ function ageAt(geb,date){
   if(m<0){y--;m+=12;}
   return y+';'+m;
 }
+function locale(l){ return {de:'de-DE',en:'en-GB',fr:'fr-FR',it:'it-IT',es:'es-ES',tr:'tr-TR',ru:'ru-RU'}[l||LANG]||'de-DE'; }
+function fmtDate(d,l){ if(!d)return''; const x=new Date(d); return isNaN(x)?d:x.toLocaleDateString(locale(l)); }
 
 /* ===== Rendering ===== */
-function render(){ renderNav(); renderMain(); renderMob(); updateProg(); syncBrand(); }
+function render(){ renderNav(); renderMain(); renderMob(); updateProg(); syncBrand(); syncLang(); }
 
 function syncBrand(){
-  $('brand-sub').textContent = S.child.name
-    ? S.child.name + ' · ' + form().label
-    : 'Entwicklungsbeobachtung · digital';
+  $('brand-sub').textContent = S.child.name ? S.child.name + ' · ' + form().label : t('brand_sub');
 }
+function syncLang(){ const sel=$('langsel'); if(sel&&sel.value!==LANG) sel.value=LANG; }
+function setLang(l){ if(!LANGMETA[l])return; LANG=l; S.lang=l; render(); }
 
 function renderNav(){
-  const setupReady = !!S.child.name;
-  let h = `<div class="nsec">Start</div>`;
-  h += navItem('setup','📋','Profildaten',false,'');
-  h += `<div class="nsec">Datenerhebung</div>`;
+  const ready = !!S.child.name;
+  let h = `<div class="nsec">${t('nav_start')}</div>`;
+  h += navItem('setup','📋',t('nav_profil'),false,'');
+  h += `<div class="nsec">${t('nav_erhebung')}</div>`;
   AREA_ORDER.forEach(aid=>{
-    const m=AREA_META[aid];
-    const checks=[0,1,2].map(r=>{
-      const on = S.rounds[r].date || hasData(r);
-      const done = rated(r,aid)===items(aid).length && items(aid).length>0;
-      return `<i style="background:${(on&&rated(r,aid))?PENS[r]:'var(--line)'};${done?'':''}"></i>`;
-    }).join('');
-    h += navItem(aid,m.emoji,m.title,!setupReady,`<span class="ncheck">${checks}</span>`);
+    const checks=[0,1,2].map(r=>`<i style="background:${(hasData(r)&&rated(r,aid))?PENS[r]:'var(--line)'}"></i>`).join('');
+    h += navItem(aid,AREA_META[aid].emoji,areaName(aid),!ready,`<span class="ncheck">${checks}</span>`);
   });
-  h += navItem('abschluss','📝','Abschluss & Notizen',!setupReady,'');
-  h += `<div class="nsec">Auswertung</div>`;
-  h += navItem('aus','📊','Auswertung & Bericht',!setupReady,'');
+  h += navItem('abschluss','📝',t('nav_abschluss'),!ready,'');
+  h += `<div class="nsec">${t('nav_auswertung_sec')}</div>`;
+  h += navItem('aus','📊',t('nav_auswertung'),!ready,'');
+  h += navItem('bericht','📄',t('nav_bericht'),!ready,'');
   $('nav').innerHTML=h;
 }
 function navItem(v,ico,label,dis,right){
@@ -668,17 +1162,17 @@ function navItem(v,ico,label,dis,right){
     <span class="nico">${ico}</span><span>${label}</span>${right||''}</button>`;
 }
 function renderMob(){
-  const setupReady=!!S.child.name;
-  const tabs=[['setup','📋'],...AREA_ORDER.map(a=>[a,AREA_META[a].emoji]),['abschluss','📝'],['aus','📊']];
+  const ready=!!S.child.name;
+  const tabs=[['setup','📋'],...AREA_ORDER.map(a=>[a,AREA_META[a].emoji]),['abschluss','📝'],['aus','📊'],['bericht','📄']];
   $('mobnav').innerHTML=tabs.map(([v,ic])=>
-    `<button class="${S.view===v?'on':''}" ${(!setupReady&&v!=='setup')?'disabled':''} onclick="go('${v}')">${ic}</button>`).join('');
+    `<button class="${S.view===v?'on':''}" ${(!ready&&v!=='setup')?'disabled':''} onclick="go('${v}')">${ic}</button>`).join('');
 }
-
 function go(v){ if(v!=='setup' && !S.child.name) return; S.view=v; render(); window.scrollTo(0,0); }
 
 function renderMain(){
   if(S.view==='setup') return renderSetup();
   if(S.view==='aus') return renderAus();
+  if(S.view==='bericht') return renderBericht();
   if(S.view==='abschluss') return renderAbschluss();
   renderArea(S.view);
 }
@@ -687,53 +1181,53 @@ function renderMain(){
 function renderSetup(){
   const c=S.child;
   let h=`<div class="wrap">
-    <div class="eyebrow">Profildaten</div>
-    <h2 class="h-lg">Kind &amp; Beobachtungen</h2>
-    <p class="lead">Grunddaten des Kindes und bis zu drei Beobachtungszeiträume. Jede Beobachtung hat – wie der Farbstift auf dem Papierbogen – eine feste Farbe.</p>
+    <div class="eyebrow">${t('nav_profil')}</div>
+    <h2 class="h-lg">${t('setup_h')}</h2>
+    <p class="lead">${t('setup_lead')}</p>
 
     <div class="card">
-      <h3>Kind</h3>
-      <div class="hint">Diese Angaben bleiben auf deinem Gerät. Gespeichert wird als Datei.</div>
+      <h3>${t('card_child')}</h3>
+      <div class="hint">${t('child_hint')}</div>
       <div class="grid">
-        <div class="fld full"><label>Name, Vorname</label><input id="f-name" value="${esc(c.name)}" oninput="setChild('name',this.value)" placeholder="Mustermann, Mia"></div>
-        <div class="fld"><label>geboren am</label><input id="f-geb" type="date" value="${c.geb}" oninput="setChild('geb',this.value)"></div>
-        <div class="fld"><label>Erstsprache</label><input value="${esc(c.erstsprache)}" oninput="setChild('erstsprache',this.value)" placeholder="Deutsch"></div>
-        <div class="fld"><label>im Kindergarten seit</label><input type="date" value="${c.kigaSeit}" oninput="setChild('kigaSeit',this.value)"></div>
+        <div class="fld full"><label>${t('f_name')}</label><input value="${esc(c.name)}" oninput="setChild('name',this.value)" placeholder="${t('ph_name')}"></div>
+        <div class="fld"><label>${t('f_geb')}</label><input type="date" value="${c.geb}" oninput="setChild('geb',this.value)"></div>
+        <div class="fld"><label>${t('f_erst')}</label><input value="${esc(c.erstsprache)}" oninput="setChild('erstsprache',this.value)" placeholder="${t('ph_erst')}"></div>
+        <div class="fld"><label>${t('f_kiga')}</label><input type="date" value="${c.kigaSeit}" oninput="setChild('kigaSeit',this.value)"></div>
       </div>
     </div>
 
     <div class="card">
-      <h3>Altersgruppe / Bogen</h3>
-      <div class="hint">Bestimmt, welche Merkmale erhoben werden.</div>
+      <h3>${t('card_age')}</h3>
+      <div class="hint">${t('age_hint')}</div>
       <div class="ages">
-        ${ageCard('2-3','🧸','2–3 Jahre','Bogen für 2- und 3-jährige Kinder')}
-        ${ageCard('4-6','🪁','4–6 Jahre','Bogen für 4- bis 6-jährige Kinder')}
+        ${ageCard('2-3','🧸',t('age23_t'),t('age23_s'))}
+        ${ageCard('4-6','🪁',t('age46_t'),t('age46_s'))}
       </div>
     </div>
 
     <div class="card">
-      <h3>Beobachtungen</h3>
-      <div class="hint">Mindestens eine. Das Alter wird automatisch aus Geburtsdatum und Beobachtungsdatum berechnet.</div>`;
+      <h3>${t('card_beob')}</h3>
+      <div class="hint">${t('beob_hint')}</div>`;
   for(let r=0;r<3;r++){
     const rd=S.rounds[r];
     h+=`<div class="rndrow">
-      <div class="rlabel"><span class="rdot" style="background:${PENS[r]}"></span>${r+1}. Beobachtung</div>
-      <div class="fld"><label>Zeitraum / Datum</label><input type="date" value="${rd.date}" oninput="setRound(${r},'date',this.value)"></div>
-      <div class="fld"><label>Beobachter/in</label><input value="${esc(rd.beobachter)}" oninput="setRound(${r},'beobachter',this.value)" placeholder="Name"></div>
-      <div class="fld"><label>Alter (J;M)</label><input readonly value="${ageAt(c.geb,rd.date)}"></div>
+      <div class="rlabel"><span class="rdot" style="background:${PENS[r]}"></span>${r+1}. ${t('beobachtung')}</div>
+      <div class="fld"><label>${t('col_zeitraum')}</label><input type="date" value="${rd.date}" oninput="setRound(${r},'date',this.value)"></div>
+      <div class="fld"><label>${t('col_beob')}</label><input value="${esc(rd.beobachter)}" oninput="setRound(${r},'beobachter',this.value)" placeholder="${t('ph_beob')}"></div>
+      <div class="fld"><label>${t('col_alter')}</label><input readonly value="${ageAt(c.geb,rd.date)}"></div>
     </div>`;
   }
   h+=`</div>
     <div class="row" style="justify-content:flex-end;margin-top:.4rem">
-      <button class="btn pri" ${c.name?'':'disabled'} onclick="go('${AREA_ORDER[0]}')">Zur Erhebung →</button>
+      <button class="btn pri" ${c.name?'':'disabled'} onclick="go('${AREA_ORDER[0]}')">${t('to_erhebung')}</button>
     </div>
-    <p class="lead" style="font-size:.74rem;margin-top:1.4rem;color:var(--faint)">Ravensburger Bogen zur Entwicklungsbeobachtung · © 2007 Fachberatungsstellen für Kindertageseinrichtungen im Landkreis Ravensburg. Diese App bildet den Bogen digital ab und ersetzt keine fachliche Bewertung.</p>
+    <p class="lead" style="font-size:.74rem;margin-top:1.4rem;color:var(--faint)">${t('footer_src')}</p>
   </div>`;
   $('main').innerHTML=h;
 }
-function ageCard(id,e,t,s){
+function ageCard(id,e,tt,s){
   return `<button class="agec ${S.child.form===id?'sel':''}" onclick="setForm('${id}')">
-    <div class="ae">${e}</div><div class="at">${t}</div><div class="as">${s}</div></button>`;
+    <div class="ae">${e}</div><div class="at">${tt}</div><div class="as">${s}</div></button>`;
 }
 function setChild(k,v){ S.child[k]=v; if(k==='name')syncBrand(); if(k==='geb'){ renderSetup(); } renderNav(); }
 function setRound(r,k,v){ S.rounds[r][k]=v; if(k==='date'){ const el=document.querySelectorAll('#main input[readonly]')[r]; if(el) el.value=ageAt(S.child.geb,v);} renderNav(); }
@@ -741,7 +1235,7 @@ function setForm(id){
   if(id===S.child.form) return;
   const answered = AREA_ORDER.some(a=>(S.ans[a]||[]).some(v=>v.some(x=>x!=null)));
   const apply=()=>{ S.child.form=id; S.ans={}; renderSetup(); renderNav(); };
-  if(answered) modal('Altersgruppe wechseln?','Die Merkmale unterscheiden sich je Altersgruppe. Bereits gesetzte Einschätzungen gehen dabei verloren.',apply);
+  if(answered) modal(t('m_switch_t'),t('m_switch_p'),apply);
   else apply();
 }
 
@@ -751,54 +1245,51 @@ function renderArea(aid){
   const its=items(aid);
   let h=`<div class="ahead">
       <span class="ae">${m.emoji}</span>
-      <div><div class="anum">${m.num} · BEREICH</div><h2>${m.title}</h2></div>
+      <div><div class="anum">${m.num} · ${t('area_bereich')}</div><h2>${areaName(aid)}</h2></div>
     </div>`;
 
-  // Runden-Tabs
   h+=`<div class="rounds" style="margin-top:1rem">`;
   for(let r=0;r<3;r++){
-    h+=`<button class="rtab r${r} ${S.active===r?'on':''}" onclick="setActive(${r})">
-      <span class="rdot"></span>${r+1}. Beob.</button>`;
+    h+=`<button class="rtab r${r} ${S.active===r?'on':''}" onclick="setActive(${r})"><span class="rdot"></span>${r+1}. ${t('beob_short')}</button>`;
   }
   h+=`</div>`;
   const rd=S.rounds[S.active];
-  h+=`<p class="rmeta">Aktive Beobachtung: <b>${S.active+1}.</b>${rd.date?' · '+fmtDate(rd.date):''}${rd.beobachter?' · '+esc(rd.beobachter):''} — Klick setzt die Markierung für diese Beobachtung.</p>`;
+  h+=`<p class="rmeta">${t('active_obs')} <b>${S.active+1}.</b>${rd.date?' · '+fmtDate(rd.date):''}${rd.beobachter?' · '+esc(rd.beobachter):''} — ${t('active_hint')}</p>`;
 
-  if(A.intro) h+=`<p class="aintro">${A.intro}</p>`;
+  if(LANG!=='de') h+=`<p class="inoff">ⓘ ${t('inoffiziell')}</p>`;
+  if(A.intro) h+=`<p class="aintro">${tx(A.intro)}</p>`;
 
-  // Tabelle
   h+=`<div class="scaletbl">
     <div class="colhead">
-      <div class="ch-sp">Merkmal</div>
-      ${SCALE.map(s=>`<div class="ch">${s.label}</div>`).join('')}
+      <div class="ch-sp">${t('merkmal')}</div>
+      ${SCALE.map((s,i)=>`<div class="ch">${scaleLabel(i)}</div>`).join('')}
     </div>`;
   let lastGroup=null;
   its.forEach(it=>{
-    if(it.group && it.group!==lastGroup){ h+=`<div class="grouplbl" style="grid-column:1/-1">${it.group}</div>`; lastGroup=it.group; }
+    if(it.group && it.group!==lastGroup){ h+=`<div class="grouplbl" style="grid-column:1/-1">${tx(it.group)}</div>`; lastGroup=it.group; }
     h+=`<div class="irow" id="row-${aid}-${it.idx}">
-        <div class="itxt">${it.text}</div>${cells(aid,it.idx)}</div>`;
+        <div class="itxt"><span>${tx(it.text)}</span>${LANG!=='de'?`<span class="orig">${it.text}</span>`:''}</div>${cells(aid,it.idx)}</div>`;
   });
   h+=`</div>`;
 
-  // Freitexte
   h+=`<div class="texts">`;
   const tfields=[...STD_TEXTS, ...((A.extras)||[])];
   tfields.forEach(f=>{
     const key=aid+'.'+f.id, val=S.texts[key]||'';
+    const lbl = f.label? tx(f.label) : t('text_'+f.id);
     h+=`<details class="tcard" ${val?'open':''}>
-      <summary>${f.label}${val?' <span class="filledtag">ausgefüllt</span>':''}<span class="chev">▶</span></summary>
-      <div class="tbody"><textarea oninput="setText('${key}',this.value,this)" placeholder="${f.placeholder||'Notizen …'}">${esc(val)}</textarea></div>
+      <summary>${lbl}${val?` <span class="filledtag">${t('filled')}</span>`:''}<span class="chev">▶</span></summary>
+      <div class="tbody"><textarea oninput="setText('${key}',this.value,this)" placeholder="${t('ph_notes')}">${esc(val)}</textarea></div>
     </details>`;
   });
   h+=`</div>`;
 
-  // Navigation
   const i=AREA_ORDER.indexOf(aid);
   const prev=i>0?AREA_ORDER[i-1]:'setup';
   const next=i<AREA_ORDER.length-1?AREA_ORDER[i+1]:'abschluss';
   h+=`<div class="anav">
-    <button class="btn ghost" onclick="go('${prev}')">← ${prev==='setup'?'Profildaten':AREA_META[prev].title}</button>
-    <button class="btn pri" onclick="go('${next}')">${next==='abschluss'?'Abschluss & Notizen':AREA_META[next].title} →</button>
+    <button class="btn ghost" onclick="go('${prev}')">← ${prev==='setup'?t('nav_profil'):areaName(prev)}</button>
+    <button class="btn pri" onclick="go('${next}')">${next==='abschluss'?t('nav_abschluss'):areaName(next)} →</button>
   </div>`;
   $('main').innerHTML=h;
 }
@@ -809,11 +1300,7 @@ function cells(aid,idx){
     const val=CELLVAL[c];
     const here=S.active!=null && v[S.active]===val;
     let marks='';
-    for(let r=0;r<3;r++){
-      if(v[r]===val){
-        marks+=`<span class="mk r${r} ${r===S.active?'cur':'ghost'}"></span>`;
-      }
-    }
+    for(let r=0;r<3;r++){ if(v[r]===val) marks+=`<span class="mk r${r} ${r===S.active?'cur':'ghost'}"></span>`; }
     out+=`<div class="cell ${here?'act-here':''}" style="--cellc:${PENS[S.active]||'var(--pen1)'}" onclick="mark('${aid}',${idx},${c})">${marks}</div>`;
   }
   return out;
@@ -821,7 +1308,6 @@ function cells(aid,idx){
 function mark(aid,idx,c){
   const val=CELLVAL[c], v=S.ans[aid][idx];
   v[S.active]= (v[S.active]===val)? null : val;
-  // nur Zeile + Nav + Progress aktualisieren (kein Scroll-Sprung)
   const row=$('row-'+aid+'-'+idx);
   if(row){ const txt=row.querySelector('.itxt'); row.innerHTML=txt.outerHTML+cells(aid,idx); }
   renderNav(); updateProg();
@@ -831,7 +1317,7 @@ function setText(key,val,el){
   S.texts[key]=val;
   const sum=el.closest('details').querySelector('summary');
   const tag=sum.querySelector('.filledtag');
-  if(val&&!tag){ sum.querySelector('.chev').insertAdjacentHTML('beforebegin',' <span class="filledtag">ausgefüllt</span>'); }
+  if(val&&!tag){ sum.querySelector('.chev').insertAdjacentHTML('beforebegin',` <span class="filledtag">${t('filled')}</span>`); }
   else if(!val&&tag){ tag.remove(); }
 }
 
@@ -839,135 +1325,192 @@ function setText(key,val,el){
 function updateProg(){
   if(S.view==='setup'||!S.child.name){ $('prog').style.display='none'; return; }
   $('prog').style.display='';
-  const t=total(), r=ratedAll(S.active);
-  const pct=t?Math.round(r/t*100):0;
+  const tt=total(), r=ratedAll(S.active);
+  const pct=tt?Math.round(r/tt*100):0;
   $('prog-pct').textContent=pct+' %';
-  $('prog-round').textContent='('+(S.active+1)+'. Beob.)';
+  $('prog-round').textContent='('+(S.active+1)+'. '+t('beob_short')+')';
   $('pfill').style.width=pct+'%';
 }
 
-/* ===== Auswertung ===== */
+/* ---- Abschluss ---- */
+function renderAbschluss(){
+  const fields=form().abschluss||[];
+  let h=`<div class="wrap">
+    <div class="eyebrow">${t('abschluss_eyebrow')}</div>
+    <h2 class="h-lg">${t('nav_abschluss')}</h2>
+    <p class="lead">${t('abschluss_lead')}</p>`;
+  fields.forEach(f=>{
+    const key='_abschluss.'+f.id, val=S.texts[key]||'';
+    h+=`<div class="card">
+      <h3 style="font-size:.95rem">${tx(f.label)}${val?` <span class="filledtag">${t('filled')}</span>`:''}</h3>
+      <textarea style="width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:.6rem .7rem;font-size:.88rem;line-height:1.55;resize:vertical;min-height:96px;font-family:inherit;color:var(--ink)" oninput="S.texts['${key}']=this.value" placeholder="${esc(tx(f.placeholder||''))}">${esc(val)}</textarea>
+    </div>`;
+  });
+  h+=`<div class="anav">
+    <button class="btn ghost" onclick="go('${AREA_ORDER[AREA_ORDER.length-1]}')">← ${areaName(AREA_ORDER[AREA_ORDER.length-1])}</button>
+    <button class="btn pri" onclick="go('aus')">${t('nav_auswertung')} →</button>
+  </div></div>`;
+  $('main').innerHTML=h;
+}
+
+/* ===== Auswertung (nur Anzeige) ===== */
 function renderAus(){
   const rounds=[0,1,2].filter(hasData);
   if(!rounds.length){
-    $('main').innerHTML=`<div class="wrap"><div class="eyebrow">Auswertung</div><h2 class="h-lg">Noch keine Einschätzungen</h2>
-      <p class="lead">Sobald du im Erhebungsteil Merkmale markierst, entsteht hier automatisch das Entwicklungsprofil.</p>
-      <button class="btn pri" onclick="go('${AREA_ORDER[0]}')">Zur Erhebung →</button></div>`;
+    $('main').innerHTML=`<div class="wrap"><div class="eyebrow">${t('nav_auswertung')}</div><h2 class="h-lg">${t('aus_empty_h')}</h2>
+      <p class="lead">${t('aus_empty_p')}</p>
+      <button class="btn pri" onclick="go('${AREA_ORDER[0]}')">${t('to_erhebung')}</button></div>`;
     return;
   }
-  const focusRound = rounds[rounds.length-1];
-  let h=`<div class="wrap"><div class="eyebrow">Auswertung</div>
-    <h2 class="h-lg">Entwicklungsprofil${S.child.name?' · '+esc(S.child.name):''}</h2>
-    <div class="note"><b>Kein Test, keine Note.</b> Der Ravensburger Bogen beschreibt Entwicklung qualitativ. Diese Übersicht fasst die Markierungen visuell zusammen – als Gesprächsgrundlage fürs Team und Elterngespräch, nicht als Diagnose. Auffälligkeiten gehören immer ins Gespräch und ggf. zu einem Fachdienst.</div>`;
+  const focusRound = (S._focus!=null && rounds.includes(S._focus))? S._focus : rounds[rounds.length-1];
+  let h=`<div class="wrap"><div class="eyebrow">${t('nav_auswertung')}</div>
+    <h2 class="h-lg">${t('aus_h')}${S.child.name?' · '+esc(S.child.name):''}</h2>
+    <div class="note"><b>${t('note_title')}</b> ${t('note_body')}</div>`;
 
-  // Legende Runden
-  h+=`<div class="legend">`+rounds.map(r=>`<span><i style="background:${PENHEX[r]}"></i>${r+1}. Beobachtung${S.rounds[r].date?' · '+fmtDate(S.rounds[r].date):''}</span>`).join('')+`</div>`;
+  h+=`<div class="legend">`+rounds.map(r=>`<span><i style="background:${PENHEX[r]}"></i>${r+1}. ${t('beobachtung')}${S.rounds[r].date?' · '+fmtDate(S.rounds[r].date):''}</span>`).join('')+`</div>`;
 
-  // Profil
-  h+=`<div class="card profile"><h3>Bereichsprofil</h3><div class="hint">Mittelwert je Bereich auf der Skala „trifft noch nicht zu“ (links) bis „trifft zu“ (rechts).</div>`;
+  h+=`<div class="card profile"><h3>${t('profile_h')}</h3><div class="hint">${t('profile_hint')}</div>`;
   AREA_ORDER.forEach(aid=>{
-    h+=`<div class="prow"><div class="pname">${AREA_META[aid].emoji} ${SHORT[aid]}</div><div class="ptrack">`;
+    h+=`<div class="prow"><div class="pname">${AREA_META[aid].emoji} ${areaShort(aid)}</div><div class="ptrack">`;
     [25,50,75].forEach(p=>h+=`<span class="ptick" style="left:${p}%"></span>`);
     rounds.forEach((r,k)=>{
-      const mn=areaMean(aid,r);
-      if(mn==null) return;
-      const w=(mn-1)/3*100;
-      const top=4 + k*9;
-      h+=`<span class="pbarv r${r}" style="width:${w}%;top:${top}px" title="${r+1}. Beob.: ${mn.toFixed(1)}"></span>`;
+      const mn=areaMean(aid,r); if(mn==null) return;
+      h+=`<span class="pbarv r${r}" style="width:${(mn-1)/3*100}%;top:${4+k*9}px" title="${r+1}.: ${mn.toFixed(1)}"></span>`;
     });
     h+=`</div></div>`;
   });
   h+=`</div>`;
 
-  // Radar
-  h+=`<div class="card"><h3>Stärkenprofil (Netzdiagramm)</h3><div class="hint">Alle Beobachtungen übereinander – so wird der Verlauf sichtbar.</div>
+  h+=`<div class="card"><h3>${t('radar_h')}</h3><div class="hint">${t('radar_hint')}</div>
       <canvas id="radar" width="640" height="440" style="display:block;margin:.4rem auto 0"></canvas></div>`;
 
-  // Stärken & Schwerpunkte
   h+=`<div class="card"><div class="row" style="justify-content:space-between">
-      <h3 style="margin:0">Stärken &amp; Beobachtungsschwerpunkte</h3>
-      <div class="fld" style="min-width:150px"><label>Grundlage</label>
-        <select onchange="S._focus=+this.value;renderAus()">${rounds.map(r=>`<option value="${r}" ${(+(S._focus??focusRound)===r)?'selected':''}>${r+1}. Beobachtung</option>`).join('')}</select></div>
+      <h3 style="margin:0">${t('sw_h')}</h3>
+      <div class="fld" style="min-width:160px"><label>${t('grundlage')}</label>
+        <select onchange="S._focus=+this.value;renderAus()">${rounds.map(r=>`<option value="${r}" ${r===focusRound?'selected':''}>${r+1}. ${t('beobachtung')}</option>`).join('')}</select></div>
       </div>
-      <div class="cols2" style="margin-top:.8rem">${chipsCol('str',S._focus??focusRound)}${chipsCol('foc',S._focus??focusRound)}</div>
+      <div class="cols2" style="margin-top:.8rem">${chipsCol('str',focusRound)}${chipsCol('foc',focusRound)}</div>
   </div>`;
 
   h+=`<div class="row" style="justify-content:flex-end;margin-top:.4rem">
-      <button class="btn ghost" onclick="window.print()">Diese Seite drucken</button>
-      <button class="btn pri" onclick="printReport()">Bericht erstellen (PDF/Druck)</button>
+      <button class="btn pri" onclick="go('bericht')">${t('to_bericht')} →</button>
   </div></div>`;
   $('main').innerHTML=h;
-  requestAnimationFrame(()=>drawRadar($('radar'),rounds));
+  requestAnimationFrame(()=>drawRadar($('radar'),rounds,LANG));
 }
-
 function chipsCol(kind,round){
   const want = kind==='str'? (v=>v===4) : (v=>v!=null&&v<=2);
-  const title = kind==='str'?'Stärken (trifft zu)':'Beobachtungsschwerpunkte (trifft weniger / noch nicht zu)';
+  const title = kind==='str'? t('staerken_title') : t('schwer_title');
   const tag = kind==='str'?'+':'•';
   let rows='';
   AREA_ORDER.forEach(aid=>{
     items(aid).forEach(it=>{
       const v=S.ans[aid][it.idx][round];
-      if(want(v)) rows+=`<div class="chip ${kind}"><span class="ci">${tag}</span><div>${it.text}<span class="ca">${AREA_META[aid].emoji} ${SHORT[aid]}</span></div></div>`;
+      if(want(v)) rows+=`<div class="chip ${kind}"><span class="ci">${tag}</span><div>${tx(it.text)}<span class="ca">${AREA_META[aid].emoji} ${areaShort(aid)}</span></div></div>`;
     });
   });
-  if(!rows) rows=`<div class="emptyc">– keine –</div>`;
+  if(!rows) rows=`<div class="emptyc">${t('none')}</div>`;
   return `<div><div class="eyebrow" style="margin-bottom:.5rem">${title}</div><div class="chips">${rows}</div></div>`;
 }
 
-/* ---- Radar zeichnen ---- */
-function drawRadar(cv,rounds){
+/* ---- Radar ---- */
+function drawRadar(cv,rounds,l){
   if(!cv) return;
   const dpr=window.devicePixelRatio||1;
   const W=cv.clientWidth||cv.width, H=440;
   cv.width=W*dpr; cv.height=H*dpr; cv.style.height=H+'px';
-  const x=cv.getContext('2d'); x.scale(dpr,dpr);
-  x.clearRect(0,0,W,H);
+  const x=cv.getContext('2d'); x.scale(dpr,dpr); x.clearRect(0,0,W,H);
   const cx=W/2, cy=H/2+6, R=Math.min(W,H)/2-58, N=AREA_ORDER.length;
   const ang=i=>-Math.PI/2 + i*2*Math.PI/N;
-  // Gitter
   for(let g=1;g<=4;g++){
-    const rr=R*g/4;
-    x.beginPath();
+    const rr=R*g/4; x.beginPath();
     for(let i=0;i<=N;i++){ const a=ang(i%N); const px=cx+rr*Math.cos(a), py=cy+rr*Math.sin(a); i?x.lineTo(px,py):x.moveTo(px,py); }
     x.closePath(); x.strokeStyle = g===4?'#D8D2C5':'#E9E4D8'; x.lineWidth=1; x.stroke();
   }
-  // Achsen + Labels
   x.fillStyle='#6E6B63'; x.font='600 12px Inter,sans-serif'; x.textAlign='center'; x.textBaseline='middle';
   for(let i=0;i<N;i++){
     const a=ang(i), ex=cx+R*Math.cos(a), ey=cy+R*Math.sin(a);
     x.beginPath(); x.moveTo(cx,cy); x.lineTo(ex,ey); x.strokeStyle='#E9E4D8'; x.stroke();
     const lx=cx+(R+30)*Math.cos(a), ly=cy+(R+22)*Math.sin(a);
-    x.fillText(AREA_META[AREA_ORDER[i]].emoji+' '+SHORT[AREA_ORDER[i]], lx, ly);
+    x.fillText(AREA_META[AREA_ORDER[i]].emoji+' '+areaShort(AREA_ORDER[i],l), lx, ly);
   }
-  // Daten je Runde
   rounds.forEach(r=>{
     const pts=AREA_ORDER.map((aid,i)=>{
       const mn=areaMean(aid,r); const a=ang(i);
-      const val = mn==null?0:(mn-1)/3; // 0..1
-      const rad=R*Math.max(.04,val);
+      const val = mn==null?0:(mn-1)/3; const rad=R*Math.max(.04,val);
       return [cx+rad*Math.cos(a), cy+rad*Math.sin(a), mn];
     });
-    x.beginPath();
-    pts.forEach((p,i)=> i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));
-    x.closePath();
-    x.fillStyle=hexA(PENHEX[r],.13); x.fill();
-    x.strokeStyle=PENHEX[r]; x.lineWidth=2; x.stroke();
+    x.beginPath(); pts.forEach((p,i)=> i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.closePath();
+    x.fillStyle=hexA(PENHEX[r],.13); x.fill(); x.strokeStyle=PENHEX[r]; x.lineWidth=2; x.stroke();
     pts.forEach(p=>{ if(p[2]==null)return; x.beginPath(); x.arc(p[0],p[1],3.2,0,7); x.fillStyle=PENHEX[r]; x.fill(); });
   });
 }
 function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
 
+/* ===== Bericht (Baukasten) ===== */
+function renderBericht(){
+  const rounds=[0,1,2].filter(hasData);
+  if(!rounds.length){
+    $('main').innerHTML=`<div class="wrap"><div class="eyebrow">${t('nav_bericht')}</div><h2 class="h-lg">${t('aus_empty_h')}</h2>
+      <p class="lead">${t('bericht_empty_p')}</p><button class="btn pri" onclick="go('${AREA_ORDER[0]}')">${t('to_erhebung')}</button></div>`;
+    return;
+  }
+  if(S.bericht.rounds==null) S.bericht.rounds=rounds.slice();
+  if(S.bericht.lang==null) S.bericht.lang=LANG;
+  const B=S.bericht;
+  const secList=[['stamm','sec_stamm'],['profil','sec_profil'],['radar','sec_radar'],['staerken','sec_staerken'],['schwer','sec_schwer'],['texte','sec_texte'],['abschluss','sec_abschluss']];
+
+  let h=`<div class="wrap"><div class="eyebrow">${t('nav_bericht')}</div>
+    <h2 class="h-lg">${t('bericht_h')}</h2>
+    <p class="lead">${t('bericht_lead')}</p>
+
+    <div class="card">
+      <h3>${t('bericht_sections')}</h3>
+      <div class="checks">`;
+  secList.forEach(([k,lbl])=>{
+    h+=`<label class="chk"><input type="checkbox" ${B.sections[k]?'checked':''} onchange="S.bericht.sections['${k}']=this.checked"><span>${t(lbl)}</span></label>`;
+  });
+  h+=`</div></div>
+
+    <div class="card">
+      <h3>${t('bericht_rounds')}</h3>
+      <div class="hint">${t('bericht_rounds_hint')}</div>
+      <div class="checks">`;
+  rounds.forEach(r=>{
+    h+=`<label class="chk"><input type="checkbox" ${B.rounds.includes(r)?'checked':''} onchange="toggleBerichtRound(${r},this.checked)"><span><span class="rdot" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PENHEX[r]};margin-right:.4rem"></span>${r+1}. ${t('beobachtung')}${S.rounds[r].date?' · '+fmtDate(S.rounds[r].date):''}</span></label>`;
+  });
+  h+=`</div></div>
+
+    <div class="card">
+      <h3>${t('bericht_lang')}</h3>
+      <div class="hint">${t('bericht_lang_hint')}</div>
+      <div class="fld" style="max-width:240px"><select onchange="S.bericht.lang=this.value">
+        ${LANGS.map(l=>`<option value="${l}" ${B.lang===l?'selected':''}>${LANGMETA[l].flag} ${LANGMETA[l].label}</option>`).join('')}
+      </select></div>
+    </div>
+
+    <div class="row" style="justify-content:flex-end;margin-top:.4rem">
+      <button class="btn ghost" onclick="go('aus')">← ${t('nav_auswertung')}</button>
+      <button class="btn pri" onclick="printReport()">${t('bericht_make')}</button>
+    </div></div>`;
+  $('main').innerHTML=h;
+}
+function toggleBerichtRound(r,on){
+  const arr=S.bericht.rounds;
+  if(on){ if(!arr.includes(r)) arr.push(r); } else { S.bericht.rounds=arr.filter(x=>x!==r); }
+  S.bericht.rounds.sort();
+}
+
 /* ===== Speichern / Öffnen / Neu ===== */
 function saveFile(){
-  if(!S.child.name){ toast('Bitte zuerst einen Namen eingeben.'); return; }
+  if(!S.child.name){ toast(t('toast_needname')); return; }
   const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
   const a=document.createElement('a');
   const safe=(S.child.name||'kind').replace(/[^\wäöüÄÖÜß -]/g,'').replace(/[ ,]+/g,'_');
   a.href=URL.createObjectURL(blob);
   a.download=`Ravensburger_${safe}_${new Date().toISOString().slice(0,10)}.rbb`;
   a.click(); URL.revokeObjectURL(a.href);
-  toast('Gespeichert ✓');
+  toast(t('toast_saved'));
 }
 function openFile(e){
   const f=e.target.files[0]; if(!f) return;
@@ -975,79 +1518,95 @@ function openFile(e){
   rd.onload=()=>{ try{
       const d=JSON.parse(rd.result);
       if(!d.child||!d.ans){ throw 0; }
-      S=Object.assign(blank(),d); S.view='setup'; render();
-      toast('Geöffnet: '+(S.child.name||'Datei'));
-    }catch(_){ toast('Datei konnte nicht gelesen werden.'); }
+      S=Object.assign(blank(),d);
+      if(!S.bericht) S.bericht=blank().bericht;
+      LANG = S.lang||'de'; S.view='setup'; render();
+      toast(t('toast_opened')+': '+(S.child.name||''));
+    }catch(_){ toast(t('toast_badfile')); }
     e.target.value='';
   };
   rd.readAsText(f);
 }
-function confirmNew(){
-  modal('Neue Erhebung?','Aktuelle Eingaben werden verworfen. Vorher speichern, falls du sie behalten möchtest.',()=>{ S=blank(); render(); });
-}
+function confirmNew(){ modal(t('m_new_t'),t('m_new_p'),()=>{ const l=LANG; S=blank(); S.lang=l; LANG=l; render(); }); }
 
 /* ===== Modal / Toast ===== */
-function modal(t,p,ok){ $('modal-t').textContent=t; $('modal-p').textContent=p; $('modal').classList.add('open');
+function modal(tt,p,ok){ $('modal-t').textContent=tt; $('modal-p').textContent=p; $('modal-cancel').textContent=t('cancel'); $('modal-ok').textContent='OK'; $('modal').classList.add('open');
   $('modal-ok').onclick=()=>{ closeModal(); ok&&ok(); };
 }
 function closeModal(){ $('modal').classList.remove('open'); }
 let toT;
-function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toT); toT=setTimeout(()=>t.classList.remove('show'),2200); }
+function toast(m){ const el=$('toast'); el.textContent=m; el.classList.add('show'); clearTimeout(toT); toT=setTimeout(()=>el.classList.remove('show'),2200); }
 
 /* ===== Helfer ===== */
 function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function fmtDate(d){ if(!d)return''; const x=new Date(d); return isNaN(x)?d:x.toLocaleDateString('de-DE'); }
 
 /* ===== Druckbericht ===== */
 function printReport(){
-  const rounds=[0,1,2].filter(hasData);
-  const focus=S._focus??rounds[rounds.length-1];
+  const L = S.bericht.lang || LANG;
+  const sec = S.bericht.sections;
+  const rounds = (S.bericht.rounds && S.bericht.rounds.length? S.bericht.rounds : [0,1,2].filter(hasData)).filter(hasData);
+  if(!rounds.length){ toast(t('toast_norounds')); return; }
+  const focus = rounds[rounds.length-1];
   const radar=$('radar');
-  const radarImg = radar && radar.width>10 ? radar.toDataURL('image/png') : '';
+  const radarImg = (sec.radar && radar && radar.width>10) ? radar.toDataURL('image/png') : '';
   const c=S.child;
+  const T=(k)=>t(k,L); const X=(de)=>tx(de,L);
+
   let p=`<div class="hd"><div class="dots"><i style="background:${PENHEX[0]}"></i><i style="background:${PENHEX[1]}"></i><i style="background:${PENHEX[2]}"></i></div>
-    <div><h1>Ravensburger Bogen zur Entwicklungsbeobachtung</h1><div class="meta">${form().label} · erstellt ${new Date().toLocaleDateString('de-DE')}</div></div></div>`;
+    <div><h1>${T('rep_title')}</h1><div class="meta">${form().label} · ${T('rep_created')} ${new Date().toLocaleDateString(locale(L))}</div></div></div>`;
 
-  p+=`<table class="kv"><tr><td>Name</td><th>${esc(c.name)||'—'}</th><td>geboren</td><th>${fmtDate(c.geb)||'—'}</th></tr>
-    <tr><td>Erstsprache</td><th>${esc(c.erstsprache)||'—'}</th><td>im Kindergarten seit</td><th>${fmtDate(c.kigaSeit)||'—'}</th></tr></table>`;
+  if(L!=='de') p+=`<div class="inoffbox">ⓘ ${T('inoffiziell')}</div>`;
 
-  p+=`<table class="kv"><tr><th>Beobachtung</th><th>Zeitraum / Datum</th><th>Alter (J;M)</th><th>Beobachter/in</th></tr>`;
-  rounds.forEach(r=>p+=`<tr><td><span class="pdot" style="background:${PENHEX[r]}"></span>${r+1}.</td><td>${fmtDate(S.rounds[r].date)||'—'}</td><td>${ageAt(c.geb,S.rounds[r].date)||'—'}</td><td>${esc(S.rounds[r].beobachter)||'—'}</td></tr>`);
-  p+=`</table>`;
+  if(sec.stamm){
+    p+=`<table class="kv"><tr><td>${T('f_name')}</td><th>${esc(c.name)||'—'}</th><td>${T('f_geb')}</td><th>${fmtDate(c.geb,L)||'—'}</th></tr>
+      <tr><td>${T('f_erst')}</td><th>${esc(c.erstsprache)||'—'}</th><td>${T('f_kiga')}</td><th>${fmtDate(c.kigaSeit,L)||'—'}</th></tr></table>`;
+    p+=`<table class="kv"><tr><th>${T('beobachtung')}</th><th>${T('col_zeitraum')}</th><th>${T('col_alter')}</th><th>${T('col_beob')}</th></tr>`;
+    rounds.forEach(r=>p+=`<tr><td><span class="pdot" style="background:${PENHEX[r]}"></span>${r+1}.</td><td>${fmtDate(S.rounds[r].date,L)||'—'}</td><td>${ageAt(c.geb,S.rounds[r].date)||'—'}</td><td>${esc(S.rounds[r].beobachter)||'—'}</td></tr>`);
+    p+=`</table>`;
+  }
 
-  p+=`<div class="disc"><b>Hinweis:</b> Der Ravensburger Bogen beschreibt Entwicklung qualitativ. Diese Auswertung ist eine visuelle Zusammenfassung als Gesprächsgrundlage – kein Testergebnis und keine Diagnose.</div>`;
+  p+=`<div class="disc"><b>${T('rep_hinweis_t')}</b> ${T('rep_hinweis')}</div>`;
 
-  // Profil
-  p+=`<h2>Bereichsprofil</h2><table class="prof"><tr><th>Bereich</th>${rounds.map(r=>`<th>${r+1}. Beob.</th>`).join('')}<th>Verlauf</th></tr>`;
-  AREA_ORDER.forEach(aid=>{
-    p+=`<tr><td>${AREA_META[aid].emoji} ${SHORT[aid]}</td>`;
-    rounds.forEach(r=>{ const m=areaMean(aid,r); p+=`<td>${m==null?'—':m.toFixed(1)}</td>`; });
-    p+=`<td class="bars">`;
-    rounds.forEach(r=>{ const m=areaMean(aid,r); if(m!=null) p+=`<span class="bv" style="background:${PENHEX[r]};width:${(m-1)/3*90+6}px"></span>`; });
-    p+=`</td></tr>`;
-  });
-  p+=`</table>`;
+  if(sec.profil){
+    p+=`<h2>${T('profile_h')}</h2><table class="prof"><tr><th>${T('rep_bereich')}</th>${rounds.map(r=>`<th>${r+1}. ${T('beob_short')}</th>`).join('')}<th>${T('rep_verlauf')}</th></tr>`;
+    AREA_ORDER.forEach(aid=>{
+      p+=`<tr><td>${AREA_META[aid].emoji} ${areaShort(aid,L)}</td>`;
+      rounds.forEach(r=>{ const m=areaMean(aid,r); p+=`<td>${m==null?'—':m.toFixed(1)}</td>`; });
+      p+=`<td class="bars">`;
+      rounds.forEach(r=>{ const m=areaMean(aid,r); if(m!=null) p+=`<span class="bv" style="background:${PENHEX[r]};width:${(m-1)/3*90+6}px"></span>`; });
+      p+=`</td></tr>`;
+    });
+    p+=`</table>`;
+  }
 
-  if(radarImg) p+=`<h2>Netzdiagramm</h2><img class="radar" src="${radarImg}">`;
+  if(radarImg){ p+=`<h2>${T('radar_h')}</h2><img class="radar" src="${radarImg}">`; }
 
-  // Stärken / Schwerpunkte
-  const collect=(test)=>{ let a=''; AREA_ORDER.forEach(aid=>items(aid).forEach(it=>{ const v=S.ans[aid][it.idx][focus]; if(test(v)) a+=`<li>${it.text} <span class="src">${SHORT[aid]}</span></li>`; })); return a||'<li class="non">– keine –</li>'; };
-  p+=`<div class="two"><div><h2>Stärken</h2><ul class="lst str">${collect(v=>v===4)}</ul></div>
-      <div><h2>Beobachtungsschwerpunkte</h2><ul class="lst foc">${collect(v=>v!=null&&v<=2)}</ul></div></div>
-      <div class="srcnote">Grundlage: ${focus+1}. Beobachtung</div>`;
+  if(sec.staerken || sec.schwer){
+    const collect=(test)=>{ let a=''; AREA_ORDER.forEach(aid=>items(aid).forEach(it=>{ const v=S.ans[aid][it.idx][focus]; if(test(v)) a+=`<li>${X(it.text)} <span class="src">${areaShort(aid,L)}</span></li>`; })); return a||`<li class="non">${T('none')}</li>`; };
+    p+=`<div class="two">`;
+    if(sec.staerken) p+=`<div><h2>${T('staerken_title')}</h2><ul class="lst str">${collect(v=>v===4)}</ul></div>`;
+    if(sec.schwer)   p+=`<div><h2>${T('schwer_title')}</h2><ul class="lst foc">${collect(v=>v!=null&&v<=2)}</ul></div>`;
+    p+=`</div><div class="srcnote">${T('grundlage')}: ${focus+1}. ${T('beobachtung')}</div>`;
+  }
 
-  // Freitexte
-  let ft='';
-  AREA_ORDER.forEach(aid=>{
-    const A=form().areas[aid]; const fields=[...STD_TEXTS,...((A.extras)||[])];
-    let block='';
-    fields.forEach(f=>{ const val=S.texts[aid+'.'+f.id]; if(val) block+=`<div class="fx"><div class="fxl">${f.label}</div><div>${esc(val).replace(/\n/g,'<br>')}</div></div>`; });
-    if(block) ft+=`<h3>${AREA_META[aid].num} · ${AREA_META[aid].title}</h3>${block}`;
-  });
-  (form().abschluss||[]).forEach(f=>{ const val=S.texts['_abschluss.'+f.id]; if(val) ft+=`<div class="fx"><div class="fxl">${f.label}</div><div>${esc(val).replace(/\n/g,'<br>')}</div></div>`; });
-  if(ft) p+=`<h2>Notizen &amp; Beobachtungsbeispiele</h2>${ft}`;
+  if(sec.texte){
+    let ft='';
+    AREA_ORDER.forEach(aid=>{
+      const A=form().areas[aid]; const fields=[...STD_TEXTS,...((A.extras)||[])];
+      let block='';
+      fields.forEach(f=>{ const val=S.texts[aid+'.'+f.id]; const lbl=f.label?X(f.label):T('text_'+f.id); if(val) block+=`<div class="fx"><div class="fxl">${lbl}</div><div>${esc(val).replace(/\n/g,'<br>')}</div></div>`; });
+      if(block) ft+=`<h3>${AREA_META[aid].num} · ${areaName(aid,L)}</h3>${block}`;
+    });
+    if(ft) p+=`<h2>${T('rep_texte')}</h2>${ft}`;
+  }
 
-  p+=`<div class="foot">Ravensburger Bogen zur Entwicklungsbeobachtung · © 2007 Fachberatungsstellen für Kindertageseinrichtungen im Landkreis Ravensburg · Digital erfasst</div>`;
+  if(sec.abschluss){
+    let ab='';
+    (form().abschluss||[]).forEach(f=>{ const val=S.texts['_abschluss.'+f.id]; if(val) ab+=`<div class="fx"><div class="fxl">${X(f.label)}</div><div>${esc(val).replace(/\n/g,'<br>')}</div></div>`; });
+    if(ab) p+=`<h2>${T('nav_abschluss')}</h2>${ab}`;
+  }
+
+  p+=`<div class="foot">${T('rep_title')} · © 2007 Fachberatungsstellen für Kindertageseinrichtungen im Landkreis Ravensburg · ${T('rep_digital')}</div>`;
 
   const css=`*{box-sizing:border-box}body{font:13px/1.5 'Inter',Arial,sans-serif;color:#2B3043;margin:0;padding:30px 34px;background:#fff}
     .hd{display:flex;gap:12px;align-items:center;border-bottom:2px solid #2B3043;padding-bottom:10px;margin-bottom:14px}
@@ -1057,8 +1616,9 @@ function printReport(){
     h3{font:600 12px 'Fraunces',Georgia,serif;margin:12px 0 4px;color:#2B3043}
     table{border-collapse:collapse;width:100%;margin-bottom:8px}
     .kv td,.kv th{border:1px solid #E5E0D4;padding:4px 8px;font-size:12px;text-align:left}
-    .kv td{background:#F8F5EE;color:#6E6B63;width:120px}.kv th{font-weight:600}
+    .kv td{background:#F8F5EE;color:#6E6B63;width:130px}.kv th{font-weight:600}
     .pdot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+    .inoffbox{background:#FBF6EE;border:1px solid #E7D9C2;border-radius:6px;padding:6px 10px;font-size:11px;color:#9A7B4F;margin:0 0 10px}
     .disc{background:#F8F5EE;border-left:3px solid #C77B30;padding:7px 10px;font-size:11px;color:#6E6B63;margin:10px 0}
     .prof td,.prof th{border-bottom:1px solid #EEEAE0;padding:5px 8px;font-size:12px;text-align:left}
     .prof th{font-size:11px;color:#6E6B63;border-bottom:1px solid #E5E0D4}
@@ -1068,49 +1628,31 @@ function printReport(){
     .lst{list-style:none;padding:0;margin:0}.lst li{font-size:11.5px;padding:3px 0 3px 14px;position:relative;border-bottom:1px solid #F0ECE2}
     .lst.str li::before{content:'+';position:absolute;left:0;color:#33786A;font-weight:700}
     .lst.foc li::before{content:'•';position:absolute;left:0;color:#B5664B;font-weight:700}
-    .lst .src{color:#9A968C;font-size:10px} .lst .non{color:#9A968C}.lst .non::before{content:''!important}
+    .lst .src{color:#9A968C;font-size:10px}.lst .non{color:#9A968C}.lst .non::before{content:''!important}
     .srcnote{font-size:10px;color:#9A968C;margin-top:4px}
     .fx{margin:4px 0 8px}.fxl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9A968C;font-weight:600}
     .foot{margin-top:24px;border-top:1px solid #E5E0D4;padding-top:8px;font-size:10px;color:#9A968C;text-align:center}
     @media print{body{padding:0}h2{page-break-after:avoid}.fx,.lst li{page-break-inside:avoid}}`;
 
   const w=window.open('','_blank');
-  if(!w){ toast('Bitte Pop-ups erlauben, um den Bericht zu öffnen.'); return; }
-  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Bericht ${esc(c.name)}</title>
+  if(!w){ toast(t('toast_popup')); return; }
+  w.document.write(`<!DOCTYPE html><html lang="${L}" dir="ltr"><head><meta charset="UTF-8"><title>${T('rep_title')} ${esc(c.name)}</title>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>${css}</style></head><body>${p}</body></html>`);
   w.document.close();
   setTimeout(()=>w.print(),500);
 }
 
-/* Abschluss-Notizen */
-function renderAbschluss(){
-  const fields=form().abschluss||[];
-  let h=`<div class="wrap">
-    <div class="eyebrow">Abschluss</div>
-    <h2 class="h-lg">Abschluss &amp; Notizen</h2>
-    <p class="lead">Allgemeine Beobachtungen zum Abschluss der Beobachtungsphase – z. B. zur Vorbereitung eines Elterngesprächs.</p>`;
-  fields.forEach(f=>{
-    const key='_abschluss.'+f.id, val=S.texts[key]||'';
-    h+=`<div class="card">
-      <h3 style="font-size:.95rem">${f.label}${val?' <span class="filledtag">ausgefüllt</span>':''}</h3>
-      <textarea style="width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:.6rem .7rem;font-size:.88rem;line-height:1.55;resize:vertical;min-height:96px;font-family:inherit;color:var(--ink)" oninput="S.texts['${key}']=this.value" placeholder="${esc(f.placeholder||'')}">${esc(val)}</textarea>
-    </div>`;
-  });
-  h+=`<div class="anav">
-    <button class="btn ghost" onclick="go('${AREA_ORDER[AREA_ORDER.length-1]}')">← ${AREA_META[AREA_ORDER[AREA_ORDER.length-1]].title}</button>
-    <button class="btn pri" onclick="go('aus')">Zur Auswertung →</button>
-  </div></div>`;
-  $('main').innerHTML=h;
-}
-
-/* Kopfhöhe dynamisch messen, damit die mitlaufende Spaltenüberschrift exakt darunter sitzt */
-function setHH(){
-  const hd=document.querySelector('header');
-  if(hd) document.documentElement.style.setProperty('--hh', hd.offsetHeight+'px');
-}
+/* Kopfhöhe dynamisch messen */
+function setHH(){ const hd=document.querySelector('header'); if(hd) document.documentElement.style.setProperty('--hh', hd.offsetHeight+'px'); }
 window.addEventListener('resize', setHH);
 window.addEventListener('orientationchange', ()=>setTimeout(setHH,200));
+
+/* Sprachauswahl aufbauen */
+(function buildLangSel(){
+  const sel=$('langsel');
+  if(sel) sel.innerHTML=LANGS.map(l=>`<option value="${l}">${LANGMETA[l].flag} ${LANGMETA[l].label}</option>`).join('');
+})();
 
 render();
 setHH();
