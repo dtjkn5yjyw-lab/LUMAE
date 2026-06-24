@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entwicklungsschnecke · Beobachten & Dokumentieren</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F1EA; --surface:#FCFBF7; --surface2:#F8F5EE;
+  --ink:#2B3043; --muted:#6E6B63; --faint:#9A968C; --line:#E5E0D4; --line2:#EEEAE0;
+  --pen1:#2F7E86; --pen2:#C77B30; --pen3:#A8456B;
+  --good:#33786A;
+  --r:12px; --shadow:0 1px 2px rgba(43,48,67,.04),0 6px 20px rgba(43,48,67,.06);
+  --hh:60px;
+}
+html{scroll-padding-top:calc(var(--hh) + 58px)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.ff{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+a{color:var(--pen1)}
+
+/* ── Header ── */
+header{position:sticky;top:0;z-index:100;background:var(--ink);color:#F3EFE6}
+.hwrap{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:1rem;padding:.7rem 1.2rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:.6rem;min-width:0}
+.snailmark{width:30px;height:30px;flex-shrink:0}
+.brand h1{font-size:1.02rem;line-height:1.1;font-weight:500;color:#F8F5EE}
+.brand .sub{font-size:.66rem;letter-spacing:.04em;color:#A9A59A;margin-top:1px}
+.hspace{flex:1}
+.prog{min-width:120px;max-width:210px;flex:1}
+.prog .pl{font-size:.62rem;color:#B4B0A4;margin-bottom:3px;display:flex;justify-content:space-between;gap:.5rem}
+.pbar{height:4px;background:rgba(255,255,255,.14);border-radius:99px;overflow:hidden}
+.pfill{height:100%;width:0;background:linear-gradient(90deg,var(--pen1),var(--pen3));transition:width .4s}
+.hbtns{display:flex;gap:.35rem;flex-wrap:wrap}
+.hb{display:inline-flex;align-items:center;gap:.32rem;padding:.36rem .6rem;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#EFEBE1;font-size:.74rem;font-weight:500;transition:.15s;white-space:nowrap}
+.hb:hover{background:rgba(255,255,255,.1)}
+.hb.pri{background:rgba(47,126,134,.85);border-color:transparent}
+.hb.pri:hover{background:#2f7e86}
+.hb svg{width:14px;height:14px}
+
+/* ── Layout ── */
+.app{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:248px 1fr;gap:0;min-height:calc(100vh - var(--hh))}
+nav{position:sticky;top:var(--hh);align-self:start;height:calc(100vh - var(--hh));overflow-y:auto;padding:1rem .7rem 2rem;border-right:1px solid var(--line)}
+.nsec{font-size:.62rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:.5rem .6rem .3rem;font-weight:600}
+.nitem{display:flex;align-items:center;gap:.55rem;width:100%;text-align:left;background:transparent;border:0;border-radius:9px;padding:.5rem .6rem;font-size:.82rem;color:var(--ink);transition:.13s;position:relative}
+.nitem:hover{background:var(--surface2)}
+.nitem.on{background:var(--surface);box-shadow:var(--shadow);font-weight:600}
+.nitem.on::before{content:"";position:absolute;left:-.7rem;top:50%;transform:translateY(-50%);width:3px;height:22px;border-radius:99px;background:var(--accent,var(--pen1))}
+.nitem.dis{opacity:.42;pointer-events:none}
+.nico{font-size:1rem;width:1.2rem;text-align:center;flex-shrink:0}
+.ncheck{margin-left:auto;display:flex;gap:3px;align-items:center}
+.npc{font-size:.6rem;color:var(--faint);font-weight:700}
+main{padding:1.6rem 1.8rem 4rem;min-width:0}
+
+/* ── Generic ── */
+.wrap{max-width:780px}
+.eyebrow{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.h-lg{font-size:1.7rem;margin:.2rem 0 .3rem}
+.lead{color:var(--muted);font-size:.92rem;margin-bottom:1.4rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1.1rem 1.2rem;box-shadow:var(--shadow);margin-bottom:1rem}
+.card > h3{font-size:1.05rem;margin-bottom:.2rem}
+.card .hint{font-size:.78rem;color:var(--muted);margin-bottom:.9rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem}
+.fld{display:flex;flex-direction:column;gap:.28rem}
+.fld.full{grid-column:1/-1}
+.fld label{font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.fld input,.fld select,.fld textarea{width:100%;padding:.5rem .65rem;border:1px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--ink);font-size:.88rem;transition:.13s}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--pen1);background:#fff;box-shadow:0 0 0 3px rgba(47,126,134,.12)}
+.fld input[readonly]{background:#EFEBE1;color:var(--muted)}
+.fld textarea{resize:vertical;min-height:62px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.1rem;border-radius:10px;border:1px solid transparent;font-size:.88rem;font-weight:600;transition:.15s}
+.btn.pri{background:var(--ink);color:#F6F2E9}
+.btn.pri:hover{background:#363c52}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--muted)}
+.btn.sm{padding:.4rem .7rem;font-size:.78rem;border-radius:8px}
+.btn:disabled{opacity:.4;pointer-events:none}
+.row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+
+/* ── Age choice ── */
+.ages{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:.4rem}
+.agec{border:1.5px solid var(--line);border-radius:var(--r);padding:1rem;background:var(--surface2);text-align:left;transition:.16s}
+.agec:hover{border-color:var(--pen1)}
+.agec.sel{border-color:var(--pen1);background:#fff;box-shadow:0 0 0 3px rgba(47,126,134,.13)}
+.agec .ae{font-size:1.5rem}
+.agec .at{font-weight:700;margin-top:.2rem}
+.agec .as{font-size:.74rem;color:var(--muted)}
+
+/* ── Beobachtungszeilen (Setup) ── */
+.rndrow{display:grid;grid-template-columns:140px 1.3fr 1.3fr 92px;gap:.7rem 1rem;align-items:end;padding:.7rem 0;border-top:1px solid var(--line2)}
+.rndrow:first-of-type{border-top:0}
+.rndrow .rlabel{display:flex;align-items:center;gap:.5rem;font-size:.84rem;font-weight:700;align-self:center}
+.rndrow .rlabel .rdot{width:13px;height:13px;border-radius:50%;flex-shrink:0}
+.rndrow .fld{min-width:0}
+@media(max-width:680px){
+  .rndrow{grid-template-columns:1fr 1fr;gap:.6rem .8rem}
+  .rndrow .rlabel{grid-column:1/-1}
+}
+
+/* ── Round selector ── */
+.rounds{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.2rem}
+.rtab{display:flex;align-items:center;gap:.45rem;padding:.45rem .75rem;border-radius:99px;border:1.5px solid var(--line);background:var(--surface);font-size:.8rem;font-weight:600;color:var(--muted);transition:.14s}
+.rtab .rdot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:2px solid currentColor}
+.rtab.on{color:#fff}
+.rtab.on.r0{background:var(--pen1);border-color:var(--pen1)}
+.rtab.on.r1{background:var(--pen2);border-color:var(--pen2)}
+.rtab.on.r2{background:var(--pen3);border-color:var(--pen3)}
+.rtab.on .rdot{border-color:rgba(255,255,255,.7)}
+.rtab:not(.on).r0 .rdot{color:var(--pen1)}
+.rtab:not(.on).r1 .rdot{color:var(--pen2)}
+.rtab:not(.on).r2 .rdot{color:var(--pen3)}
+.rmeta{font-size:.74rem;color:var(--muted);margin:.5rem 0 0}
+.rmeta b{color:var(--ink)}
+
+/* ── Area capture ── */
+.ahead{display:flex;align-items:flex-start;gap:.8rem;margin-bottom:.1rem}
+.ahead .ae{font-size:1.7rem;line-height:1}
+.ahead .anum{font-size:.7rem;font-weight:700;letter-spacing:.1em;color:var(--accent,var(--pen1))}
+.ahead h2{font-size:1.35rem;line-height:1.1}
+.qline{font-style:italic;color:var(--muted);font-size:.9rem;margin:.7rem 0 0}
+
+.kbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-top:1rem;overflow:hidden}
+.kbox-head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.55rem .8rem;border-bottom:1px solid var(--line2);background:var(--surface2)}
+.kbox-head .lbl{font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:700}
+.krow{display:flex;align-items:center;gap:.7rem;padding:.1rem .8rem;border-bottom:1px solid var(--line2);transition:background .1s}
+.krow:last-child{border-bottom:0}
+.krow:hover{background:var(--surface2)}
+.kcheck{flex:0 0 auto;width:100%;display:flex;align-items:center;gap:.7rem;background:transparent;border:0;text-align:left;padding:.65rem 0;color:var(--ink)}
+.kdot{width:22px;height:22px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;display:flex;align-items:center;justify-content:center;transition:.13s;position:relative}
+.kdot.done{border-color:transparent}
+.kdot.done::after{content:"✓";color:#fff;font-size:.8rem;font-weight:800}
+.ktxt{font-size:.88rem;line-height:1.4}
+.krow.is-done .ktxt{color:var(--ink)}
+.kearlier{font-size:.6rem;font-weight:700;color:var(--faint);flex:0 0 auto}
+.kedit{flex:0 0 auto;display:flex;gap:.3rem}
+.kedit button{border:0;background:transparent;color:var(--faint);font-size:.95rem;padding:.2rem .35rem;border-radius:6px}
+.kedit button:hover{background:var(--line2);color:var(--ink)}
+.kedit-input{flex:1;border:1px solid var(--line);border-radius:8px;background:#fff;padding:.45rem .6rem;font-size:.86rem}
+.kadd{display:flex;gap:.5rem;padding:.6rem .8rem;background:var(--surface2)}
+.kadd input{flex:1;border:1px solid var(--line);border-radius:8px;background:#fff;padding:.5rem .6rem;font-size:.86rem}
+
+.texts{margin-top:1rem}
+.tcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:.7rem;overflow:hidden}
+.tcard summary{list-style:none;cursor:pointer;padding:.7rem .9rem;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:.5rem;color:var(--ink)}
+.tcard summary::-webkit-details-marker{display:none}
+.tcard summary .chev{margin-left:auto;color:var(--faint);transition:.2s;font-size:.7rem}
+.tcard[open] summary .chev{transform:rotate(90deg)}
+.tcard .tbody{padding:0 .9rem .9rem}
+.tcard textarea{width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:.55rem .65rem;font-size:.86rem;line-height:1.5;resize:vertical;min-height:70px}
+.tcard textarea:focus{outline:none;border-color:var(--pen1);background:#fff}
+.filledtag{font-size:.6rem;font-weight:700;color:var(--good);background:rgba(51,120,106,.12);padding:.1rem .4rem;border-radius:99px}
+
+.anav{display:flex;justify-content:space-between;gap:.8rem;margin-top:1.4rem}
+
+/* ── Auswertung / Schnecke ── */
+.note{background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--pen2);border-radius:9px;padding:.7rem .9rem;font-size:.8rem;color:var(--muted);line-height:1.55;margin-bottom:1.2rem}
+.legend{display:flex;gap:.9rem;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin:.2rem 0 1rem;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:.35rem}
+.legend i{width:11px;height:11px;border-radius:50%}
+.snailwrap{display:block;width:100%;max-width:600px;margin:.2rem auto 0}
+.snailwrap svg{width:100%;height:auto;display:block}
+.scell{cursor:pointer;transition:fill .12s,opacity .12s}
+.scell:hover{opacity:.78}
+.snailtip{font-size:.74rem;color:var(--faint);text-align:center;margin-top:.4rem}
+
+.profile .prow{display:grid;grid-template-columns:150px 1fr 44px;gap:.7rem;align-items:center;margin-bottom:.5rem}
+.profile .pname{font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:.4rem}
+.ptrack{position:relative;height:14px;background:var(--surface2);border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.pbarv{position:absolute;top:0;bottom:0;left:0;border-radius:7px;transition:width .5s}
+.ppct{font-size:.74rem;font-weight:700;color:var(--muted);text-align:right}
+
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.chips{display:flex;flex-direction:column;gap:.45rem}
+.chip{display:flex;gap:.5rem;align-items:flex-start;font-size:.82rem;line-height:1.4;padding:.5rem .65rem;border-radius:9px;border:1px solid var(--line2)}
+.chip .ci{font-size:.62rem;font-weight:700;color:#fff;border-radius:5px;padding:.05rem .35rem;flex-shrink:0;margin-top:1px}
+.chip.str{background:rgba(51,120,106,.07)} .chip.str .ci{background:var(--good)}
+.chip.nxt{background:rgba(199,123,48,.06)} .chip.nxt .ci{background:var(--pen2)}
+.chip .ca{font-size:.66rem;color:var(--faint);display:block;margin-top:1px}
+.emptyc{font-size:.82rem;color:var(--faint);padding:.5rem}
+
+.toast{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%) translateY(140%);background:var(--ink);color:#F6F2E9;padding:.7rem 1.1rem;border-radius:99px;font-size:.84rem;font-weight:500;box-shadow:0 8px 28px rgba(0,0,0,.25);z-index:400;transition:transform .35s;display:flex;gap:.5rem;align-items:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+.modal-bg{position:fixed;inset:0;background:rgba(30,32,42,.5);backdrop-filter:blur(2px);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:1.3rem;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal h3{font-size:1.1rem;margin-bottom:.4rem}
+.modal p{font-size:.86rem;color:var(--muted);margin-bottom:1.1rem;line-height:1.5}
+.modal .mrow{display:flex;gap:.6rem;justify-content:flex-end}
+
+.checks{display:flex;flex-direction:column;gap:.55rem;margin-top:.3rem}
+.chk{display:flex;align-items:center;gap:.6rem;font-size:.9rem;cursor:pointer;line-height:1.35}
+.chk input{width:18px;height:18px;accent-color:var(--pen1);flex:0 0 auto;cursor:pointer}
+
+.mobnav{display:none}
+@media(max-width:860px){
+  .app{grid-template-columns:1fr}
+  nav{display:none}
+  main{padding:1.1rem 1rem 5rem}
+  .cols2{grid-template-columns:1fr}
+  .profile .prow{grid-template-columns:110px 1fr 40px}
+  .mobnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);z-index:90;padding:.3rem;gap:.2rem;overflow-x:auto}
+  .mobnav button{flex:0 0 auto;background:transparent;border:0;border-radius:8px;padding:.4rem .55rem;font-size:1.1rem;opacity:.5}
+  .mobnav button.on{opacity:1;background:var(--surface2)}
+}
+@media print{header,nav,.mobnav,.anav,.rounds,.hbtns{display:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div class="brand">
+      <svg class="snailmark" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M50 86 H30 a8 8 0 0 1 0-16 h6" fill="none" stroke="#9bd1c4" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="58" cy="50" r="34" fill="none" stroke="#9bd1c4" stroke-width="7"/>
+        <path d="M58 50 m0 0 a18 18 0 1 0 18 0" fill="none" stroke="#f0c98a" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="58" cy="50" r="6" fill="#e89db8"/>
+        <path d="M26 72 l-6 -10 M34 70 l-2 -11" stroke="#9bd1c4" stroke-width="6" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h1>Entwicklungs&shy;schnecke</h1>
+        <div class="sub" id="brand-sub">Beobachten & Dokumentieren · digital</div>
+      </div>
+    </div>
+    <div class="hspace"></div>
+    <div class="prog" id="prog" style="display:none">
+      <div class="pl"><span>Schnecke <span id="prog-round"></span></span><span id="prog-pct">0 %</span></div>
+      <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    </div>
+    <div class="hbtns">
+      <button class="hb pri" onclick="saveFile()" title="Als Datei speichern">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        <span class="lbl">Speichern</span>
+      </button>
+      <button class="hb" onclick="document.getElementById('openf').click()" title="Datei öffnen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span class="lbl">Öffnen</span>
+      </button>
+      <button class="hb" onclick="confirmNew()" title="Neue Schnecke">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="lbl">Neu</span>
+      </button>
+      <input type="file" id="openf" accept=".esb,.json" style="display:none" onchange="openFile(event)">
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+<div class="mobnav" id="mobnav"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modal-t"></h3><p id="modal-p"></p>
+    <div class="mrow">
+      <button class="btn ghost" id="modal-cancel" onclick="closeModal()">Abbrechen</button>
+      <button class="btn pri" id="modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   Entwicklungsschnecke – Beobachten & Dokumentieren (digital)
+   Im Geiste des Verfahrens von Kornelia Schlaaf-Kirschner:
+   positiver Blick aufs Kind, „Was kann das Kind schon?".
+   ------------------------------------------------------------
+   Hinweis: Die hier hinterlegten Entwicklungsschritte sind ein
+   editierbarer, allgemeiner Startsatz (gängige Meilensteine) –
+   nicht der originale Kriterienkatalog. Eigene Kriterien können
+   jederzeit ergänzt, geändert oder gelöscht werden.
+   ============================================================ */
+
+const PENS   = ['var(--pen1)','var(--pen2)','var(--pen3)'];
+const PENHEX = ['#2F7E86','#C77B30','#A8456B'];
+const $ = id => document.getElementById(id);
+
+/* ===== Bögen / Bildungsbereiche ===== */
+const FORMS = {
+  '0-3': {
+    label:'0–3 Jahre', sub:'Krippe · Tagespflege · U3',
+    order:['wahrnehmung','sprechen','bewegung','koerper','sozial','denken'],
+    areas:{
+      wahrnehmung:{ num:'I',  emoji:'👂', short:'Wahrnehmung', title:'Hören · Sehen · Verstehen', color:'#2F7E86' },
+      sprechen:   { num:'II', emoji:'💬', short:'Sprechen',    title:'Sprechen',                  color:'#C77B30' },
+      bewegung:   { num:'III',emoji:'🤸', short:'Bewegung',    title:'Bewegung · Geschicklichkeit', color:'#7A9A4E' },
+      koerper:    { num:'IV', emoji:'🧍', short:'Körper',      title:'Körperkontrolle',           color:'#A8456B' },
+      sozial:     { num:'V',  emoji:'💛', short:'Gefühle',     title:'Emotionalität · soziales Miteinander', color:'#B5664B' },
+      denken:     { num:'VI', emoji:'🧩', short:'Denken',      title:'Denken',                    color:'#5B6B8C' }
+    }
+  },
+  '3-6': {
+    label:'3–6 Jahre', sub:'Kindergarten · Kita',
+    order:['spielen','sprache','denken','bewegung','lebenspraxis','sozial'],
+    areas:{
+      spielen:     { num:'I',  emoji:'🎲', short:'Spielen',     title:'Spielen',                   color:'#2F7E86' },
+      sprache:     { num:'II', emoji:'💬', short:'Sprache',     title:'Sprechen · Hören · Sehen',  color:'#C77B30' },
+      denken:      { num:'III',emoji:'🧩', short:'Denken',      title:'Denken',                    color:'#5B6B8C' },
+      bewegung:    { num:'IV', emoji:'🤸', short:'Bewegung',    title:'Bewegung',                  color:'#7A9A4E' },
+      lebenspraxis:{ num:'V',  emoji:'🧺', short:'Lebenspraxis',title:'Lebenspraxis',              color:'#C8923A' },
+      sozial:      { num:'VI', emoji:'💛', short:'Sozial',      title:'Soziales Miteinander · Emotionalität', color:'#B5664B' }
+    }
+  }
+};
+
+/* ===== Editierbarer Start-Kriterienkatalog (allgemeine Meilensteine, früh → spät) ===== */
+const SEED = {
+  '0-3':{
+    wahrnehmung:[
+      'reagiert auf Geräusche und Stimmen','folgt Personen und Gegenständen mit den Augen',
+      'wendet sich einer Geräuschquelle zu','erkennt vertraute Personen wieder',
+      'reagiert auf seinen Namen','versteht einfache Wörter und Gesten (z. B. „winke-winke“)',
+      'versteht einfache Aufforderungen („Gib mir …“)','zeigt auf benannte Gegenstände oder Bilder',
+      'erkennt Gegenstände auf Bildern wieder','versteht kurze Sätze im Alltag'
+    ],
+    sprechen:[
+      'bildet erste Laute (gurrt, lallt)','plappert Silbenketten („dadada“)',
+      'ahmt Laute und Geräusche nach','spricht erste Wörter („Mama“, „Papa“)',
+      'benennt vertraute Gegenstände und Personen','spricht Zweiwortsätze („Mama da“)',
+      'nutzt einfache Mehrwortsätze','stellt erste Fragen („Was ist das?“)',
+      'teilt eigene Wünsche sprachlich mit','erzählt von einfachen Erlebnissen'
+    ],
+    bewegung:[
+      'greift gezielt nach Gegenständen','gibt Dinge von einer Hand in die andere',
+      'greift Kleines mit Daumen und Finger (Pinzettengriff)','stapelt zwei bis drei Bausteine',
+      'krabbelt sicher','zieht sich zum Stand hoch','läuft mit Festhalten',
+      'läuft frei','steigt Stufen (mit Hilfe), klettert','krickelt mit Stift, blättert Seiten'
+    ],
+    koerper:[
+      'hält den Kopf selbst','dreht sich vom Rücken auf den Bauch','sitzt frei',
+      'isst zunehmend selbstständig (Finger, Löffel)','trinkt aus dem Becher',
+      'zeigt Interesse am Sauberwerden','meldet sich, wenn die Windel voll ist',
+      'nutzt zunehmend Toilette oder Töpfchen','wäscht und trocknet die Hände mit Hilfe',
+      'hilft beim An- und Ausziehen mit'
+    ],
+    sozial:[
+      'zeigt Freude im Kontakt (lächelt, lacht)','baut Bindung zu Bezugspersonen auf',
+      'lässt sich trösten','zeigt und teilt Gefühle','zeigt Interesse an anderen Kindern',
+      'spielt neben anderen Kindern','ahmt andere nach','lässt sich kurz vertrösten',
+      'zeigt erstes Mitgefühl','gibt ab und teilt (mit Begleitung)'
+    ],
+    denken:[
+      'sucht versteckte Gegenstände','erkennt Ursache und Wirkung (drückt Knopf → Effekt)',
+      'ahmt Handlungen zeitversetzt nach','ordnet Gegenstände einander zu',
+      'sortiert nach einem Merkmal (z. B. Farbe)','versteht einfache Abläufe im Alltag',
+      'löst einfache Steck- und Stapelaufgaben','erkennt sich selbst im Spiegel',
+      'spielt erste „So-tun-als-ob“-Spiele','merkt sich, wo Dinge hingehören'
+    ]
+  },
+  '3-6':{
+    spielen:[
+      'spielt für eine Weile allein vertieft','spielt neben und mit anderen Kindern',
+      'hält sich an einfache Spielregeln','übernimmt Rollen im Rollenspiel',
+      'entwickelt eigene Spielideen','baut und konstruiert nach eigener Idee',
+      'bringt ein Spiel zu Ende','räumt nach dem Spielen mit auf',
+      'bezieht andere Kinder ins Spiel ein','spielt Regelspiele und kann verlieren'
+    ],
+    sprache:[
+      'spricht in vollständigen Sätzen','spricht deutlich und verständlich',
+      'erzählt zusammenhängend von Erlebnissen','hört bei Geschichten aufmerksam zu',
+      'versteht und befolgt mehrteilige Aufträge','benennt Farben und Formen',
+      'reimt und spielt mit Sprache','erkennt Anlaute und Silben',
+      'interessiert sich für Buchstaben und Zeichen','stellt Fragen und führt Gespräche'
+    ],
+    denken:[
+      'ordnet und sortiert nach Merkmalen','erkennt Mengen und zählt',
+      'erkennt Zusammenhänge (wenn – dann)','merkt sich Lieder, Reime, Abläufe',
+      'konzentriert sich auf eine Aufgabe','löst kleine Probleme eigenständig',
+      'erkennt Muster und setzt sie fort','unterscheidet gestern – heute – morgen',
+      'vergleicht Größen und Mengen','erklärt, wie etwas funktioniert'
+    ],
+    bewegung:[
+      'läuft, springt und klettert sicher','hält das Gleichgewicht (z. B. Einbeinstand)',
+      'fängt und wirft einen Ball','hüpft auf einem Bein',
+      'bewegt sich rhythmisch zur Musik','hält einen Stift sicher',
+      'malt erkennbare Formen und Figuren','schneidet mit der Schere entlang einer Linie',
+      'fädelt, knöpft, baut Feines','koordiniert Auge und Hand'
+    ],
+    lebenspraxis:[
+      'zieht sich weitgehend allein an und aus','isst selbstständig mit Besteck',
+      'geht selbstständig zur Toilette','wäscht sich Hände und Gesicht',
+      'räumt eigene Sachen auf','findet sich in den Räumen zurecht',
+      'hält Alltagsregeln ein','übernimmt kleine Aufgaben und Dienste',
+      'bittet bei Bedarf um Hilfe','achtet auf die eigenen Sachen'
+    ],
+    sozial:[
+      'nimmt Kontakt zu anderen Kindern auf','schließt Freundschaften',
+      'zeigt und benennt Gefühle','lässt sich trösten und tröstet andere',
+      'wartet, bis es an der Reihe ist','hält vereinbarte Regeln ein',
+      'löst Streit zunehmend mit Worten','geht Kompromisse ein',
+      'hilft anderen Kindern','vertritt die eigene Meinung'
+    ]
+  }
+};
+
+const TEXTFIELDS = [
+  { id:'beob',    label:'Beobachtungen & Beispiele' },
+  { id:'foerder', label:'Förderideen & Ziele' }
+];
+const ABSCHLUSS = [
+  { id:'eltern',    label:'Angaben der Eltern', ph:'Was berichten die Eltern über das Kind (Interessen, Verhalten zu Hause, Besonderheiten)?' },
+  { id:'allgemein', label:'Allgemeine Anmerkungen', ph:'z. B. zur Vorbereitung eines Entwicklungs- oder Elterngesprächs.' }
+];
+
+/* ===== Zustand ===== */
+function blank(){
+  return {
+    v:1,
+    child:{name:'',geb:'',einrichtung:'',erstsprache:'',kigaSeit:'',form:'3-6'},
+    rounds:[{date:'',beobachter:''},{date:'',beobachter:''},{date:'',beobachter:''}],
+    active:0,
+    crit:{ '0-3':clone(SEED['0-3']), '3-6':clone(SEED['3-6']) },
+    ans:{}, texts:{},
+    view:'setup', editArea:null, _disp:null,
+    bericht:{ sections:{stamm:true,schnecke:true,profil:true,staerken:true,naechste:true,texte:true,abschluss:true}, rounds:null }
+  };
+}
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+let S = blank();
+
+/* ===== Datenhelfer ===== */
+const form   = () => FORMS[S.child.form];
+const order  = () => form().order;
+const meta   = aid => form().areas[aid];
+const crits  = aid => S.crit[S.child.form][aid] || [];
+function ensure(aid){
+  const n = crits(aid).length;
+  if(!S.ans[aid]) S.ans[aid]=[];
+  while(S.ans[aid].length<n) S.ans[aid].push([false,false,false]);
+  if(S.ans[aid].length>n) S.ans[aid].length=n;
+}
+const total = () => order().reduce((s,a)=>s+crits(a).length,0);
+function doneCount(aid,round){ ensure(aid); return S.ans[aid].filter(v=>v[round]).length; }
+const doneAll = round => order().reduce((s,a)=>s+doneCount(a,round),0);
+const hasData = round => doneAll(round)>0;
+/* erster Erhebungs-Index, in dem Kriterium i erreicht wurde (oder -1) */
+function firstRound(aid,i){ ensure(aid); const v=S.ans[aid][i]; for(let r=0;r<3;r++) if(v[r]) return r; return -1; }
+/* in Erhebung r erreicht (kumuliert: einmal erreicht bleibt erreicht) */
+function doneUpTo(aid,i,round){ ensure(aid); const v=S.ans[aid][i]; for(let r=0;r<=round;r++) if(v[r]) return true; return false; }
+
+/* ===== Alter ===== */
+function ageAt(geb,date){
+  if(!geb||!date) return '';
+  const g=new Date(geb), d=new Date(date);
+  if(isNaN(g)||isNaN(d)||d<g) return '';
+  let y=d.getFullYear()-g.getFullYear(), m=d.getMonth()-g.getMonth();
+  if(d.getDate()<g.getDate()) m--;
+  if(m<0){y--;m+=12;}
+  return y+';'+m;
+}
+function fmtDate(d){ if(!d)return''; const x=new Date(d); return isNaN(x)?d:x.toLocaleDateString('de-DE'); }
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ============================================================
+   Rendering
+   ============================================================ */
+function render(){ renderNav(); renderMob(); renderMain(); updateProg(); syncBrand(); }
+function syncBrand(){ $('brand-sub').textContent = S.child.name ? S.child.name+' · '+form().label : 'Beobachten & Dokumentieren · digital'; }
+
+function renderNav(){
+  const ready = !!S.child.name;
+  let h = `<div class="nsec">Start</div>`;
+  h += navItem('setup','📋','Profil & Erhebungen',false,'');
+  h += `<div class="nsec">Bildungsbereiche</div>`;
+  order().forEach(aid=>{
+    const m=meta(aid);
+    const dc=doneCount(aid,S.active), tt=crits(aid).length;
+    const right = ready? `<span class="ncheck"><span class="npc">${dc}/${tt}</span></span>`:'';
+    h += navItem(aid,m.emoji,m.short,!ready,right,m.color);
+  });
+  h += navItem('abschluss','📝','Abschluss & Notizen',!ready,'');
+  h += `<div class="nsec">Auswertung</div>`;
+  h += navItem('aus','🐌','Die Schnecke',!ready,'');
+  h += navItem('bericht','📄','Bericht',!ready,'');
+  $('nav').innerHTML=h;
+}
+function navItem(v,ico,label,dis,right,accent){
+  const on=S.view===v;
+  return `<button class="nitem ${on?'on':''} ${dis?'dis':''}" style="${accent?`--accent:${accent}`:''}" onclick="go('${v}')">
+    <span class="nico">${ico}</span><span>${label}</span>${right||''}</button>`;
+}
+function renderMob(){
+  const ready=!!S.child.name;
+  const tabs=[['setup','📋'],...order().map(a=>[a,meta(a).emoji]),['abschluss','📝'],['aus','🐌'],['bericht','📄']];
+  $('mobnav').innerHTML=tabs.map(([v,ic])=>
+    `<button class="${S.view===v?'on':''}" ${(!ready&&v!=='setup')?'disabled':''} onclick="go('${v}')">${ic}</button>`).join('');
+}
+function go(v){ if(v!=='setup' && !S.child.name) return; S.view=v; S.editArea=null; render(); window.scrollTo(0,0); }
+
+function renderMain(){
+  if(S.view==='setup')     return renderSetup();
+  if(S.view==='aus')       return renderAus();
+  if(S.view==='bericht')   return renderBericht();
+  if(S.view==='abschluss') return renderAbschluss();
+  renderArea(S.view);
+}
+
+/* ---- Setup ---- */
+function renderSetup(){
+  const c=S.child;
+  let h=`<div class="wrap">
+    <div class="eyebrow">Profil</div>
+    <h2 class="h-lg">Kind & Erhebungen</h2>
+    <p class="lead">Grunddaten des Kindes und bis zu drei Erhebungszeiträume. Jede Erhebung hat – wie ein Buntstift auf dem Papierbogen – ihre eigene Farbe. So wächst die Schnecke über die Zeit sichtbar weiter.</p>
+
+    <div class="card">
+      <h3>Kind</h3>
+      <div class="hint">Diese Angaben bleiben auf deinem Gerät. Gespeichert wird als Datei.</div>
+      <div class="grid">
+        <div class="fld full"><label>Name, Vorname</label><input value="${esc(c.name)}" oninput="setChild('name',this.value)" placeholder="Mustermann, Mia"></div>
+        <div class="fld"><label>geboren am</label><input type="date" value="${c.geb}" oninput="setChild('geb',this.value)"></div>
+        <div class="fld"><label>Erstsprache</label><input value="${esc(c.erstsprache)}" oninput="setChild('erstsprache',this.value)" placeholder="Deutsch"></div>
+        <div class="fld"><label>in der Einrichtung seit</label><input type="date" value="${c.kigaSeit}" oninput="setChild('kigaSeit',this.value)"></div>
+        <div class="fld"><label>Einrichtung / Gruppe</label><input value="${esc(c.einrichtung)}" oninput="setChild('einrichtung',this.value)" placeholder="z. B. Kita Sonnenblume"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Altersbereich / Bogen</h3>
+      <div class="hint">Bestimmt die Bildungsbereiche und die Entwicklungsschritte. Beide Bögen sind frei anpassbar.</div>
+      <div class="ages">
+        ${ageCard('0-3','🍼',FORMS['0-3'].label,FORMS['0-3'].sub)}
+        ${ageCard('3-6','🪁',FORMS['3-6'].label,FORMS['3-6'].sub)}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Erhebungen</h3>
+      <div class="hint">Mindestens eine. Das Alter wird automatisch aus Geburts- und Erhebungsdatum berechnet.</div>`;
+  for(let r=0;r<3;r++){
+    const rd=S.rounds[r];
+    h+=`<div class="rndrow">
+      <div class="rlabel"><span class="rdot" style="background:${PENS[r]}"></span>${r+1}. Erhebung</div>
+      <div class="fld"><label>Zeitraum / Datum</label><input type="date" value="${rd.date}" oninput="setRound(${r},'date',this.value)"></div>
+      <div class="fld"><label>Beobachter/in</label><input value="${esc(rd.beobachter)}" oninput="setRound(${r},'beobachter',this.value)" placeholder="Name"></div>
+      <div class="fld"><label>Alter (J;M)</label><input readonly value="${ageAt(c.geb,rd.date)}"></div>
+    </div>`;
+  }
+  h+=`</div>
+    <div class="row" style="justify-content:flex-end;margin-top:.4rem">
+      <button class="btn pri" ${c.name?'':'disabled'} onclick="go('${order()[0]}')">Zur Erhebung →</button>
+    </div>
+    <p class="lead" style="font-size:.74rem;margin-top:1.4rem;color:var(--faint)">Im Geiste des Verfahrens „Dokumentieren und Beobachten mit der Entwicklungsschnecke“ von Kornelia Schlaaf-Kirschner. Diese App bildet den positiven, strukturierten Blick aufs Kind digital ab und ersetzt keine fachliche Bewertung. Die voreingestellten Entwicklungsschritte sind ein editierbarer, allgemeiner Startsatz – nicht der originale Kriterienkatalog.</p>
+  </div>`;
+  $('main').innerHTML=h;
+}
+function ageCard(id,e,tt,s){
+  return `<button class="agec ${S.child.form===id?'sel':''}" onclick="setForm('${id}')">
+    <div class="ae">${e}</div><div class="at">${tt}</div><div class="as">${s}</div></button>`;
+}
+function setChild(k,v){ S.child[k]=v; if(k==='name')syncBrand(); if(k==='geb'){ renderSetup(); } renderNav(); }
+function setRound(r,k,v){ S.rounds[r][k]=v; if(k==='date'){ const el=document.querySelectorAll('#main input[readonly]')[r]; if(el) el.value=ageAt(S.child.geb,v);} renderNav(); }
+function setForm(id){
+  if(id===S.child.form) return;
+  const answered = order().some(a=>(S.ans[a]||[]).some(v=>v.some(Boolean)));
+  const apply=()=>{ S.child.form=id; S.ans={}; renderSetup(); renderNav(); };
+  if(answered) modal('Altersbereich wechseln?','Die Bildungsbereiche und Entwicklungsschritte unterscheiden sich. Bereits gesetzte Markierungen gehen dabei verloren.',apply);
+  else apply();
+}
+
+/* ---- Bereich (Erhebung) ---- */
+function renderArea(aid){
+  const m=meta(aid); ensure(aid);
+  const list=crits(aid), edit=S.editArea===aid;
+  let h=`<div class="ahead">
+      <span class="ae">${m.emoji}</span>
+      <div><div class="anum" style="color:${m.color}">${m.num} · Bildungsbereich</div><h2>${esc(m.title)}</h2></div>
+    </div>
+    <p class="qline">Was kann das Kind in diesem Bereich schon?</p>
+
+    <div class="rounds" style="margin-top:1rem">`;
+  for(let r=0;r<3;r++){
+    h+=`<button class="rtab r${r} ${S.active===r?'on':''}" onclick="setActive(${r})"><span class="rdot"></span>${r+1}. Erhebung</button>`;
+  }
+  h+=`</div>`;
+  const rd=S.rounds[S.active];
+  h+=`<p class="rmeta">Aktive Erhebung: <b>${S.active+1}.</b>${rd.date?' · '+fmtDate(rd.date):''}${rd.beobachter?' · '+esc(rd.beobachter):''} — ein Tipp setzt die Markierung in dieser Farbe.</p>`;
+
+  h+=`<div class="kbox">
+    <div class="kbox-head">
+      <span class="lbl">Entwicklungsschritte · ${doneCount(aid,S.active)}/${list.length}</span>
+      <button class="btn ghost sm" onclick="toggleEdit('${aid}')">${edit?'✓ Fertig':'✎ Kriterien bearbeiten'}</button>
+    </div>`;
+  list.forEach((txt,i)=>{
+    if(edit){
+      h+=`<div class="krow">
+        <input class="kedit-input" value="${esc(txt)}" onchange="editCrit('${aid}',${i},this.value)">
+        <div class="kedit">
+          <button title="nach oben" onclick="moveCrit('${aid}',${i},-1)">↑</button>
+          <button title="nach unten" onclick="moveCrit('${aid}',${i},1)">↓</button>
+          <button title="löschen" onclick="delCrit('${aid}',${i})">🗑</button>
+        </div></div>`;
+    } else {
+      const fr=firstRound(aid,i), here=S.ans[aid][i][S.active];
+      const col = here? PENHEX[S.active] : (fr>=0? PENHEX[fr] : '');
+      h+=`<div class="krow ${(here||fr>=0)?'is-done':''}" id="kr-${aid}-${i}">
+        <button class="kcheck" onclick="toggle('${aid}',${i})">
+          <span class="kdot ${here?'done':''}" style="${here?`background:${col};border-color:${col}`:''}"></span>
+          <span class="ktxt">${esc(txt)}</span>
+        </button>
+        ${(!here&&fr>=0)?`<span class="kearlier" title="erreicht in ${fr+1}. Erhebung" style="color:${PENHEX[fr]}">${fr+1}.</span>`:''}
+      </div>`;
+    }
+  });
+  if(edit){
+    h+=`<div class="kadd">
+      <input id="newcrit-${aid}" placeholder="Neuen Entwicklungsschritt hinzufügen …" onkeydown="if(event.key==='Enter')addCrit('${aid}')">
+      <button class="btn pri sm" onclick="addCrit('${aid}')">＋ Hinzufügen</button>
+    </div>`;
+  }
+  h+=`</div>`;
+
+  /* Freitexte */
+  h+=`<div class="texts">`;
+  TEXTFIELDS.forEach(f=>{
+    const key=aid+'.'+f.id, val=S.texts[key]||'';
+    h+=`<details class="tcard" ${val?'open':''}>
+      <summary>${f.label}${val?` <span class="filledtag">ausgefüllt</span>`:''}<span class="chev">▶</span></summary>
+      <div class="tbody"><textarea oninput="setText('${key}',this.value,this)" placeholder="Notizen …">${esc(val)}</textarea></div>
+    </details>`;
+  });
+  h+=`</div>`;
+
+  const i=order().indexOf(aid);
+  const prev=i>0?order()[i-1]:'setup';
+  const next=i<order().length-1?order()[i+1]:'abschluss';
+  h+=`<div class="anav">
+    <button class="btn ghost" onclick="go('${prev}')">← ${prev==='setup'?'Profil':meta(prev).short}</button>
+    <button class="btn pri" onclick="go('${next}')">${next==='abschluss'?'Abschluss':meta(next).short} →</button>
+  </div>`;
+  $('main').innerHTML=h;
+}
+function toggle(aid,i){
+  ensure(aid);
+  S.ans[aid][i][S.active]=!S.ans[aid][i][S.active];
+  renderArea(S.view); renderNav(); updateProg();
+}
+function setActive(r){ S.active=r; renderArea(S.view); renderNav(); updateProg(); }
+function setText(key,val,el){
+  S.texts[key]=val;
+  const sum=el.closest('details').querySelector('summary');
+  const tag=sum.querySelector('.filledtag');
+  if(val&&!tag) sum.querySelector('.chev').insertAdjacentHTML('beforebegin',` <span class="filledtag">ausgefüllt</span>`);
+  else if(!val&&tag) tag.remove();
+}
+/* Kriterien-Bearbeitung */
+function toggleEdit(aid){ S.editArea = S.editArea===aid? null : aid; renderArea(aid); }
+function editCrit(aid,i,v){ v=v.trim(); if(v) S.crit[S.child.form][aid][i]=v; else delCrit(aid,i); }
+function addCrit(aid){
+  const inp=$('newcrit-'+aid); const v=(inp.value||'').trim(); if(!v) return;
+  S.crit[S.child.form][aid].push(v); ensure(aid); inp.value=''; renderArea(aid); renderNav();
+}
+function delCrit(aid,i){
+  S.crit[S.child.form][aid].splice(i,1);
+  if(S.ans[aid]) S.ans[aid].splice(i,1);
+  ensure(aid); renderArea(aid); renderNav(); updateProg();
+}
+function moveCrit(aid,i,d){
+  const arr=S.crit[S.child.form][aid], j=i+d;
+  if(j<0||j>=arr.length) return;
+  [arr[i],arr[j]]=[arr[j],arr[i]];
+  if(S.ans[aid]){ [S.ans[aid][i],S.ans[aid][j]]=[S.ans[aid][j],S.ans[aid][i]]; }
+  renderArea(aid);
+}
+
+/* ---- Progress ---- */
+function updateProg(){
+  if(S.view==='setup'||!S.child.name){ $('prog').style.display='none'; return; }
+  $('prog').style.display='';
+  const tt=total(), d=doneAll(S.active), pct=tt?Math.round(d/tt*100):0;
+  $('prog-pct').textContent=pct+' %';
+  $('prog-round').textContent='('+(S.active+1)+'. Erh.)';
+  $('pfill').style.width=pct+'%';
+}
+
+/* ---- Abschluss ---- */
+function renderAbschluss(){
+  let h=`<div class="wrap">
+    <div class="eyebrow">Abschluss</div>
+    <h2 class="h-lg">Abschluss & Notizen</h2>
+    <p class="lead">Allgemeine Beobachtungen zum Abschluss der Beobachtungsphase – z. B. zur Vorbereitung eines Entwicklungs- oder Elterngesprächs.</p>`;
+  ABSCHLUSS.forEach(f=>{
+    const key='_abschluss.'+f.id, val=S.texts[key]||'';
+    h+=`<div class="card">
+      <h3 style="font-size:.95rem">${f.label}${val?` <span class="filledtag">ausgefüllt</span>`:''}</h3>
+      <textarea style="width:100%;border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:.6rem .7rem;font-size:.88rem;line-height:1.55;resize:vertical;min-height:96px;font-family:inherit;color:var(--ink);margin-top:.5rem" oninput="S.texts['${key}']=this.value" placeholder="${esc(f.ph)}">${esc(val)}</textarea>
+    </div>`;
+  });
+  h+=`<div class="anav">
+    <button class="btn ghost" onclick="go('${order()[order().length-1]}')">← ${meta(order()[order().length-1]).short}</button>
+    <button class="btn pri" onclick="go('aus')">Zur Schnecke →</button>
+  </div></div>`;
+  $('main').innerHTML=h;
+}
+
+/* ============================================================
+   Auswertung – Die Schnecke
+   ============================================================ */
+function renderAus(){
+  const rounds=[0,1,2].filter(hasData);
+  if(!rounds.length){
+    $('main').innerHTML=`<div class="wrap"><div class="eyebrow">Auswertung</div><h2 class="h-lg">Die Schnecke ist noch leer</h2>
+      <p class="lead">Sobald du in den Bildungsbereichen markierst, was das Kind schon kann, malt sich die Schnecke hier automatisch aus.</p>
+      <button class="btn pri" onclick="go('${order()[0]}')">Zur Erhebung →</button></div>`;
+    return;
+  }
+  const disp = (S._disp!=null && rounds.includes(S._disp))? S._disp : rounds[rounds.length-1];
+
+  let h=`<div class="wrap"><div class="eyebrow">Auswertung</div>
+    <h2 class="h-lg">Die Schnecke${S.child.name?' · '+esc(S.child.name):''}</h2>
+    <div class="note"><b>Kein Test, keine Note.</b> Die Entwicklungsschnecke zeigt, was das Kind schon kann – von innen (früh) nach außen. Jede Erhebung hat ihre eigene Farbe, so wird Entwicklung über die Zeit sichtbar. Eine Gesprächsgrundlage fürs Team und für Elterngespräche, keine Diagnose.</div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div><h3 style="margin:0">Entwicklungsschnecke</h3><div class="hint" style="margin:.2rem 0 0">Tippe ein Feld an, um es in der aktiven Erhebung auszumalen.</div></div>
+        <div class="fld" style="min-width:150px"><label>Ausmalen in</label>
+          <select onchange="setActive(+this.value);renderAus()">${[0,1,2].map(r=>`<option value="${r}" ${r===S.active?'selected':''}>${r+1}. Erhebung</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="legend">${rounds.map(r=>`<span><i style="background:${PENHEX[r]}"></i>${r+1}. Erhebung${S.rounds[r].date?' · '+fmtDate(S.rounds[r].date):''}</span>`).join('')}</div>
+      <div class="snailwrap">${snailSVG(disp,true)}</div>
+      <div class="snailtip">🐌 Innen = früh erworben · außen = später · ausgefüllte Felder = „kann das Kind schon“.</div>
+    </div>`;
+
+  /* Bereichsprofil */
+  h+=`<div class="card profile"><h3>Bereichsprofil</h3><div class="hint">Anteil der erreichten Entwicklungsschritte je Bereich (bis ${disp+1}. Erhebung).</div>`;
+  order().forEach(aid=>{
+    const m=meta(aid), tt=crits(aid).length;
+    let d=0; for(let i=0;i<tt;i++) if(doneUpTo(aid,i,disp)) d++;
+    const pct=tt?Math.round(d/tt*100):0;
+    h+=`<div class="prow">
+      <div class="pname">${m.emoji} ${m.short}</div>
+      <div class="ptrack"><span class="pbarv" style="width:${pct}%;background:${m.color}"></span></div>
+      <div class="ppct">${pct}%</div>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  /* Stärken & nächste Schritte */
+  h+=`<div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">Stärken & nächste Schritte</h3>
+        <div class="fld" style="min-width:160px"><label>Grundlage</label>
+          <select onchange="S._disp=+this.value;renderAus()">${rounds.map(r=>`<option value="${r}" ${r===disp?'selected':''}>bis ${r+1}. Erhebung</option>`).join('')}</select></div>
+      </div>
+      <div class="cols2" style="margin-top:.8rem">${strengthsCol(disp)}${nextCol(disp)}</div>
+  </div>`;
+
+  h+=`<div class="row" style="justify-content:flex-end;margin-top:.4rem">
+      <button class="btn pri" onclick="go('bericht')">Zum Bericht →</button>
+  </div></div>`;
+  $('main').innerHTML=h;
+}
+
+function strengthsCol(disp){
+  let rows='';
+  order().forEach(aid=>{
+    crits(aid).forEach((txt,i)=>{ if(doneUpTo(aid,i,disp)) rows+=`<div class="chip str"><span class="ci">✓</span><div>${esc(txt)}<span class="ca">${meta(aid).emoji} ${meta(aid).short}</span></div></div>`; });
+  });
+  if(!rows) rows=`<div class="emptyc">– noch nichts markiert –</div>`;
+  return `<div><div class="eyebrow" style="margin-bottom:.5rem">Das kann das Kind schon</div><div class="chips">${rows}</div></div>`;
+}
+function nextCol(disp){
+  /* je Bereich der erste noch nicht erreichte Schritt = natürlicher Förderansatz */
+  let rows='';
+  order().forEach(aid=>{
+    const list=crits(aid);
+    for(let i=0;i<list.length;i++){ if(!doneUpTo(aid,i,disp)){ rows+=`<div class="chip nxt"><span class="ci">→</span><div>${esc(list[i])}<span class="ca">${meta(aid).emoji} ${meta(aid).short}</span></div></div>`; break; } }
+  });
+  if(!rows) rows=`<div class="emptyc">– alle Schritte erreicht 🎉 –</div>`;
+  return `<div><div class="eyebrow" style="margin-bottom:.5rem">Nächste Entwicklungsschritte</div><div class="chips">${rows}</div></div>`;
+}
+
+/* ---- SVG der Schnecke (radiales Schneckenhaus) ---- */
+function polar(cx,cy,r,a){ return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; }
+function annSector(cx,cy,r0,r1,a0,a1){
+  const [x0,y0]=polar(cx,cy,r1,a0), [x1,y1]=polar(cx,cy,r1,a1);
+  const [x2,y2]=polar(cx,cy,r0,a1), [x3,y3]=polar(cx,cy,r0,a0);
+  const large=(a1-a0)>Math.PI?1:0;
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r1} ${r1} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${x2.toFixed(2)} ${y2.toFixed(2)} A${r0} ${r0} 0 ${large} 0 ${x3.toFixed(2)} ${y3.toFixed(2)} Z`;
+}
+function snailSVG(disp,interactive){
+  const cx=300, cy=292, R0=46, R=196, gap=0.012;
+  const ar=order();
+  const N=ar.length;
+  const sweep=2*Math.PI/N;
+  const start=-Math.PI/2 - sweep/2;     // erste Sektormitte oben
+  let cells='', lines='', labels='';
+  /* dekorative Spirale (Schneckenhaus) */
+  let spiral='M'; for(let t=0;t<=Math.PI*4.4;t+=0.18){ const rr=R0-6 + (R-R0+14)*(t/(Math.PI*4.4)); const [px,py]=polar(cx,cy,rr,t-Math.PI/2); spiral+=`${px.toFixed(1)} ${py.toFixed(1)} `; if(spiral.endsWith('M'+ (px.toFixed(1)))){} spiral=spiral.replace(/^M(\d)/,'M $1'); }
+  /* einfacher: Archimedische Spirale als Pfad */
+  let sp='M'; let first=true;
+  for(let t=0;t<=Math.PI*4.6;t+=0.14){ const rr=R0-4 + (R-R0+16)*(t/(Math.PI*4.6)); const [px,py]=polar(cx,cy,rr,t-Math.PI/2); sp+= (first?'':'L')+px.toFixed(1)+' '+py.toFixed(1)+' '; first=false; }
+
+  ar.forEach((aid,s)=>{
+    const m=meta(aid), list=crits(aid), n=Math.max(1,list.length);
+    const a0=start+s*sweep+gap, a1=start+(s+1)*sweep-gap;
+    const step=(R-R0)/n;
+    for(let i=0;i<n;i++){
+      const r0=R0+i*step+1.5, r1=R0+(i+1)*step-0.5;
+      const done = doneUpTo(aid,i,disp);
+      const fr = done? firstRound(aid,i) : -1;
+      const fill = done? (fr>=0?PENHEX[fr]:m.color) : '#FFFFFF';
+      const op = done? '0.92' : '1';
+      const stroke = done? 'rgba(255,255,255,.6)' : '#E5E0D4';
+      const tint = done? '' : `style="fill:${hexA(m.color,.05)}"`;
+      cells+=`<path class="scell" d="${annSector(cx,cy,r0,r1,a0,a1)}" fill="${done?fill:hexA(m.color,.06)}" fill-opacity="${op}" stroke="${stroke}" stroke-width="1" ${interactive?`onclick="snailToggle('${aid}',${i})"`:''}>
+        <title>${esc(m.short)}: ${esc(list[i]||'')}${done?' ✓':''}</title></path>`;
+    }
+    /* Sektor-Trennlinie + farbiger Außenbogen */
+    const [lx,ly]=polar(cx,cy,R+2,a0);
+    /* farbiger Rim */
+    const [rx0,ry0]=polar(cx,cy,R+5,a0), [rx1,ry1]=polar(cx,cy,R+5,a1);
+    const large=(a1-a0)>Math.PI?1:0;
+    cells+=`<path d="M${rx0.toFixed(1)} ${ry0.toFixed(1)} A${R+5} ${R+5} 0 ${large} 1 ${rx1.toFixed(1)} ${ry1.toFixed(1)}" fill="none" stroke="${m.color}" stroke-width="3.5" stroke-linecap="round"/>`;
+    /* Label */
+    const amid=(a0+a1)/2;
+    const [tx,ty]=polar(cx,cy,R+26,amid);
+    const anchor = Math.cos(amid)>0.25?'start':(Math.cos(amid)<-0.25?'end':'middle');
+    labels+=`<text x="${tx.toFixed(1)}" y="${ty.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="middle" font-family="Inter,sans-serif" font-size="13" font-weight="600" fill="#4a4f5e">${m.emoji} ${esc(m.short)}</text>`;
+  });
+
+  return `<svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Entwicklungsschnecke">
+    <path d="${sp.trim()}" fill="none" stroke="#E9E4D8" stroke-width="1.4" opacity=".8"/>
+    ${cells}
+    <circle cx="${cx}" cy="${cy}" r="${R0-3}" fill="#FCFBF7" stroke="#E5E0D4" stroke-width="1.4"/>
+    <text x="${cx}" y="${cy+2}" text-anchor="middle" dominant-baseline="middle" font-size="30">🐌</text>
+    ${labels}
+  </svg>`;
+}
+function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+function snailToggle(aid,i){ ensure(aid); S.ans[aid][i][S.active]=!S.ans[aid][i][S.active]; renderAus(); renderNav(); updateProg(); }
+
+/* ============================================================
+   Bericht
+   ============================================================ */
+function renderBericht(){
+  const rounds=[0,1,2].filter(hasData);
+  if(!rounds.length){
+    $('main').innerHTML=`<div class="wrap"><div class="eyebrow">Bericht</div><h2 class="h-lg">Noch keine Daten</h2>
+      <p class="lead">Markiere zuerst in den Bildungsbereichen, was das Kind schon kann.</p><button class="btn pri" onclick="go('${order()[0]}')">Zur Erhebung →</button></div>`;
+    return;
+  }
+  if(S.bericht.rounds==null) S.bericht.rounds=rounds.slice();
+  const B=S.bericht;
+  const secList=[['stamm','Stammdaten & Erhebungen'],['schnecke','Die Schnecke (Grafik)'],['profil','Bereichsprofil'],['staerken','Stärken (kann das Kind schon)'],['naechste','Nächste Entwicklungsschritte'],['texte','Freitexte je Bereich'],['abschluss','Abschluss-Notizen']];
+
+  let h=`<div class="wrap"><div class="eyebrow">Bericht</div>
+    <h2 class="h-lg">Bericht zusammenstellen</h2>
+    <p class="lead">Wähle aus, welche Inhalte der Bericht enthält. Danach „Bericht erstellen“ für Druck oder PDF.</p>
+
+    <div class="card"><h3>Inhalte</h3><div class="checks">`;
+  secList.forEach(([k,lbl])=>{
+    h+=`<label class="chk"><input type="checkbox" ${B.sections[k]?'checked':''} onchange="S.bericht.sections['${k}']=this.checked"><span>${lbl}</span></label>`;
+  });
+  h+=`</div></div>
+
+    <div class="card"><h3>Erhebungen</h3><div class="hint">Welche Erhebungen sollen einfließen?</div><div class="checks">`;
+  rounds.forEach(r=>{
+    h+=`<label class="chk"><input type="checkbox" ${B.rounds.includes(r)?'checked':''} onchange="toggleBerichtRound(${r},this.checked)"><span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${PENHEX[r]};margin-right:.4rem"></span>${r+1}. Erhebung${S.rounds[r].date?' · '+fmtDate(S.rounds[r].date):''}</span></label>`;
+  });
+  h+=`</div></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn pri" onclick="printReport()">📄 Bericht erstellen (PDF / Druck)</button>
+    </div></div>`;
+  $('main').innerHTML=h;
+}
+function toggleBerichtRound(r,on){
+  const a=S.bericht.rounds;
+  if(on){ if(!a.includes(r)) a.push(r); } else { const k=a.indexOf(r); if(k>=0)a.splice(k,1); }
+  a.sort();
+}
+
+/* ---- Datei ---- */
+function saveFile(){
+  if(!S.child.name){ toast('Bitte zuerst einen Namen eingeben.'); return; }
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const a=document.createElement('a');
+  const safe=(S.child.name||'kind').replace(/[^\wäöüÄÖÜß -]/g,'').replace(/[ ,]+/g,'_');
+  a.href=URL.createObjectURL(blob);
+  a.download=`Entwicklungsschnecke_${safe}_${new Date().toISOString().slice(0,10)}.esb`;
+  a.click(); URL.revokeObjectURL(a.href);
+  toast('Gespeichert ✓');
+}
+function openFile(e){
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const d=JSON.parse(rd.result);
+      S=Object.assign(blank(),d);
+      if(!S.crit) S.crit={ '0-3':clone(SEED['0-3']), '3-6':clone(SEED['3-6']) };
+      if(!S.bericht) S.bericht=blank().bericht;
+      S.view='setup'; S.editArea=null; render();
+      toast('Geöffnet: '+(S.child.name||''));
+    }catch(_){ toast('Datei konnte nicht gelesen werden.'); }
+    e.target.value='';
+  };
+  rd.readAsText(f);
+}
+function confirmNew(){ modal('Neue Schnecke?','Aktuelle Eingaben werden verworfen. Vorher speichern, falls du sie behalten möchtest.',()=>{ S=blank(); render(); }); }
+
+/* ---- Modal / Toast ---- */
+function modal(tt,p,ok){ $('modal-t').textContent=tt; $('modal-p').textContent=p; $('modal').classList.add('open'); $('modal-ok').onclick=()=>{ closeModal(); ok&&ok(); }; }
+function closeModal(){ $('modal').classList.remove('open'); }
+let toT;
+function toast(m){ const el=$('toast'); el.textContent=m; el.classList.add('show'); clearTimeout(toT); toT=setTimeout(()=>el.classList.remove('show'),2200); }
+
+/* ============================================================
+   Druckbericht
+   ============================================================ */
+function printReport(){
+  const sec=S.bericht.sections;
+  const rounds=(S.bericht.rounds&&S.bericht.rounds.length?S.bericht.rounds:[0,1,2].filter(hasData)).filter(hasData);
+  if(!rounds.length){ toast('Bitte mindestens eine Erhebung auswählen.'); return; }
+  const disp=rounds[rounds.length-1];
+  const c=S.child;
+
+  let p=`<div class="hd">
+      <svg width="46" height="46" viewBox="0 0 100 100"><circle cx="56" cy="50" r="34" fill="none" stroke="#2F7E86" stroke-width="7"/><path d="M56 50 a18 18 0 1 0 18 0" fill="none" stroke="#C77B30" stroke-width="7" stroke-linecap="round"/><circle cx="56" cy="50" r="6" fill="#A8456B"/><path d="M50 86 H30 a8 8 0 0 1 0-16 h6" fill="none" stroke="#2F7E86" stroke-width="7" stroke-linecap="round"/></svg>
+      <div><h1>Entwicklungsschnecke · Beobachtung & Dokumentation</h1>
+      <div class="meta">${form().label} · erstellt ${new Date().toLocaleDateString('de-DE')}</div></div></div>`;
+
+  if(sec.stamm){
+    p+=`<table class="kv"><tr><td>Name</td><th>${esc(c.name)||'—'}</th><td>geboren</td><th>${fmtDate(c.geb)||'—'}</th></tr>
+      <tr><td>Erstsprache</td><th>${esc(c.erstsprache)||'—'}</th><td>Einrichtung seit</td><th>${fmtDate(c.kigaSeit)||'—'}</th></tr>
+      <tr><td>Einrichtung</td><th colspan="3">${esc(c.einrichtung)||'—'}</th></tr></table>`;
+    p+=`<table class="kv"><tr><th>Erhebung</th><th>Datum</th><th>Alter (J;M)</th><th>Beobachter/in</th></tr>`;
+    rounds.forEach(r=>p+=`<tr><td><span class="pdot" style="background:${PENHEX[r]}"></span>${r+1}.</td><td>${fmtDate(S.rounds[r].date)||'—'}</td><td>${ageAt(c.geb,S.rounds[r].date)||'—'}</td><td>${esc(S.rounds[r].beobachter)||'—'}</td></tr>`);
+    p+=`</table>`;
+  }
+  p+=`<div class="disc"><b>Hinweis:</b> Die Entwicklungsschnecke beschreibt Entwicklung positiv und qualitativ („Was kann das Kind schon?“). Diese Auswertung ist eine visuelle Gesprächsgrundlage – kein Testergebnis und keine Diagnose.</div>`;
+
+  if(sec.schnecke){
+    p+=`<h2>Die Schnecke</h2><div class="snail">${snailSVG(disp,false)}</div>
+      <div class="leg">${rounds.map(r=>`<span><i style="background:${PENHEX[r]}"></i>${r+1}. Erhebung</span>`).join('')}</div>`;
+  }
+  if(sec.profil){
+    p+=`<h2>Bereichsprofil</h2><table class="prof"><tr><th>Bereich</th><th>erreicht</th><th>Anteil</th></tr>`;
+    order().forEach(aid=>{
+      const m=meta(aid), tt=crits(aid).length; let d=0; for(let i=0;i<tt;i++) if(doneUpTo(aid,i,disp)) d++;
+      const pct=tt?Math.round(d/tt*100):0;
+      p+=`<tr><td>${m.emoji} ${esc(m.short)}</td><td>${d} / ${tt}</td><td class="bars"><span class="bv" style="background:${m.color};width:${pct*0.9+4}px"></span> ${pct}%</td></tr>`;
+    });
+    p+=`</table>`;
+  }
+  if(sec.staerken){
+    let li=''; order().forEach(aid=>crits(aid).forEach((txt,i)=>{ if(doneUpTo(aid,i,disp)) li+=`<li>${esc(txt)} <span class="src">${esc(meta(aid).short)}</span></li>`; }));
+    p+=`<h2>Das kann das Kind schon</h2><ul class="lst str">${li||'<li class="non">—</li>'}</ul>`;
+  }
+  if(sec.naechste){
+    let li=''; order().forEach(aid=>{ const list=crits(aid); for(let i=0;i<list.length;i++){ if(!doneUpTo(aid,i,disp)){ li+=`<li>${esc(list[i])} <span class="src">${esc(meta(aid).short)}</span></li>`; break; } } });
+    p+=`<h2>Nächste Entwicklungsschritte</h2><ul class="lst nxt">${li||'<li class="non">alle Schritte erreicht</li>'}</ul>`;
+  }
+  if(sec.texte){
+    let ft='';
+    order().forEach(aid=>{
+      let block='';
+      TEXTFIELDS.forEach(f=>{ const val=S.texts[aid+'.'+f.id]; if(val) block+=`<div class="fx"><div class="fxl">${f.label}</div><div>${esc(val).replace(/\n/g,'<br>')}</div></div>`; });
+      if(block) ft+=`<h3>${meta(aid).num} · ${esc(meta(aid).title)}</h3>${block}`;
+    });
+    if(ft) p+=`<h2>Notizen je Bereich</h2>${ft}`;
+  }
+  if(sec.abschluss){
+    let ab=''; ABSCHLUSS.forEach(f=>{ const val=S.texts['_abschluss.'+f.id]; if(val) ab+=`<div class="fx"><div class="fxl">${f.label}</div><div>${esc(val).replace(/\n/g,'<br>')}</div></div>`; });
+    if(ab) p+=`<h2>Abschluss & Notizen</h2>${ab}`;
+  }
+  p+=`<div class="foot">Entwicklungsschnecke · im Geiste des Verfahrens von Kornelia Schlaaf-Kirschner · digital erfasst</div>`;
+
+  const css=`*{box-sizing:border-box}body{font:13px/1.5 'Inter',Arial,sans-serif;color:#2B3043;margin:0;padding:30px 34px;background:#fff}
+    .hd{display:flex;gap:12px;align-items:center;border-bottom:2px solid #2B3043;padding-bottom:10px;margin-bottom:14px}
+    h1{font:600 16px 'Fraunces',Georgia,serif;margin:0}.meta{font-size:11px;color:#6E6B63}
+    h2{font:600 14px 'Fraunces',Georgia,serif;margin:18px 0 7px;border-bottom:1px solid #E5E0D4;padding-bottom:3px}
+    h3{font:600 12px 'Fraunces',Georgia,serif;margin:12px 0 4px}
+    table{border-collapse:collapse;width:100%;margin-bottom:8px}
+    .kv td,.kv th{border:1px solid #E5E0D4;padding:4px 8px;font-size:12px;text-align:left}
+    .kv td{background:#F8F5EE;color:#6E6B63;width:120px}.kv th{font-weight:600}
+    .pdot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+    .disc{background:#F8F5EE;border-left:3px solid #C77B30;padding:7px 10px;font-size:11px;color:#6E6B63;margin:10px 0}
+    .snail{max-width:430px;margin:6px auto}.snail svg{width:100%;height:auto}
+    .leg{display:flex;gap:14px;justify-content:center;font-size:11px;color:#6E6B63;margin-top:4px}.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle}
+    .prof td,.prof th{border-bottom:1px solid #EEEAE0;padding:5px 8px;font-size:12px;text-align:left}.prof th{font-size:11px;color:#6E6B63}
+    .bars .bv{display:inline-block;height:8px;border-radius:4px;margin-right:5px;vertical-align:middle}
+    .lst{list-style:none;padding:0;margin:0;column-count:2;column-gap:22px}.lst li{font-size:11.5px;padding:3px 0 3px 14px;position:relative;break-inside:avoid;border-bottom:1px solid #F0ECE2}
+    .lst.str li::before{content:'✓';position:absolute;left:0;color:#33786A;font-weight:700}
+    .lst.nxt li::before{content:'→';position:absolute;left:0;color:#C77B30;font-weight:700}
+    .lst .src{color:#9A968C;font-size:10px}.lst .non{color:#9A968C}.lst .non::before{content:''!important}
+    .fx{margin:4px 0 8px}.fxl{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9A968C;font-weight:600}
+    .foot{margin-top:24px;border-top:1px solid #E5E0D4;padding-top:8px;font-size:10px;color:#9A968C;text-align:center}
+    @media print{body{padding:0}h2{page-break-after:avoid}.fx,.lst li{page-break-inside:avoid}}`;
+
+  const w=window.open('','_blank');
+  if(!w){ toast('Bitte Pop-ups erlauben, um den Bericht zu öffnen.'); return; }
+  w.document.write(`<!DOCTYPE html><html lang="de"><head><meta charset="UTF-8"><title>Entwicklungsschnecke ${esc(c.name)}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>${css}</style></head><body>${p}</body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),600);
+}
+
+/* Kopfhöhe dynamisch */
+function setHH(){ const hd=document.querySelector('header'); if(hd) document.documentElement.style.setProperty('--hh', hd.offsetHeight+'px'); }
+window.addEventListener('resize',setHH);
+window.addEventListener('orientationchange',()=>setTimeout(setHH,200));
+
+render(); setHH(); setTimeout(setHH,300);
+</script>
+</body>
+</html>
