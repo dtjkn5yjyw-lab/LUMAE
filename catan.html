@@ -1,1296 +1,945 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Catan · Pass &amp; Play</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
-<script src="https://cdn.tailwindcss.com"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>CATAN — Pass &amp; Play</title>
 <style>
-  html,body{margin:0;background:#f4ecd8;min-height:100%}
-  #root{min-height:100vh}
-  .display{font-family:"Iowan Old Style",Georgia,"Times New Roman",serif;font-weight:700}
-  /* fallback while Babel compiles */
-  .boot{font-family:system-ui,sans-serif;color:#5a523f;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  :root{
+    --sea:#2a6f97; --panel:#f3ecda; --panel2:#e6dcc2; --ink:#2a2620;
+    --slate:#1f3242; --slate2:#33526a; --slate3:#3e637e; --muted:#8a7d5e;
+    --gold:#caa33a; --orange:#e2882a; --red:#cf3a36; --redd:#b8302c;
+    --p0:#cf3a36; --p1:#2f6fd0; --p2:#e2882a; --p3:#f3efe2;
+    --p0d:#8e221f; --p1d:#1d4a91; --p2d:#a85d12; --p3d:#9a9484;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    min-height:100vh; color:var(--ink);
+    font-family:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    background:radial-gradient(circle at 50% 0%, #cfe3ee 0%, #a9cbdf 45%, #7fb0cd 100%);
+    -webkit-text-size-adjust:100%;
+  }
+  .ui{font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+  .display{font-family:Georgia,'Iowan Old Style',serif;letter-spacing:.04em}
+  .wrap{max-width:1040px;margin:0 auto;padding:16px 12px}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  button:disabled{cursor:not-allowed}
+  select{font-family:ui-sans-serif,system-ui,sans-serif}
+
+  /* ---- menu ---- */
+  .menu{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(circle at 50% 30%, #2b4a63, #16242f);color:#f3ecda;text-align:center}
+  .menu .inner{max-width:460px}
+  .menu .anchor{font-size:58px;margin-bottom:6px}
+  .menu h1{font-family:Georgia,serif;font-weight:700;font-size:52px;letter-spacing:.25em;margin:0 0 2px}
+  .menu .sub{font-family:ui-sans-serif,system-ui,sans-serif;font-size:13px;letter-spacing:.18em;
+    text-transform:uppercase;color:#9fc0d4;margin-bottom:30px}
+  .menu .q{font-family:ui-sans-serif,system-ui,sans-serif;color:#cdd9e0;font-size:14px;margin-bottom:12px}
+  .menu .ns{display:flex;gap:12px;justify-content:center;margin-bottom:30px}
+  .menu .ns button{width:54px;height:54px;border-radius:50%;font-size:20px;font-weight:700;border:2px solid #5d7e93;
+    background:transparent;color:#9fc0d4;font-family:ui-sans-serif,system-ui,sans-serif;transition:.15s}
+  .menu .ns button.on{background:var(--orange);border-color:#f3ecda;color:#fff;transform:scale(1.1)}
+  .menu .begin{font-family:Georgia,serif;letter-spacing:.18em;font-size:18px;padding:12px 40px;border-radius:10px;
+    background:var(--red);color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+  .menu .begin:hover{background:var(--redd)}
+  .menu .blurb{font-family:ui-sans-serif,system-ui,sans-serif;font-size:11px;color:#7c98a9;margin-top:30px;line-height:1.6}
+
+  /* ---- lang toggle ---- */
+  .lang{display:inline-flex;gap:4px;padding:3px;border-radius:9px;background:rgba(0,0,0,.25)}
+  .lang.light{background:rgba(31,50,66,.1)}
+  .lang button{font-family:ui-sans-serif,system-ui,sans-serif;font-size:12px;font-weight:600;
+    padding:5px 10px;border-radius:7px;color:#9fc0d4;transition:.15s}
+  .lang.light button{color:var(--slate2)}
+  .lang button.on{background:var(--orange);color:#fff}
+
+  /* ---- header ---- */
+  .header{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:rgba(31,50,66,.88);color:#f3ecda;border-radius:12px;padding:8px 16px;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  .header .title{font-family:Georgia,serif;font-weight:700;font-size:23px;letter-spacing:.2em}
+  .header .phase{font-family:ui-sans-serif,system-ui,sans-serif;font-size:11px;text-transform:uppercase;
+    letter-spacing:.16em;color:#9fc0d4}
+  .header .right{display:flex;align-items:center;gap:10px}
+  .header .turn{font-family:ui-sans-serif,system-ui,sans-serif;font-size:14px;display:flex;align-items:center;gap:8px}
+  .header .turn .who{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+  .dot{width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,255,255,.4)}
+  .btn-new{font-family:ui-sans-serif,system-ui,sans-serif;font-size:12px;padding:6px 12px;border-radius:8px;
+    background:var(--slate2);color:#f3ecda}
+  .btn-new:hover{background:var(--slate3)}
+
+  /* ---- layout ---- */
+  .layout{display:flex;flex-direction:column;gap:16px;margin-top:12px}
+  @media(min-width:900px){ .layout{flex-direction:row} .sidebar{width:320px;flex:0 0 320px} .board-wrap{flex:1;min-width:0} }
+  .board-wrap{background:var(--sea);border-radius:18px;padding:8px;box-shadow:inset 0 0 40px rgba(0,0,0,.35)}
+  .board-wrap svg{display:block;width:100%;height:auto;user-select:none}
+  .sidebar{font-family:ui-sans-serif,system-ui,sans-serif;display:flex;flex-direction:column;gap:12px}
+
+  /* ---- panels ---- */
+  .panel{background:var(--panel);border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);overflow:hidden}
+  .pp{padding:12px}
+  .phead{padding:8px 16px;display:flex;align-items:center;justify-content:space-between;color:#fff;font-weight:700;letter-spacing:.02em}
+  .phead .who{display:flex;align-items:center;gap:8px}
+  .miniwhite{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.7)}
+
+  .res-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+  .res-cell{text-align:center;border-radius:8px;padding:6px 0}
+  .res-cell .ic{font-size:18px;line-height:1}
+  .res-cell .n{font-weight:700;font-size:14px}
+
+  .supply{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#7a6e52;margin:0 2px 12px}
+  .supply .lbl{text-transform:uppercase;letter-spacing:.14em;font-size:10px;color:var(--muted)}
+  .supply .nums{display:flex;gap:10px}
+
+  .seclbl{text-transform:uppercase;letter-spacing:.14em;font-size:10px;color:var(--muted);margin-bottom:5px}
+  .devrow{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+  .devbtn{font-size:11px;padding:4px 8px;border-radius:6px;background:var(--slate2);color:#f3ecda}
+  .devbtn:hover:not(:disabled){background:var(--slate3)}
+  .devbtn:disabled{opacity:.4}
+  .newdev{font-size:11px;padding:4px 8px;border-radius:6px;background:rgba(154,148,132,.4);color:#5a523f}
+  .vpbadge{font-size:11px;padding:4px 8px;border-radius:6px;background:rgba(202,163,58,.3);color:#7a5e12}
+
+  .hint{font-size:13px;color:#5a523f;background:var(--panel2);border-radius:8px;padding:8px}
+  .hint.gold{color:#7a5e12;background:rgba(202,163,58,.25);font-size:12px}
+
+  .actions{display:flex;flex-direction:column;gap:8px}
+  .btn-roll{width:100%;padding:11px;border-radius:10px;background:var(--red);color:#fff;font-weight:600;
+    letter-spacing:.03em;box-shadow:0 4px 10px rgba(0,0,0,.15)}
+  .btn-roll:hover:not(:disabled){background:var(--redd)}
+  .btn-roll:disabled{opacity:.5}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .bbtn{padding:6px 8px;border-radius:10px;font-weight:600;font-size:14px;border:1px solid var(--panel2);
+    background:var(--panel2);color:#3a3024;transition:.12s;text-align:center}
+  .bbtn:hover:not(:disabled){background:#dcceac}
+  .bbtn.active{background:var(--orange);border-color:var(--gold);color:#fff}
+  .bbtn:disabled{opacity:.45;background:rgba(230,220,194,.5);border-color:transparent;color:#9a9484}
+  .bbtn .cost{font-size:10px;font-weight:400;opacity:.8}
+  .btn-end{width:100%;padding:9px;border-radius:10px;background:var(--slate2);color:#f3ecda;font-weight:600}
+  .btn-end:hover:not(:disabled){background:var(--slate3)}
+  .btn-end:disabled{opacity:.4}
+
+  .banktrade{border-radius:10px;background:var(--panel2);padding:8px}
+  .banktrade .row{display:flex;align-items:center;gap:6px;font-size:14px}
+  .banktrade select{background:#fff;border-radius:6px;padding:4px 6px;font-size:13px;border:1px solid #d8cfb6}
+  .banktrade .arrow{color:var(--muted)}
+  .banktrade .tradebtn{margin-left:auto;padding:4px 10px;border-radius:6px;background:var(--slate2);
+    color:#f3ecda;font-size:12px;font-weight:600}
+  .banktrade .tradebtn:disabled{opacity:.4}
+
+  .dice{display:flex;align-items:center;justify-content:center;gap:12px;padding:4px 0}
+  .die{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:2px;
+    width:36px;height:36px;background:#fff;border-radius:6px;border:1px solid #d8cfb6;padding:4px;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+  .die span{display:flex;align-items:center;justify-content:center}
+  .pip{width:6px;height:6px;border-radius:50%;background:var(--slate2)}
+  .dsum{font-size:22px;font-weight:700;color:var(--slate2)}
+
+  .scoreboard .score-row{display:flex;align-items:center;gap:8px;font-size:14px;border-radius:8px;padding:4px 8px}
+  .scoreboard .score-row.cur{background:var(--panel2)}
+  .scoreboard .nm{font-weight:600;width:56px}
+  .scoreboard .vp{color:#5a523f}
+  .scoreboard .meta{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:11px;color:#7a6e52}
+
+  .log{background:rgba(31,50,66,.88);color:#dfe9ef;border-radius:12px;padding:12px;font-size:12px;line-height:1.6}
+  .log .lh{text-transform:uppercase;letter-spacing:.16em;font-size:10px;color:#7f9cae;margin-bottom:4px}
+  .log .ln{opacity:.6}
+  .log .ln.first{opacity:1;color:#f3ecda}
+
+  .foot{margin-top:14px;text-align:center;font-family:ui-sans-serif,system-ui,sans-serif;font-size:11px;color:rgba(31,50,66,.55)}
+
+  /* ---- modals ---- */
+  .overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.5)}
+  .modal{width:100%;max-width:380px;border-radius:16px;overflow:hidden;background:var(--panel);box-shadow:0 20px 50px rgba(0,0,0,.4);
+    font-family:ui-sans-serif,system-ui,sans-serif}
+  .modal .bar{height:6px}
+  .modal .body{padding:20px}
+  .modal h3{font-family:Georgia,serif;font-size:21px;margin:0 0 4px}
+  .modal p{font-size:14px;color:#5a523f;margin:0 0 14px}
+  .drow{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:14px}
+  .drow .rn{width:108px}
+  .drow .have{font-size:12px;color:var(--muted);width:64px}
+  .drow .pm{width:28px;height:28px;border-radius:6px;background:var(--panel2);font-size:16px}
+  .drow .cnt{width:24px;text-align:center;font-weight:700}
+  .mbtn{width:100%;padding:11px;border-radius:10px;color:#fff;font-weight:600}
+  .mbtn:disabled{opacity:.4}
+  .steal-opt{width:100%;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:10px;color:#fff;font-weight:600;margin-bottom:8px}
+  .steal-opt .c{margin-left:auto;font-size:13px;opacity:.9}
+  .resgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px}
+  .resgrid button{border-radius:8px;padding:8px 0;text-align:center}
+  .resgrid button .ic{font-size:18px}
+  .resgrid button .nm{font-size:10px;margin-top:2px}
+  .picked{font-size:14px;color:#5a523f;margin-bottom:12px}
+  .picked .reset{margin-left:8px;font-size:12px;text-decoration:underline}
+  .wincenter{text-align:center}
+  .wincenter .trophy{font-size:46px;margin-bottom:6px}
+  .wincenter h3{font-size:28px}
+  .wincenter .again{font-family:Georgia,serif;letter-spacing:.16em;padding:10px 32px;border-radius:10px;color:#fff;margin-top:6px}
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div id="root"><div class="boot">Catan wird geladen …</div></div>
-<script type="text/babel" data-presets="react">
-const { useReducer, useState, useMemo } = React;
-
+<div id="app"></div>
+<script>
+"use strict";
 /* ============================================================
-   CATAN — Pass & Play  (DE / EN)
-   Implementation aligned with the official Catan-Almanach
-   (Kosmos, Regelstand April 2010, 3–4 Spieler).
+   CATAN — Pass & Play  ·  standalone, offline, single file
+   Aligned with the official Catan-Almanach (Kosmos, 2010, 3–4 P.)
    ============================================================ */
 
 /* ---------- constants ---------- */
-const SIZE = 52;
-const SQRT3 = Math.sqrt(3);
-const ROWS = [3, 4, 5, 4, 3];
-
-const RES = ["wood", "brick", "sheep", "wheat", "ore"];
-const RES_META = {
-  wood:  { tile: "#3f6b41", icon: "🌲", token: "#dff0df" },
-  brick: { tile: "#b1582f", icon: "🧱", token: "#f6ddcf" },
-  sheep: { tile: "#8fb766", icon: "🐑", token: "#e9f3d9" },
-  wheat: { tile: "#d9aa3c", icon: "🌾", token: "#f7ecca" },
-  ore:   { tile: "#6b7480", icon: "⛰️", token: "#e2e5ea" },
-  desert:{ tile: "#d8c79a", icon: "🏜️", token: "#efe6cf" },
+var SIZE=52, SQRT3=Math.sqrt(3), ROWS=[3,4,5,4,3];
+var RES=["wood","brick","sheep","wheat","ore"];
+var RES_META={
+  wood:{tile:"#3f6b41",icon:"🌲",token:"#dff0df"},
+  brick:{tile:"#b1582f",icon:"🧱",token:"#f6ddcf"},
+  sheep:{tile:"#8fb766",icon:"🐑",token:"#e9f3d9"},
+  wheat:{tile:"#d9aa3c",icon:"🌾",token:"#f7ecca"},
+  ore:{tile:"#6b7480",icon:"⛰️",token:"#e2e5ea"},
+  desert:{tile:"#d8c79a",icon:"🏜️",token:"#efe6cf"}
 };
-
-const PLAYER_COLORS = [
-  { main: "#cf3a36", dark: "#8e221f", text: "#fff" },
-  { main: "#2f6fd0", dark: "#1d4a91", text: "#fff" },
-  { main: "#e2882a", dark: "#a85d12", text: "#fff" },
-  { main: "#f3efe2", dark: "#9a9484", text: "#3a3730" },
+var PCOL=[
+  {main:"#cf3a36",dark:"#8e221f",text:"#fff"},
+  {main:"#2f6fd0",dark:"#1d4a91",text:"#fff"},
+  {main:"#e2882a",dark:"#a85d12",text:"#fff"},
+  {main:"#f3efe2",dark:"#9a9484",text:"#3a3730"}
 ];
-
-const COSTS = {
-  road:       { wood: 1, brick: 1 },
-  settlement: { wood: 1, brick: 1, sheep: 1, wheat: 1 },
-  city:       { wheat: 2, ore: 3 },
-  dev:        { sheep: 1, wheat: 1, ore: 1 },
+var COSTS={
+  road:{wood:1,brick:1},
+  settlement:{wood:1,brick:1,sheep:1,wheat:1},
+  city:{wheat:2,ore:3},
+  dev:{sheep:1,wheat:1,ore:1}
 };
+var PIECE={road:15,settlement:5,city:4}; // Almanach: 15 Straßen, 5 Siedlungen, 4 Städte
 
-// Official piece supply per player (Almanach: 15 Straßen, 5 Siedlungen, 4 Städte)
-const PIECE = { road: 15, settlement: 5, city: 4 };
-
-/* ============================================================
-   i18n
-   ============================================================ */
-const I18N = {
-  de: {
-    subtitle: "Pass & Play · Besiedle die Insel",
-    choose: "Wähle die Anzahl der Siedler",
-    begin: "LOSLEGEN",
-    blurb: "Eine originalgetreue Umsetzung des Klassikers · Straßen, Siedlungen, Städte, Räuber, Entwicklungskarten, Längste Handelsstraße & Größte Rittermacht · wer zuerst 10 Punkte erreicht, gewinnt.",
-    phase_setup: "Gründungsphase",
-    phase_play: "Spielzug",
-    phase_over: "Spielende",
-    turn: "Am Zug:",
-    new_game: "Neues Spiel",
-    place_a: "Setze die hervorgehobene",
-    s_settlement: "Siedlung",
-    s_road: "Straße",
-    on_board: "auf den Plan.",
-    click_robber: "Klicke ein Feld, um den Räuber zu versetzen.",
-    roll: "🎲 Würfeln",
-    end_turn: "Zug beenden →",
-    dev_cards: "Entwicklungskarten",
-    new_suffix: "·neu",
-    vp_card: "★ Siegpunkt ×",
-    settlers: "Siedler",
-    game_log: "Spielprotokoll",
-    bank_trade: "Seehandel · 4 : 1",
-    trade: "Tauschen",
-    supply: "Vorrat",
-    cards: "Karten",
-    tip_hand: "Handkarten",
-    tip_knights: "gespielte Ritter",
-    tip_lroad: "Längste Handelsstraße (+2)",
-    tip_larmy: "Größte Rittermacht (+2)",
-    tip_newdev: "Diese Runde gekauft – ab dem nächsten Zug spielbar",
-    // build buttons
-    b_road: "Straße",
-    b_settlement: "Siedlung",
-    b_city: "Stadt",
-    b_dev: "Entw.-Karte",
-    // modals
-    discard_title: "{name} muss abwerfen",
-    discard_desc: "Zu viele Karten. Wähle {count} zum Ablegen auf den Vorrat.",
-    discard_have: "habe",
-    discard_btn: "Abwerfen {sel}/{count}",
-    steal_title: "Wem Karte rauben?",
-    plenty_title: "Erfindung",
-    plenty_desc: "Nimm dir 2 beliebige Rohstoffe aus dem Vorrat.",
-    plenty_picked: "Gewählt:",
-    plenty_reset: "zurücksetzen",
-    plenty_btn: "Rohstoffe nehmen",
-    mono_title: "Monopol",
-    mono_desc: "Wähle einen Rohstoff – alle Mitspieler geben dir alle Karten dieser Sorte.",
-    win_title: "{name} gewinnt!",
-    win_sub: "10 Siegpunkte erreicht und die Insel besiedelt.",
-    win_again: "NEUES SPIEL",
-    rb_hint: "Lege 2 Straßen kostenlos.",
-    // dev names + desc
-    dev_knight: "Ritter", dev_road: "Straßenbau", dev_plenty: "Erfindung", dev_monopoly: "Monopol", dev_vp: "Siegpunkt",
-    devd_knight: "Versetze den Räuber und raube eine Karte.",
-    devd_road: "Baue 2 Straßen kostenlos.",
-    devd_plenty: "Nimm 2 beliebige Rohstoffe aus dem Vorrat.",
-    devd_monopoly: "Nenne einen Rohstoff; nimm alle davon von allen.",
-    devd_vp: "1 Siegpunkt. Bleibt verdeckt.",
-    // resources
-    res_wood: "Holz", res_brick: "Lehm", res_sheep: "Wolle", res_wheat: "Getreide", res_ore: "Erz",
-    // colors
-    c0: "Rot", c1: "Blau", c2: "Orange", c3: "Weiß",
-    // log
-    log_setup_settle: "{name} setzt eine Siedlung.",
-    log_setup_road: "{name} setzt eine Straße.",
-    log_setup_prompt: "{name}, setze eine Siedlung.",
-    log_setup_first: "Setzt eure ersten Siedlungen.",
-    log_setup_done: "Gründung abgeschlossen. {name} würfelt.",
-    log_roll: "{name} würfelt {sum} ({d1}+{d2}).",
-    log_robber_discard: "Räuber! Spieler mit 8+ Karten werfen die Hälfte ab.",
-    log_move_robber: "Versetze den Räuber.",
-    log_discarded: "{name} wirft {count} Karten ab.",
-    log_robber_nosteal: "Räuber versetzt. Niemand zum Berauben.",
-    log_stole: "{name} raubt {victim} eine Karte.",
-    log_nothing_steal: "Nichts zu rauben.",
-    log_built_road: "{name} baut eine Straße.",
-    log_built_settle: "{name} baut eine Siedlung.",
-    log_built_city: "{name} baut eine Stadt.",
-    log_bought_dev: "{name} kauft eine Entwicklungskarte.",
-    log_played_dev: "{name} spielt {card}.",
-    log_plenty: "{name} nimmt {resList}.",
-    log_monopoly: "{name} monopolisiert {res} (+{count}).",
-    log_bank: "{name} tauscht 4 {give} → 1 {get}.",
-    log_next: "{name} ist am Zug.",
-    log_wins: "{name} gewinnt!",
+/* ============================================================ i18n ============ */
+var I18N={
+  de:{
+    subtitle:"Pass & Play · Besiedle die Insel", choose:"Wähle die Anzahl der Siedler",
+    begin:"LOSLEGEN",
+    blurb:"Eine originalgetreue Umsetzung des Klassikers · Straßen, Siedlungen, Städte, Räuber, Entwicklungskarten, Längste Handelsstraße & Größte Rittermacht · wer zuerst 10 Punkte erreicht, gewinnt.",
+    phase_setup:"Gründungsphase", phase_play:"Spielzug", phase_over:"Spielende",
+    turn:"Am Zug:", new_game:"Neues Spiel",
+    place_a:"Setze die hervorgehobene", s_settlement:"Siedlung", s_road:"Straße", on_board:"auf den Plan.",
+    click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
+    roll:"🎲 Würfeln", end_turn:"Zug beenden →", dev_cards:"Entwicklungskarten",
+    new_suffix:"·neu", vp_card:"★ Siegpunkt ×", settlers:"Siedler", game_log:"Spielprotokoll",
+    bank_trade:"Seehandel · 4 : 1", trade:"Tauschen", supply:"Vorrat", cards:"Karten",
+    tip_hand:"Handkarten", tip_knights:"gespielte Ritter", tip_lroad:"Längste Handelsstraße (+2)",
+    tip_larmy:"Größte Rittermacht (+2)", tip_newdev:"Diese Runde gekauft – ab dem nächsten Zug spielbar",
+    b_road:"Straße", b_settlement:"Siedlung", b_city:"Stadt", b_dev:"Entw.-Karte",
+    discard_title:"{name} muss abwerfen", discard_desc:"Zu viele Karten. Wähle {count} zum Ablegen auf den Vorrat.",
+    discard_have:"habe", discard_btn:"Abwerfen {sel}/{count}",
+    steal_title:"Wem Karte rauben?", plenty_title:"Erfindung", plenty_desc:"Nimm dir 2 beliebige Rohstoffe aus dem Vorrat.",
+    plenty_picked:"Gewählt:", plenty_reset:"zurücksetzen", plenty_btn:"Rohstoffe nehmen",
+    mono_title:"Monopol", mono_desc:"Wähle einen Rohstoff – alle Mitspieler geben dir alle Karten dieser Sorte.",
+    win_title:"{name} gewinnt!", win_sub:"10 Siegpunkte erreicht und die Insel besiedelt.", win_again:"NEUES SPIEL",
+    rb_hint:"Lege 2 Straßen kostenlos.",
+    dev_knight:"Ritter", dev_road:"Straßenbau", dev_plenty:"Erfindung", dev_monopoly:"Monopol", dev_vp:"Siegpunkt",
+    devd_knight:"Versetze den Räuber und raube eine Karte.", devd_road:"Baue 2 Straßen kostenlos.",
+    devd_plenty:"Nimm 2 beliebige Rohstoffe aus dem Vorrat.", devd_monopoly:"Nenne einen Rohstoff; nimm alle davon von allen.",
+    devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
+    res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
+    c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß",
+    foot:"v0.2 · Grundspiel · offline · eine Datei",
+    log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.",
+    log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
+    log_setup_done:"Gründung abgeschlossen. {name} würfelt.",
+    log_roll:"{name} würfelt {sum} ({d1}+{d2}).",
+    log_robber_discard:"Räuber! Spieler mit 8+ Karten werfen die Hälfte ab.", log_move_robber:"Versetze den Räuber.",
+    log_discarded:"{name} wirft {count} Karten ab.", log_robber_nosteal:"Räuber versetzt. Niemand zum Berauben.",
+    log_stole:"{name} raubt {victim} eine Karte.", log_nothing_steal:"Nichts zu rauben.",
+    log_built_road:"{name} baut eine Straße.", log_built_settle:"{name} baut eine Siedlung.", log_built_city:"{name} baut eine Stadt.",
+    log_bought_dev:"{name} kauft eine Entwicklungskarte.", log_played_dev:"{name} spielt {card}.",
+    log_plenty:"{name} nimmt {resList}.", log_monopoly:"{name} monopolisiert {res} (+{count}).",
+    log_bank:"{name} tauscht 4 {give} → 1 {get}.", log_next:"{name} ist am Zug.", log_wins:"{name} gewinnt!"
   },
-  en: {
-    subtitle: "Pass & Play · Settle the Island",
-    choose: "Choose your number of settlers",
-    begin: "BEGIN",
-    blurb: "A faithful take on the classic island game · roads, settlements, cities, the robber, development cards, Longest Road & Largest Army · first to 10 points wins.",
-    phase_setup: "Setup",
-    phase_play: "In play",
-    phase_over: "Game over",
-    turn: "Turn:",
-    new_game: "New game",
-    place_a: "Place a highlighted",
-    s_settlement: "settlement",
-    s_road: "road",
-    on_board: "on the board.",
-    click_robber: "Click a hex to move the robber.",
-    roll: "🎲 Roll dice",
-    end_turn: "End turn →",
-    dev_cards: "Development cards",
-    new_suffix: "·new",
-    vp_card: "★ Victory ×",
-    settlers: "Settlers",
-    game_log: "Game log",
-    bank_trade: "Bank trade · 4 : 1",
-    trade: "Trade",
-    supply: "Supply",
-    cards: "cards",
-    tip_hand: "cards in hand",
-    tip_knights: "knights played",
-    tip_lroad: "Longest Road (+2)",
-    tip_larmy: "Largest Army (+2)",
-    tip_newdev: "Bought this turn — playable next turn",
-    b_road: "Road",
-    b_settlement: "Settlement",
-    b_city: "City",
-    b_dev: "Dev card",
-    discard_title: "{name} must discard",
-    discard_desc: "Too many cards. Choose {count} to return to the bank.",
-    discard_have: "have",
-    discard_btn: "Discard {sel}/{count}",
-    steal_title: "Steal from whom?",
-    plenty_title: "Year of Plenty",
-    plenty_desc: "Take any two resources from the bank.",
-    plenty_picked: "Picked:",
-    plenty_reset: "reset",
-    plenty_btn: "Take resources",
-    mono_title: "Monopoly",
-    mono_desc: "Name a resource — every other player hands you all of theirs.",
-    win_title: "{name} wins!",
-    win_sub: "Reached 10 victory points and settled the island.",
-    win_again: "PLAY AGAIN",
-    rb_hint: "Place 2 roads for free.",
-    dev_knight: "Knight", dev_road: "Road Building", dev_plenty: "Year of Plenty", dev_monopoly: "Monopoly", dev_vp: "Victory Point",
-    devd_knight: "Move the robber and steal a card.",
-    devd_road: "Place 2 roads for free.",
-    devd_plenty: "Take any 2 resources from the bank.",
-    devd_monopoly: "Name a resource; take everyone's of it.",
-    devd_vp: "Worth 1 point. Kept hidden.",
-    res_wood: "Wood", res_brick: "Brick", res_sheep: "Sheep", res_wheat: "Wheat", res_ore: "Ore",
-    c0: "Red", c1: "Blue", c2: "Orange", c3: "White",
-    log_setup_settle: "{name} placed a settlement.",
-    log_setup_road: "{name} placed a road.",
-    log_setup_prompt: "{name}, place a settlement.",
-    log_setup_first: "Place your first settlements.",
-    log_setup_done: "Setup complete. {name} to roll.",
-    log_roll: "{name} rolled {sum} ({d1}+{d2}).",
-    log_robber_discard: "Robber! Players with 8+ cards discard half.",
-    log_move_robber: "Move the robber.",
-    log_discarded: "{name} discarded {count} cards.",
-    log_robber_nosteal: "Robber moved. No one to steal from.",
-    log_stole: "{name} stole from {victim}.",
-    log_nothing_steal: "Nothing to steal.",
-    log_built_road: "{name} built a road.",
-    log_built_settle: "{name} built a settlement.",
-    log_built_city: "{name} upgraded to a city.",
-    log_bought_dev: "{name} bought a development card.",
-    log_played_dev: "{name} played {card}.",
-    log_plenty: "{name} took {resList}.",
-    log_monopoly: "{name} monopolized {res} (+{count}).",
-    log_bank: "{name} traded 4 {give} → 1 {get}.",
-    log_next: "{name}'s turn.",
-    log_wins: "{name} wins!",
-  },
-};
-
-function fmt(str, p) {
-  if (!p) return str;
-  return str.replace(/\{(\w+)\}/g, (_, k) => (p[k] !== undefined ? p[k] : `{${k}}`));
-}
-function tr(lang, key, p) {
-  const s = (I18N[lang] && I18N[lang][key]) ?? I18N.en[key] ?? key;
-  return fmt(s, p);
-}
-const resLabel = (lang, r) => tr(lang, `res_${r}`);
-const devLabel = (lang, card) => tr(lang, `dev_${card}`);
-const devDesc  = (lang, card) => tr(lang, `devd_${card}`);
-const colorName = (lang, i) => tr(lang, `c${i}`);
-
-function logText(lang, e) {
-  const p = { ...(e.p || {}) };
-  if (typeof p.name === "number") p.name = colorName(lang, p.name);
-  if (typeof p.victim === "number") p.victim = colorName(lang, p.victim);
-  if (p.give && RES.includes(p.give)) p.give = resLabel(lang, p.give);
-  if (p.get && RES.includes(p.get)) p.get = resLabel(lang, p.get);
-  if (p.res && RES.includes(p.res)) p.res = resLabel(lang, p.res);
-  if (Array.isArray(p.resList)) p.resList = p.resList.map((r) => resLabel(lang, r)).join(" & ");
-  return tr(lang, e.k, p);
-}
-
-/* ---------- utilities ---------- */
-function shuffle(a) {
-  const arr = a.slice();
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+  en:{
+    subtitle:"Pass & Play · Settle the Island", choose:"Choose your number of settlers", begin:"BEGIN",
+    blurb:"A faithful take on the classic island game · roads, settlements, cities, the robber, development cards, Longest Road & Largest Army · first to 10 points wins.",
+    phase_setup:"Setup", phase_play:"In play", phase_over:"Game over",
+    turn:"Turn:", new_game:"New game",
+    place_a:"Place a highlighted", s_settlement:"settlement", s_road:"road", on_board:"on the board.",
+    click_robber:"Click a hex to move the robber.",
+    roll:"🎲 Roll dice", end_turn:"End turn →", dev_cards:"Development cards",
+    new_suffix:"·new", vp_card:"★ Victory ×", settlers:"Settlers", game_log:"Game log",
+    bank_trade:"Bank trade · 4 : 1", trade:"Trade", supply:"Supply", cards:"cards",
+    tip_hand:"cards in hand", tip_knights:"knights played", tip_lroad:"Longest Road (+2)",
+    tip_larmy:"Largest Army (+2)", tip_newdev:"Bought this turn — playable next turn",
+    b_road:"Road", b_settlement:"Settlement", b_city:"City", b_dev:"Dev card",
+    discard_title:"{name} must discard", discard_desc:"Too many cards. Choose {count} to return to the bank.",
+    discard_have:"have", discard_btn:"Discard {sel}/{count}",
+    steal_title:"Steal from whom?", plenty_title:"Year of Plenty", plenty_desc:"Take any two resources from the bank.",
+    plenty_picked:"Picked:", plenty_reset:"reset", plenty_btn:"Take resources",
+    mono_title:"Monopoly", mono_desc:"Name a resource — every other player hands you all of theirs.",
+    win_title:"{name} wins!", win_sub:"Reached 10 victory points and settled the island.", win_again:"PLAY AGAIN",
+    rb_hint:"Place 2 roads for free.",
+    dev_knight:"Knight", dev_road:"Road Building", dev_plenty:"Year of Plenty", dev_monopoly:"Monopoly", dev_vp:"Victory Point",
+    devd_knight:"Move the robber and steal a card.", devd_road:"Place 2 roads for free.",
+    devd_plenty:"Take any 2 resources from the bank.", devd_monopoly:"Name a resource; take everyone's of it.",
+    devd_vp:"Worth 1 point. Kept hidden.",
+    res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
+    c0:"Red", c1:"Blue", c2:"Orange", c3:"White",
+    foot:"v0.2 · base game · offline · single file",
+    log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.",
+    log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
+    log_setup_done:"Setup complete. {name} to roll.",
+    log_roll:"{name} rolled {sum} ({d1}+{d2}).",
+    log_robber_discard:"Robber! Players with 8+ cards discard half.", log_move_robber:"Move the robber.",
+    log_discarded:"{name} discarded {count} cards.", log_robber_nosteal:"Robber moved. No one to steal from.",
+    log_stole:"{name} stole from {victim}.", log_nothing_steal:"Nothing to steal.",
+    log_built_road:"{name} built a road.", log_built_settle:"{name} built a settlement.", log_built_city:"{name} upgraded to a city.",
+    log_bought_dev:"{name} bought a development card.", log_played_dev:"{name} played {card}.",
+    log_plenty:"{name} took {resList}.", log_monopoly:"{name} monopolized {res} (+{count}).",
+    log_bank:"{name} traded 4 {give} → 1 {get}.", log_next:"{name}'s turn.", log_wins:"{name} wins!"
   }
-  return arr;
-}
-const emptyRes = () => ({ wood: 0, brick: 0, sheep: 0, wheat: 0, ore: 0 });
-const totalCards = (r) => RES.reduce((s, k) => s + r[k], 0);
-const canAfford = (r, cost) => Object.entries(cost).every(([k, v]) => r[k] >= v);
-const pay = (r, cost) => {
-  const n = { ...r };
-  for (const [k, v] of Object.entries(cost)) n[k] -= v;
-  return n;
 };
+function fmt(s,p){ if(!p) return s; return s.replace(/\{(\w+)\}/g,function(_,k){return p[k]!==undefined?p[k]:"{"+k+"}";}); }
+function tr(key,p){ var L=state.lang; var s=(I18N[L]&&I18N[L][key])||I18N.en[key]||key; return fmt(s,p); }
+function resLabel(r){ return tr("res_"+r); }
+function devLabel(c){ return tr("dev_"+c); }
+function devDesc(c){ return tr("devd_"+c); }
+function colorName(i){ return tr("c"+i); }
+function logText(e){
+  var p={}; var src=e.p||{}; for(var k in src) p[k]=src[k];
+  if(typeof p.name==="number") p.name=colorName(p.name);
+  if(typeof p.victim==="number") p.victim=colorName(p.victim);
+  if(p.give&&RES.indexOf(p.give)>=0) p.give=resLabel(p.give);
+  if(p.get&&RES.indexOf(p.get)>=0) p.get=resLabel(p.get);
+  if(p.res&&RES.indexOf(p.res)>=0) p.res=resLabel(p.res);
+  if(Array.isArray(p.resList)) p.resList=p.resList.map(resLabel).join(" & ");
+  return tr(e.k,p);
+}
+
+/* ---------- utils ---------- */
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function emptyRes(){return{wood:0,brick:0,sheep:0,wheat:0,ore:0};}
+function totalCards(r){return RES.reduce(function(s,k){return s+r[k];},0);}
+function canAfford(r,c){for(var k in c){if(r[k]<c[k])return false;}return true;}
+function pay(r,c){var n={};for(var k in r)n[k]=r[k];for(var k2 in c)n[k2]-=c[k2];return n;}
 
 /* ---------- board geometry ---------- */
-function buildBoard() {
-  const hSpacing = SQRT3 * SIZE;
-  const vSpacing = 1.5 * SIZE;
-  const centers = [];
-  ROWS.forEach((count, r) => {
-    const y = r * vSpacing;
-    const rowWidth = (count - 1) * hSpacing;
-    for (let i = 0; i < count; i++) centers.push({ x: i * hSpacing - rowWidth / 2, y });
+function buildBoard(){
+  var hSp=SQRT3*SIZE, vSp=1.5*SIZE, centers=[];
+  ROWS.forEach(function(count,r){
+    var y=r*vSp, rowW=(count-1)*hSp;
+    for(var i=0;i<count;i++) centers.push({x:i*hSp-rowW/2,y:y});
   });
-
-  const corner = (cx, cy, i) => {
-    const a = (Math.PI / 180) * (60 * i - 30);
-    return { x: cx + SIZE * Math.cos(a), y: cy + SIZE * Math.sin(a) };
-  };
-
-  const vmap = new Map();
-  const vertices = [];
-  const vid = (p) => {
-    const key = `${Math.round(p.x)},${Math.round(p.y)}`;
-    if (vmap.has(key)) return vmap.get(key);
-    const id = vertices.length;
-    vertices.push({ id, x: p.x, y: p.y, hexes: [], edges: [], adj: [] });
-    vmap.set(key, id);
-    return id;
-  };
-
-  const hexes = centers.map((c, hi) => {
-    const vs = [];
-    for (let i = 0; i < 6; i++) vs.push(vid(corner(c.x, c.y, i)));
-    return { id: hi, x: c.x, y: c.y, vertices: vs };
-  });
-  hexes.forEach((h) =>
-    h.vertices.forEach((v) => { if (!vertices[v].hexes.includes(h.id)) vertices[v].hexes.push(h.id); })
-  );
-
-  const emap = new Map();
-  const edges = [];
-  const eid = (a, b) => {
-    const key = a < b ? `${a}-${b}` : `${b}-${a}`;
-    if (emap.has(key)) return emap.get(key);
-    const id = edges.length;
-    const va = vertices[a], vb = vertices[b];
-    edges.push({ id, v1: a, v2: b, x: (va.x + vb.x) / 2, y: (va.y + vb.y) / 2 });
-    emap.set(key, id);
-    return id;
-  };
-  hexes.forEach((h) => {
-    for (let i = 0; i < 6; i++) {
-      const a = h.vertices[i], b = h.vertices[(i + 1) % 6];
-      const e = eid(a, b);
-      if (!vertices[a].edges.includes(e)) vertices[a].edges.push(e);
-      if (!vertices[b].edges.includes(e)) vertices[b].edges.push(e);
-    }
-  });
-  edges.forEach((e) => {
-    if (!vertices[e.v1].adj.includes(e.v2)) vertices[e.v1].adj.push(e.v2);
-    if (!vertices[e.v2].adj.includes(e.v1)) vertices[e.v2].adj.push(e.v1);
-  });
-
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  vertices.forEach((v) => {
-    minX = Math.min(minX, v.x); minY = Math.min(minY, v.y);
-    maxX = Math.max(maxX, v.x); maxY = Math.max(maxY, v.y);
-  });
-  return { hexes, vertices, edges, bounds: { minX, minY, maxX, maxY } };
+  function corner(cx,cy,i){var a=Math.PI/180*(60*i-30);return{x:cx+SIZE*Math.cos(a),y:cy+SIZE*Math.sin(a)};}
+  var vmap={}, vertices=[];
+  function vid(p){var key=Math.round(p.x)+","+Math.round(p.y);if(vmap[key]!==undefined)return vmap[key];
+    var id=vertices.length;vertices.push({id:id,x:p.x,y:p.y,hexes:[],edges:[],adj:[]});vmap[key]=id;return id;}
+  var hexes=centers.map(function(c,hi){var vs=[];for(var i=0;i<6;i++)vs.push(vid(corner(c.x,c.y,i)));return{id:hi,x:c.x,y:c.y,vertices:vs};});
+  hexes.forEach(function(h){h.vertices.forEach(function(v){if(vertices[v].hexes.indexOf(h.id)<0)vertices[v].hexes.push(h.id);});});
+  var emap={}, edges=[];
+  function eid(a,b){var key=a<b?a+"-"+b:b+"-"+a;if(emap[key]!==undefined)return emap[key];
+    var id=edges.length;var va=vertices[a],vb=vertices[b];edges.push({id:id,v1:a,v2:b,x:(va.x+vb.x)/2,y:(va.y+vb.y)/2});emap[key]=id;return id;}
+  hexes.forEach(function(h){for(var i=0;i<6;i++){var a=h.vertices[i],b=h.vertices[(i+1)%6];var e=eid(a,b);
+    if(vertices[a].edges.indexOf(e)<0)vertices[a].edges.push(e);if(vertices[b].edges.indexOf(e)<0)vertices[b].edges.push(e);}});
+  edges.forEach(function(e){if(vertices[e.v1].adj.indexOf(e.v2)<0)vertices[e.v1].adj.push(e.v2);if(vertices[e.v2].adj.indexOf(e.v1)<0)vertices[e.v2].adj.push(e.v1);});
+  var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  vertices.forEach(function(v){minX=Math.min(minX,v.x);minY=Math.min(minY,v.y);maxX=Math.max(maxX,v.x);maxY=Math.max(maxY,v.y);});
+  return{hexes:hexes,vertices:vertices,edges:edges,bounds:{minX:minX,minY:minY,maxX:maxX,maxY:maxY}};
 }
-
-function assignTiles() {
-  const pool = shuffle([
-    ...Array(4).fill("wood"),
-    ...Array(3).fill("brick"),
-    ...Array(4).fill("sheep"),
-    ...Array(4).fill("wheat"),
-    ...Array(3).fill("ore"),
-    "desert",
-  ]);
-  const tokens = shuffle([2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12]);
-  let ti = 0;
-  return pool.map((res) => ({ resource: res, number: res === "desert" ? null : tokens[ti++] }));
+function assignTiles(){
+  var pool=shuffle([].concat(
+    Array(4).fill("wood"),Array(3).fill("brick"),Array(4).fill("sheep"),
+    Array(4).fill("wheat"),Array(3).fill("ore"),["desert"]));
+  var tokens=shuffle([2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12]); var ti=0;
+  return pool.map(function(res){return{resource:res,number:res==="desert"?null:tokens[ti++]};});
 }
-
-// Almanach: 14 Ritter, 6 Fortschritt (2× Straßenbau, 2× Erfindung, 2× Monopol), 5 Siegpunkte = 25
-function buildDevDeck() {
-  return shuffle([
-    ...Array(14).fill("knight"),
-    ...Array(5).fill("vp"),
-    ...Array(2).fill("road"),
-    ...Array(2).fill("plenty"),
-    ...Array(2).fill("monopoly"),
-  ]);
+function buildDevDeck(){
+  return shuffle([].concat(Array(14).fill("knight"),Array(5).fill("vp"),Array(2).fill("road"),Array(2).fill("plenty"),Array(2).fill("monopoly")));
 }
 
 /* ---------- rules helpers ---------- */
-function distanceOK(vertexId, buildings, board) {
-  if (buildings[vertexId]) return false;
-  return board.vertices[vertexId].adj.every((a) => !buildings[a]);
+function distanceOK(v,b,board){if(b[v])return false;return board.vertices[v].adj.every(function(a){return !b[a];});}
+function settlementLegal(v,pl,b,roads,board,setup){
+  if(!distanceOK(v,b,board))return false; if(setup)return true;
+  return board.vertices[v].edges.some(function(e){return roads[e]&&roads[e].owner===pl;});
 }
-function settlementLegal(vertexId, player, buildings, roads, board, setup) {
-  if (!distanceOK(vertexId, buildings, board)) return false;
-  if (setup) return true;
-  return board.vertices[vertexId].edges.some((e) => roads[e]?.owner === player);
-}
-function roadLegal(edgeId, player, buildings, roads, board, restrictVertex = null) {
-  if (roads[edgeId]) return false;
-  const e = board.edges[edgeId];
-  if (restrictVertex !== null) return e.v1 === restrictVertex || e.v2 === restrictVertex;
-  return [e.v1, e.v2].some((w) => {
-    const b = buildings[w];
-    if (b && b.owner === player) return true;
-    if (b && b.owner !== player) return false; // opponent building blocks extension through here
-    return board.vertices[w].edges.some((oe) => roads[oe]?.owner === player);
+function roadLegal(eid,pl,b,roads,board,restrict){
+  if(roads[eid])return false; var e=board.edges[eid];
+  if(restrict!=null)return e.v1===restrict||e.v2===restrict;
+  return [e.v1,e.v2].some(function(w){
+    var bo=b[w];
+    if(bo&&bo.owner===pl)return true;
+    if(bo&&bo.owner!==pl)return false;
+    return board.vertices[w].edges.some(function(oe){return roads[oe]&&roads[oe].owner===pl;});
   });
 }
-function longestRoad(player, roads, board, buildings) {
-  const owned = board.edges.filter((e) => roads[e.id]?.owner === player);
-  if (owned.length === 0) return 0;
-  const inc = {};
-  owned.forEach((e) => {
-    (inc[e.v1] = inc[e.v1] || []).push(e);
-    (inc[e.v2] = inc[e.v2] || []).push(e);
-  });
-  const blocked = (v) => buildings[v] && buildings[v].owner !== player; // only opponents break a road
-  let best = 0;
-  const dfs = (vertex, used) => {
-    if (used.size > 0 && blocked(vertex)) { best = Math.max(best, used.size); return; }
-    (inc[vertex] || []).forEach((e) => {
-      if (used.has(e.id)) return;
-      const next = e.v1 === vertex ? e.v2 : e.v1;
-      used.add(e.id); dfs(next, used); used.delete(e.id);
+function longestRoad(pl,roads,board,b){
+  var owned=board.edges.filter(function(e){return roads[e.id]&&roads[e.id].owner===pl;});
+  if(owned.length===0)return 0;
+  var inc={};
+  owned.forEach(function(e){(inc[e.v1]=inc[e.v1]||[]).push(e);(inc[e.v2]=inc[e.v2]||[]).push(e);});
+  function blocked(v){return b[v]&&b[v].owner!==pl;}
+  var best=0;
+  function dfs(vertex,used){
+    if(used.size>0&&blocked(vertex)){best=Math.max(best,used.size);return;}
+    (inc[vertex]||[]).forEach(function(e){
+      if(used.has(e.id))return;
+      var next=e.v1===vertex?e.v2:e.v1;
+      used.add(e.id);dfs(next,used);used.delete(e.id);
     });
-    best = Math.max(best, used.size);
-  };
-  Object.keys(inc).forEach((v) => dfs(Number(v), new Set()));
+    best=Math.max(best,used.size);
+  }
+  Object.keys(inc).forEach(function(v){dfs(Number(v),new Set());});
   return best;
 }
-
-const countRoads = (state, pi) => Object.values(state.roads).filter((r) => r.owner === pi).length;
-const countType = (state, pi, type) =>
-  Object.values(state.buildings).filter((b) => b.owner === pi && b.type === type).length;
+function countRoads(pl){var n=0;for(var k in state.roads)if(state.roads[k].owner===pl)n++;return n;}
+function countType(pl,type){var n=0;for(var k in state.buildings){var b=state.buildings[k];if(b.owner===pl&&b.type===type)n++;}return n;}
 
 /* ---------- victory points ---------- */
-function publicVP(pi, state) {
-  let vp = 0;
-  Object.values(state.buildings).forEach((b) => { if (b.owner === pi) vp += b.type === "city" ? 2 : 1; });
-  if (state.longestRoadOwner === pi) vp += 2;
-  if (state.largestArmyOwner === pi) vp += 2;
+function publicVP(pi){
+  var vp=0;
+  for(var k in state.buildings){var b=state.buildings[k];if(b.owner===pi)vp+=b.type==="city"?2:1;}
+  if(state.longestRoadOwner===pi)vp+=2;
+  if(state.largestArmyOwner===pi)vp+=2;
   return vp;
 }
-const fullVP = (pi, state) => publicVP(pi, state) + state.players[pi].vpCards;
+function fullVP(pi){return publicVP(pi)+state.players[pi].vpCards;}
 
-/* ---------- award recalculation (Almanach-faithful) ---------- */
-function recomputeAwards(state) {
-  // Longest Road: needs >=5; holder keeps on ties; a break that creates a tie among challengers sets the card aside.
-  const lengths = state.players.map((_, pi) => longestRoad(pi, state.roads, state.board, state.buildings));
-  const max = Math.max(...lengths, 0);
-  let owner = state.longestRoadOwner;
-  if (max < 5) owner = null;
-  else if (owner !== null && lengths[owner] === max) { /* holder retains */ }
-  else {
-    const leaders = lengths.map((l, i) => (l === max ? i : -1)).filter((i) => i >= 0);
-    owner = leaders.length === 1 ? leaders[0] : null;
+/* ---------- awards (Almanach-faithful) ---------- */
+function recomputeAwards(){
+  var lengths=state.players.map(function(_,pi){return longestRoad(pi,state.roads,state.board,state.buildings);});
+  var max=Math.max.apply(null,lengths.concat([0]));
+  var owner=state.longestRoadOwner;
+  if(max<5) owner=null;
+  else if(owner!==null&&lengths[owner]===max){/* holder keeps */}
+  else{
+    var leaders=lengths.map(function(l,i){return l===max?i:-1;}).filter(function(i){return i>=0;});
+    owner=leaders.length===1?leaders[0]:null; // tie among challengers => set aside
   }
-  state.longestRoadOwner = owner;
-  state.longestRoadLength = owner === null ? 0 : lengths[owner];
+  state.longestRoadOwner=owner;
+  state.longestRoadLength=owner===null?0:lengths[owner];
 
-  // Largest Army: needs >=3; taken only by strictly more knights.
-  const knights = state.players.map((p) => p.knights);
-  const aMax = Math.max(...knights, 0);
-  let aOwner = state.largestArmyOwner;
-  if (aMax < 3) aOwner = null;
-  else if (aOwner !== null && knights[aOwner] === aMax) { /* holder retains */ }
-  else {
-    const aLeaders = knights.map((k, i) => (k === aMax ? i : -1)).filter((i) => i >= 0);
-    aOwner = aLeaders.length === 1 ? aLeaders[0] : null;
+  var knights=state.players.map(function(p){return p.knights;});
+  var aMax=Math.max.apply(null,knights.concat([0]));
+  var aOwner=state.largestArmyOwner;
+  if(aMax<3) aOwner=null;
+  else if(aOwner!==null&&knights[aOwner]===aMax){/* keep */}
+  else{
+    var aL=knights.map(function(k,i){return k===aMax?i:-1;}).filter(function(i){return i>=0;});
+    aOwner=aL.length===1?aL[0]:null;
   }
-  state.largestArmyOwner = aOwner;
-  state.largestArmySize = aOwner === null ? 0 : knights[aOwner];
-  return state;
+  state.largestArmyOwner=aOwner;
+  state.largestArmySize=aOwner===null?0:knights[aOwner];
 }
 
-/* ---------- initial state ---------- */
-function freshGame(numPlayers) {
-  const board = buildBoard();
-  const tiles = assignTiles();
-  const robberHex = tiles.findIndex((t) => t.resource === "desert");
-  const players = Array.from({ length: numPlayers }, (_, i) => ({
-    id: i, res: emptyRes(), dev: [], newDev: [], vpCards: 0, knights: 0, playedDevThisTurn: false,
-  }));
-  const order = [];
-  for (let i = 0; i < numPlayers; i++) order.push(i);
-  for (let i = numPlayers - 1; i >= 0; i--) order.push(i);
-
-  return {
-    phase: "setup",
-    board, tiles, robberHex, players,
-    buildings: {}, roads: {},
-    current: order[0],
-    devDeck: buildDevDeck(),
-    setup: { order, idx: 0, placing: "settlement", lastSettlement: null },
-    turn: null, uiMode: null, pending: null,
-    longestRoadOwner: null, longestRoadLength: 0,
-    largestArmyOwner: null, largestArmySize: 0,
-    winner: null,
-    log: [{ k: "log_setup_first" }],
+/* ---------- state ---------- */
+var state=menuState();
+function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3}};}
+function freshGame(n,lang){
+  var board=buildBoard(), tiles=assignTiles();
+  var robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
+  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false});
+  var order=[]; for(var a=0;a<n;a++)order.push(a); for(var b=n-1;b>=0;b--)order.push(b);
+  return{
+    phase:"setup", lang:lang, board:board, tiles:tiles, robberHex:robberHex, players:players,
+    buildings:{}, roads:{}, current:order[0], devDeck:buildDevDeck(),
+    setup:{order:order,idx:0,placing:"settlement",lastSettlement:null},
+    turn:null, uiMode:null, pending:null,
+    longestRoadOwner:null,longestRoadLength:0,largestArmyOwner:null,largestArmySize:0,
+    winner:null, log:[{k:"log_setup_first"}],
+    ui:{bankGive:"wood",bankGet:"ore",discardSel:emptyRes(),plentyPicks:[]}
   };
 }
-function pushLog(state, k, p) {
-  state.log = [{ k, p }, ...state.log].slice(0, 7);
+function pushLog(k,p){state.log.unshift({k:k,p:p});state.log=state.log.slice(0,7);}
+
+function stealFrom(victimPi){
+  var v=state.players[victimPi], pool=[];
+  RES.forEach(function(r){for(var i=0;i<v.res[r];i++)pool.push(r);});
+  if(pool.length===0){pushLog("log_nothing_steal");return;}
+  var r=pool[Math.floor(Math.random()*pool.length)];
+  v.res[r]-=1; state.players[state.current].res[r]+=1;
+  pushLog("log_stole",{name:state.current,victim:victimPi});
 }
+function checkWin(){ if(fullVP(state.current)>=10){state.winner=state.current;state.phase="gameover";pushLog("log_wins",{name:state.current});} }
 
-/* ---------- reducer ---------- */
-function reducer(state, action) {
-  switch (action.type) {
-    case "NEW_GAME":
-      return freshGame(action.numPlayers);
+/* ---------- actions (mutating, then render) ---------- */
+function dispatch(a){ apply(a); render(); }
+function apply(a){
+  switch(a.type){
+    case "SET_LANG": state.lang=a.lang; return;
+    case "SET_N": state.ui.startN=a.n; return;
+    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang); return;
 
-    case "SETUP_SETTLEMENT": {
-      const s = cloneState(state);
-      const v = action.vertexId;
-      const pi = s.setup.order[s.setup.idx];
-      s.buildings[v] = { owner: pi, type: "settlement" };
-      const secondRound = s.setup.idx >= s.players.length;
-      if (secondRound) {
-        s.board.vertices[v].hexes.forEach((hi) => {
-          const t = s.tiles[hi];
-          if (t.resource !== "desert") s.players[pi].res[t.resource] += 1;
+    case "SETUP_SETTLEMENT":{
+      var v=a.vertexId, pi=state.setup.order[state.setup.idx];
+      state.buildings[v]={owner:pi,type:"settlement"};
+      if(state.setup.idx>=state.players.length){
+        state.board.vertices[v].hexes.forEach(function(hi){var t=state.tiles[hi];if(t.resource!=="desert")state.players[pi].res[t.resource]+=1;});
+      }
+      state.setup.placing="road"; state.setup.lastSettlement=v;
+      pushLog("log_setup_settle",{name:pi}); return;
+    }
+    case "SETUP_ROAD":{
+      var pir=state.setup.order[state.setup.idx];
+      state.roads[a.edgeId]={owner:pir}; pushLog("log_setup_road",{name:pir});
+      state.setup.idx+=1;
+      if(state.setup.idx>=state.setup.order.length){
+        state.phase="play"; state.current=state.setup.order[state.setup.order.length-1];
+        state.setup=null; state.turn={rolled:false,dice:null}; recomputeAwards();
+        pushLog("log_setup_done",{name:state.current});
+      }else{
+        state.setup.placing="settlement"; state.setup.lastSettlement=null;
+        pushLog("log_setup_prompt",{name:state.setup.order[state.setup.idx]});
+      }
+      return;
+    }
+
+    case "ROLL":{
+      var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6), sum=d1+d2;
+      state.turn.rolled=true; state.turn.dice=[d1,d2];
+      pushLog("log_roll",{name:state.current,sum:sum,d1:d1,d2:d2});
+      if(sum===7){
+        var queue=[];
+        state.players.forEach(function(p,pi){var nn=totalCards(p.res);if(nn>7)queue.push({pi:pi,count:Math.floor(nn/2)});});
+        if(queue.length>0){state.pending={type:"discard",queue:queue,qi:0};state.ui.discardSel=emptyRes();pushLog("log_robber_discard");}
+        else{state.uiMode="moveRobber";state.pending={type:"robber",source:"roll"};pushLog("log_move_robber");}
+      }else{
+        state.tiles.forEach(function(t,hi){
+          if(t.number!==sum||hi===state.robberHex)return;
+          state.board.hexes[hi].vertices.forEach(function(v){var b=state.buildings[v];if(b)state.players[b.owner].res[t.resource]+=b.type==="city"?2:1;});
         });
       }
-      s.setup.placing = "road";
-      s.setup.lastSettlement = v;
-      pushLog(s, "log_setup_settle", { name: pi });
-      return s;
+      return;
     }
-    case "SETUP_ROAD": {
-      const s = cloneState(state);
-      const pi = s.setup.order[s.setup.idx];
-      s.roads[action.edgeId] = { owner: pi };
-      pushLog(s, "log_setup_road", { name: pi });
-      s.setup.idx += 1;
-      if (s.setup.idx >= s.setup.order.length) {
-        s.phase = "play";
-        s.current = s.setup.order[s.setup.order.length - 1];
-        s.setup = null;
-        s.turn = { rolled: false, dice: null };
-        recomputeAwards(s);
-        pushLog(s, "log_setup_done", { name: s.current });
-      } else {
-        s.setup.placing = "settlement";
-        s.setup.lastSettlement = null;
-        pushLog(s, "log_setup_prompt", { name: s.setup.order[s.setup.idx] });
+
+    case "DISCARD_ADJ":{
+      var p=state.players[state.pending.queue[state.pending.qi].pi];
+      var cur=state.ui.discardSel[a.res]+a.d;
+      cur=Math.max(0,Math.min(p.res[a.res],cur)); state.ui.discardSel[a.res]=cur; return;
+    }
+    case "DISCARD_CONFIRM":{
+      var item=state.pending.queue[state.pending.qi]; var pl=state.players[item.pi];
+      RES.forEach(function(r){pl.res[r]-=state.ui.discardSel[r];});
+      pushLog("log_discarded",{name:item.pi,count:item.count});
+      state.pending.qi+=1; state.ui.discardSel=emptyRes();
+      if(state.pending.qi>=state.pending.queue.length){state.pending={type:"robber",source:"roll"};state.uiMode="moveRobber";pushLog("log_move_robber");}
+      return;
+    }
+
+    case "MOVE_ROBBER":{
+      state.robberHex=a.hexId;
+      var victims={};
+      state.board.hexes[a.hexId].vertices.forEach(function(v){var b=state.buildings[v];if(b&&b.owner!==state.current&&totalCards(state.players[b.owner].res)>0)victims[b.owner]=true;});
+      var list=Object.keys(victims).map(Number);
+      state.uiMode=null;
+      if(list.length===0){state.pending=null;pushLog("log_robber_nosteal");}
+      else if(list.length===1){stealFrom(list[0]);state.pending=null;}
+      else state.pending={type:"steal",candidates:list};
+      return;
+    }
+    case "STEAL": stealFrom(a.from); state.pending=null; return;
+
+    case "SET_MODE": state.uiMode=(state.uiMode===a.mode?null:a.mode); return;
+
+    case "BUILD_ROAD":{
+      var pr=state.players[state.current], free=state.pending&&state.pending.type==="roadbuilding";
+      if(countRoads(state.current)>=PIECE.road)return;
+      if(!free){ if(!canAfford(pr.res,COSTS.road))return; pr.res=pay(pr.res,COSTS.road); }
+      state.roads[a.edgeId]={owner:state.current}; pushLog("log_built_road",{name:state.current}); recomputeAwards();
+      if(free){
+        state.pending.left-=1;
+        var anyLegal=countRoads(state.current)<PIECE.road&&state.board.edges.some(function(e){return roadLegal(e.id,state.current,state.buildings,state.roads,state.board);});
+        if(state.pending.left<=0||!anyLegal){state.pending=null;state.uiMode=null;}
       }
-      return s;
+      checkWin(); return;
+    }
+    case "BUILD_SETTLEMENT":{
+      var ps=state.players[state.current];
+      if(countType(state.current,"settlement")>=PIECE.settlement)return;
+      if(!canAfford(ps.res,COSTS.settlement))return; ps.res=pay(ps.res,COSTS.settlement);
+      state.buildings[a.vertexId]={owner:state.current,type:"settlement"}; state.uiMode=null;
+      pushLog("log_built_settle",{name:state.current}); recomputeAwards(); checkWin(); return;
+    }
+    case "BUILD_CITY":{
+      var pc=state.players[state.current];
+      if(countType(state.current,"city")>=PIECE.city)return;
+      if(!canAfford(pc.res,COSTS.city))return; pc.res=pay(pc.res,COSTS.city);
+      state.buildings[a.vertexId]={owner:state.current,type:"city"}; state.uiMode=null;
+      pushLog("log_built_city",{name:state.current}); checkWin(); return;
+    }
+    case "BUY_DEV":{
+      var pd=state.players[state.current];
+      if(!canAfford(pd.res,COSTS.dev)||state.devDeck.length===0)return; pd.res=pay(pd.res,COSTS.dev);
+      var card=state.devDeck.shift();
+      if(card==="vp")pd.vpCards+=1; else pd.newDev.push(card);
+      pushLog("log_bought_dev",{name:state.current}); checkWin(); return;
+    }
+    case "PLAY_DEV":{
+      var pp=state.players[state.current];
+      if(pp.playedDevThisTurn)return;
+      var idx=pp.dev.indexOf(a.card); if(idx<0)return;
+      pp.dev.splice(idx,1); pp.playedDevThisTurn=true; state.uiMode=null;
+      pushLog("log_played_dev",{name:state.current,card:a.card});
+      if(a.card==="knight"){pp.knights+=1;recomputeAwards();state.uiMode="moveRobber";state.pending={type:"robber",source:"knight"};checkWin();}
+      else if(a.card==="road"){state.pending={type:"roadbuilding",left:2};state.uiMode="road";}
+      else if(a.card==="plenty"){state.pending={type:"plenty"};state.ui.plentyPicks=[];}
+      else if(a.card==="monopoly"){state.pending={type:"monopoly"};}
+      return;
+    }
+    case "PLENTY_TOGGLE": if(state.ui.plentyPicks.length<2)state.ui.plentyPicks.push(a.res); return;
+    case "PLENTY_RESET": state.ui.plentyPicks=[]; return;
+    case "PLENTY_CONFIRM":{
+      var pl2=state.players[state.current]; state.ui.plentyPicks.forEach(function(r){pl2.res[r]+=1;});
+      pushLog("log_plenty",{name:state.current,resList:state.ui.plentyPicks.slice()}); state.pending=null; state.ui.plentyPicks=[]; return;
+    }
+    case "MONOPOLY":{
+      var pm=state.players[state.current], taken=0;
+      state.players.forEach(function(q,qi){if(qi===state.current)return;taken+=q.res[a.res];q.res[a.res]=0;});
+      pm.res[a.res]+=taken; pushLog("log_monopoly",{name:state.current,res:a.res,count:taken}); state.pending=null; return;
     }
 
-    case "ROLL": {
-      const s = cloneState(state);
-      const d1 = 1 + Math.floor(Math.random() * 6);
-      const d2 = 1 + Math.floor(Math.random() * 6);
-      const sum = d1 + d2;
-      s.turn = { ...s.turn, rolled: true, dice: [d1, d2] };
-      pushLog(s, "log_roll", { name: s.current, sum, d1, d2 });
-      if (sum === 7) {
-        const queue = [];
-        s.players.forEach((p, pi) => {
-          const n = totalCards(p.res);
-          if (n > 7) queue.push({ pi, count: Math.floor(n / 2) });
-        });
-        if (queue.length > 0) {
-          s.pending = { type: "discard", queue, qi: 0 };
-          pushLog(s, "log_robber_discard");
-        } else {
-          s.uiMode = "moveRobber";
-          s.pending = { type: "robber", source: "roll" };
-          pushLog(s, "log_move_robber");
-        }
-      } else {
-        s.tiles.forEach((t, hi) => {
-          if (t.number !== sum || hi === s.robberHex) return;
-          s.board.hexes[hi].vertices.forEach((v) => {
-            const b = s.buildings[v];
-            if (b) s.players[b.owner].res[t.resource] += b.type === "city" ? 2 : 1;
-          });
-        });
-      }
-      return s;
+    case "SET_BANK": state.ui[a.side]=a.res; return;
+    case "BANK_TRADE":{
+      var pb=state.players[state.current], g=state.ui.bankGive, ge=state.ui.bankGet;
+      if(pb.res[g]<4||g===ge)return; pb.res[g]-=4; pb.res[ge]+=1;
+      pushLog("log_bank",{name:state.current,give:g,get:ge}); return;
     }
 
-    case "DISCARD": {
-      const s = cloneState(state);
-      const cur = s.pending.queue[s.pending.qi];
-      s.players[cur.pi].res = action.res;
-      pushLog(s, "log_discarded", { name: cur.pi, count: cur.count });
-      s.pending.qi += 1;
-      if (s.pending.qi >= s.pending.queue.length) {
-        s.pending = { type: "robber", source: "roll" };
-        s.uiMode = "moveRobber";
-        pushLog(s, "log_move_robber");
-      }
-      return s;
+    case "END_TURN":{
+      var pe=state.players[state.current];
+      pe.dev=pe.dev.concat(pe.newDev); pe.newDev=[]; pe.playedDevThisTurn=false;
+      state.current=(state.current+1)%state.players.length;
+      state.turn={rolled:false,dice:null}; state.uiMode=null; state.pending=null;
+      pushLog("log_next",{name:state.current}); return;
     }
-
-    case "MOVE_ROBBER": {
-      const s = cloneState(state);
-      s.robberHex = action.hexId;
-      const victims = new Set();
-      s.board.hexes[action.hexId].vertices.forEach((v) => {
-        const b = s.buildings[v];
-        if (b && b.owner !== s.current && totalCards(s.players[b.owner].res) > 0) victims.add(b.owner);
-      });
-      const list = [...victims];
-      s.uiMode = null;
-      if (list.length === 0) { s.pending = null; pushLog(s, "log_robber_nosteal"); }
-      else if (list.length === 1) { stealFrom(s, list[0]); s.pending = null; }
-      else s.pending = { type: "steal", candidates: list };
-      return s;
-    }
-    case "STEAL": {
-      const s = cloneState(state);
-      stealFrom(s, action.from);
-      s.pending = null;
-      return s;
-    }
-
-    case "SET_MODE": {
-      const s = cloneState(state);
-      s.uiMode = s.uiMode === action.mode ? null : action.mode;
-      return s;
-    }
-
-    case "BUILD_ROAD": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      const free = s.pending?.type === "roadbuilding";
-      if (countRoads(s, s.current) >= PIECE.road) return state; // supply check
-      if (!free) {
-        if (!canAfford(p.res, COSTS.road)) return state;
-        p.res = pay(p.res, COSTS.road);
-      }
-      s.roads[action.edgeId] = { owner: s.current };
-      pushLog(s, "log_built_road", { name: s.current });
-      recomputeAwards(s);
-      if (free) {
-        s.pending.left -= 1;
-        const anyLegal =
-          countRoads(s, s.current) < PIECE.road &&
-          s.board.edges.some((e) => roadLegal(e.id, s.current, s.buildings, s.roads, s.board));
-        if (s.pending.left <= 0 || !anyLegal) { s.pending = null; s.uiMode = null; }
-      }
-      checkWin(s);
-      return s;
-    }
-
-    case "BUILD_SETTLEMENT": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      if (countType(s, s.current, "settlement") >= PIECE.settlement) return state;
-      if (!canAfford(p.res, COSTS.settlement)) return state;
-      p.res = pay(p.res, COSTS.settlement);
-      s.buildings[action.vertexId] = { owner: s.current, type: "settlement" };
-      s.uiMode = null;
-      pushLog(s, "log_built_settle", { name: s.current });
-      recomputeAwards(s); // an opponent's new settlement may break a longest road
-      checkWin(s);
-      return s;
-    }
-
-    case "BUILD_CITY": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      if (countType(s, s.current, "city") >= PIECE.city) return state;
-      if (!canAfford(p.res, COSTS.city)) return state;
-      p.res = pay(p.res, COSTS.city);
-      // upgrading frees the settlement back to supply (type change handles the count)
-      s.buildings[action.vertexId] = { owner: s.current, type: "city" };
-      s.uiMode = null;
-      pushLog(s, "log_built_city", { name: s.current });
-      checkWin(s);
-      return s;
-    }
-
-    case "BUY_DEV": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      if (!canAfford(p.res, COSTS.dev) || s.devDeck.length === 0) return state;
-      p.res = pay(p.res, COSTS.dev);
-      const card = s.devDeck.shift();
-      if (card === "vp") p.vpCards += 1; else p.newDev.push(card);
-      pushLog(s, "log_bought_dev", { name: s.current });
-      checkWin(s); // a VP card can clinch 10 the moment it is bought
-      return s;
-    }
-
-    case "PLAY_DEV": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      if (p.playedDevThisTurn) return state; // one dev card per turn
-      const idx = p.dev.indexOf(action.card);
-      if (idx === -1) return state;
-      p.dev.splice(idx, 1);
-      p.playedDevThisTurn = true;
-      s.uiMode = null;
-      pushLog(s, "log_played_dev", { name: s.current, card: action.card });
-      if (action.card === "knight") {
-        p.knights += 1;
-        recomputeAwards(s);
-        s.uiMode = "moveRobber";
-        s.pending = { type: "robber", source: "knight" };
-        checkWin(s);
-      } else if (action.card === "road") {
-        s.pending = { type: "roadbuilding", left: 2 };
-        s.uiMode = "road";
-      } else if (action.card === "plenty") {
-        s.pending = { type: "plenty" };
-      } else if (action.card === "monopoly") {
-        s.pending = { type: "monopoly" };
-      }
-      return s;
-    }
-
-    case "PLENTY_PICK": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      action.picks.forEach((r) => (p.res[r] += 1));
-      s.pending = null;
-      pushLog(s, "log_plenty", { name: s.current, resList: action.picks });
-      return s;
-    }
-    case "MONOPOLY_PICK": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      let taken = 0;
-      s.players.forEach((q, qi) => { if (qi === s.current) return; taken += q.res[action.res]; q.res[action.res] = 0; });
-      p.res[action.res] += taken;
-      s.pending = null;
-      pushLog(s, "log_monopoly", { name: s.current, res: action.res, count: taken });
-      return s;
-    }
-
-    case "BANK_TRADE": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      if (p.res[action.give] < 4 || action.give === action.get) return state;
-      p.res[action.give] -= 4;
-      p.res[action.get] += 1;
-      pushLog(s, "log_bank", { name: s.current, give: action.give, get: action.get });
-      return s;
-    }
-
-    case "END_TURN": {
-      const s = cloneState(state);
-      const p = s.players[s.current];
-      p.dev = [...p.dev, ...p.newDev];
-      p.newDev = [];
-      p.playedDevThisTurn = false;
-      s.current = (s.current + 1) % s.players.length;
-      s.turn = { rolled: false, dice: null };
-      s.uiMode = null; s.pending = null;
-      pushLog(s, "log_next", { name: s.current });
-      return s;
-    }
-
-    default:
-      return state;
   }
 }
 
-function cloneState(state) {
-  return {
-    ...state,
-    players: state.players.map((p) => ({ ...p, res: { ...p.res }, dev: [...p.dev], newDev: [...p.newDev] })),
-    buildings: { ...state.buildings },
-    roads: { ...state.roads },
-    devDeck: [...state.devDeck],
-    setup: state.setup ? { ...state.setup } : null,
-    turn: state.turn ? { ...state.turn } : null,
-    pending: state.pending ? { ...state.pending } : null,
-    log: [...state.log],
-  };
-}
-function stealFrom(s, victimPi) {
-  const victim = s.players[victimPi];
-  const pool = [];
-  RES.forEach((r) => { for (let i = 0; i < victim.res[r]; i++) pool.push(r); });
-  if (pool.length === 0) { pushLog(s, "log_nothing_steal"); return; }
-  const r = pool[Math.floor(Math.random() * pool.length)];
-  victim.res[r] -= 1;
-  s.players[s.current].res[r] += 1;
-  pushLog(s, "log_stole", { name: s.current, victim: victimPi });
-}
-function checkWin(s) {
-  if (fullVP(s.current, s) >= 10) { s.winner = s.current; s.phase = "gameover"; pushLog(s, "log_wins", { name: s.current }); }
+/* ============================================================ VIEW ============ */
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function pips(n){var m={2:"•",12:"•",3:"••",11:"••",4:"•••",10:"•••",5:"••••",9:"••••",6:"•••••",8:"•••••"};return m[n]||"";}
+
+function render(){
+  document.documentElement.lang=state.lang;
+  var app=document.getElementById("app");
+  app.innerHTML = state.phase==="menu" ? renderMenu() : renderGame();
 }
 
-/* ============================================================
-   COMPONENTS
-   ============================================================ */
-function CatanGame() {
-  const [state, dispatch] = useReducer(reducer, null);
-  const [lang, setLang] = useState("de");
-  const t = (k, p) => tr(lang, k, p);
-
-  if (!state)
-    return <StartScreen lang={lang} setLang={setLang} t={t} onStart={(n) => dispatch({ type: "NEW_GAME", numPlayers: n })} />;
-
-  return (
-    <div className="w-full min-h-screen text-[#2a2620]"
-      style={{ background: "radial-gradient(circle at 50% 0%, #cfe3ee 0%, #a9cbdf 45%, #7fb0cd 100%)", fontFamily: "'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif" }}>
-      <FontStyles />
-      <div className="max-w-6xl mx-auto px-3 py-4">
-        <Header state={state} lang={lang} setLang={setLang} t={t} onNew={() => dispatch({ type: "NEW_GAME", numPlayers: state.players.length })} />
-        <div className="flex flex-col lg:flex-row gap-4 mt-3">
-          <div className="flex-1 min-w-0"><Board state={state} dispatch={dispatch} /></div>
-          <Sidebar state={state} dispatch={dispatch} lang={lang} t={t} />
-        </div>
-      </div>
-      {state.pending?.type === "discard" && <DiscardModal state={state} dispatch={dispatch} lang={lang} t={t} />}
-      {state.pending?.type === "steal" && <StealModal state={state} dispatch={dispatch} lang={lang} t={t} />}
-      {state.pending?.type === "plenty" && <PlentyModal dispatch={dispatch} t={t} />}
-      {state.pending?.type === "monopoly" && <MonopolyModal dispatch={dispatch} lang={lang} t={t} />}
-      {state.phase === "gameover" && <WinModal state={state} lang={lang} t={t} onNew={() => dispatch({ type: "NEW_GAME", numPlayers: state.players.length })} />}
-    </div>
-  );
+function langToggle(light){
+  return '<div class="lang'+(light?" light":"")+'">'+
+    ["de","en"].map(function(l){return '<button data-act="lang" data-lang="'+l+'" class="'+(state.lang===l?"on":"")+'">'+l.toUpperCase()+'</button>';}).join("")+
+  '</div>';
 }
 
-function FontStyles() {
-  return (
-    <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap');
-      .display { font-family: 'Cinzel','Iowan Old Style',Georgia,serif; }
-      .ui { font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-      @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
-    `}</style>
-  );
+function renderMenu(){
+  var n=state.ui.startN;
+  return '<div class="menu"><div class="inner">'+
+    '<div style="display:flex;justify-content:center;margin-bottom:24px">'+langToggle(false)+'</div>'+
+    '<div class="anchor">⚓︎</div>'+
+    '<h1>CATAN</h1>'+
+    '<div class="sub">'+esc(tr("subtitle"))+'</div>'+
+    '<div class="q">'+esc(tr("choose"))+'</div>'+
+    '<div class="ns">'+[2,3,4].map(function(k){return '<button data-act="setn" data-n="'+k+'" class="'+(n===k?"on":"")+'">'+k+'</button>';}).join("")+'</div>'+
+    '<button class="begin" data-act="begin">'+esc(tr("begin"))+'</button>'+
+    '<div class="blurb">'+esc(tr("blurb"))+'</div>'+
+  '</div></div>';
 }
 
-function LangToggle({ lang, setLang, dark }) {
-  const base = "ui text-xs font-semibold px-2.5 py-1 rounded-md transition";
-  return (
-    <div className={`inline-flex gap-1 rounded-lg p-0.5 ${dark ? "bg-black/25" : "bg-[#1f3242]/10"}`}>
-      {["de", "en"].map((l) => (
-        <button key={l} onClick={() => setLang(l)}
-          className={`${base} ${lang === l ? "bg-[#e2882a] text-white" : dark ? "text-[#9fc0d4] hover:text-white" : "text-[#33526a] hover:bg-white/40"}`}>
-          {l.toUpperCase()}
-        </button>
-      ))}
-    </div>
-  );
+function renderGame(){
+  var c=PCOL[state.current];
+  var phase=state.phase==="setup"?tr("phase_setup"):state.phase==="gameover"?tr("phase_over"):tr("phase_play");
+  var header='<div class="header">'+
+    '<div style="display:flex;align-items:center;gap:12px;min-width:0">'+
+      '<span class="title">CATAN</span><span class="phase">'+esc(phase)+'</span></div>'+
+    '<div class="right">'+
+      '<div class="turn"><span style="color:#9fc0d4">'+esc(tr("turn"))+'</span>'+
+        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(state.current))+'</span></div>'+
+      langToggle(false)+
+      '<button class="btn-new" data-act="newgame">'+esc(tr("new_game"))+'</button>'+
+    '</div></div>';
+  var layout='<div class="layout"><div class="board-wrap">'+renderBoard()+'</div>'+renderSidebar()+'</div>';
+  var foot='<div class="foot">'+esc(tr("foot"))+'</div>';
+  return '<div class="wrap">'+header+layout+foot+'</div>'+renderModals();
 }
 
-function StartScreen({ lang, setLang, t, onStart }) {
-  const [n, setN] = useState(3);
-  return (
-    <div className="w-full min-h-screen flex items-center justify-center p-6" style={{ background: "radial-gradient(circle at 50% 30%, #2b4a63, #16242f)" }}>
-      <FontStyles />
-      <div className="text-center text-[#f3ecda] max-w-md">
-        <div className="flex justify-center mb-6"><LangToggle lang={lang} setLang={setLang} dark /></div>
-        <div className="text-6xl mb-2">⚓︎</div>
-        <h1 className="display text-5xl tracking-[0.25em] mb-1">CATAN</h1>
-        <p className="ui text-sm tracking-widest uppercase text-[#9fc0d4] mb-8">{t("subtitle")}</p>
-        <p className="ui text-[#cdd9e0] mb-3 text-sm">{t("choose")}</p>
-        <div className="flex justify-center gap-3 mb-8">
-          {[2, 3, 4].map((k) => (
-            <button key={k} onClick={() => setN(k)}
-              className={`ui w-14 h-14 rounded-full text-xl font-bold border-2 transition ${n === k ? "bg-[#e2882a] border-[#f3ecda] text-white scale-110" : "bg-transparent border-[#5d7e93] text-[#9fc0d4] hover:border-[#9fc0d4]"}`}>
-              {k}
-            </button>
-          ))}
-        </div>
-        <button onClick={() => onStart(n)} className="display tracking-widest text-lg px-10 py-3 rounded-lg bg-[#cf3a36] hover:bg-[#b8302c] text-white shadow-lg transition">
-          {t("begin")}
-        </button>
-        <p className="ui text-[11px] text-[#7c98a9] mt-8 leading-relaxed">{t("blurb")}</p>
-      </div>
-    </div>
-  );
+/* ---- board ---- */
+function legalVertSet(){
+  var out={}, me=state.current, mode=state.uiMode, setup=state.setup, board=state.board;
+  if(state.phase==="setup"&&setup&&setup.placing==="settlement"){
+    board.vertices.forEach(function(v){if(settlementLegal(v.id,setup.order[setup.idx],state.buildings,state.roads,board,true))out[v.id]=1;});
+  }else if(mode==="settlement"&&countType(me,"settlement")<PIECE.settlement){
+    board.vertices.forEach(function(v){if(settlementLegal(v.id,me,state.buildings,state.roads,board,false))out[v.id]=1;});
+  }else if(mode==="city"&&countType(me,"city")<PIECE.city){
+    for(var k in state.buildings){var b=state.buildings[k];if(b.owner===me&&b.type==="settlement")out[k]=1;}
+  }
+  return out;
+}
+function legalEdgeSet(){
+  var out={}, me=state.current, mode=state.uiMode, setup=state.setup, board=state.board;
+  var who=state.phase==="setup"?(setup?setup.order[setup.idx]:me):me;
+  if(countRoads(who)>=PIECE.road)return out;
+  if(state.phase==="setup"&&setup&&setup.placing==="road"){
+    board.edges.forEach(function(e){if(roadLegal(e.id,setup.order[setup.idx],state.buildings,state.roads,board,setup.lastSettlement))out[e.id]=1;});
+  }else if(mode==="road"){
+    board.edges.forEach(function(e){if(roadLegal(e.id,me,state.buildings,state.roads,board))out[e.id]=1;});
+  }
+  return out;
+}
+function renderBoard(){
+  var board=state.board, tiles=state.tiles, pad=46;
+  var vb=(board.bounds.minX-pad)+" "+(board.bounds.minY-pad)+" "+(board.bounds.maxX-board.bounds.minX+pad*2)+" "+(board.bounds.maxY-board.bounds.minY+pad*2);
+  var moveRobber=state.uiMode==="moveRobber";
+  var lv=legalVertSet(), le=legalEdgeSet();
+  var s='<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">';
+
+  board.hexes.forEach(function(h){
+    var t=tiles[h.id];
+    var pts=h.vertices.map(function(vi){return board.vertices[vi].x+","+board.vertices[vi].y;}).join(" ");
+    var clickable=moveRobber&&h.id!==state.robberHex;
+    s+='<g '+(clickable?'data-hex="'+h.id+'" style="cursor:pointer"':'')+'>';
+    s+='<polygon points="'+pts+'" fill="'+RES_META[t.resource].tile+'" stroke="#244e36" stroke-width="3" stroke-linejoin="round"/>';
+    if(clickable)s+='<polygon points="'+pts+'" fill="none" stroke="#ffe08a" stroke-width="4" stroke-linejoin="round"/>';
+    s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42)+'" text-anchor="middle" font-size="20" opacity="0.9">'+RES_META[t.resource].icon+'</text>';
+    if(t.number!==null){
+      var red=(t.number===6||t.number===8);
+      s+='<circle cx="'+h.x+'" cy="'+(h.y+6)+'" r="16" fill="'+RES_META[t.resource].token+'" stroke="#7a6a45" stroke-width="1.2"/>';
+      s+='<text x="'+h.x+'" y="'+(h.y+12)+'" text-anchor="middle" font-size="17" font-weight="700" fill="'+(red?"#c0392b":"#3a3024")+'" font-family="Georgia,serif">'+t.number+'</text>';
+      s+='<text x="'+h.x+'" y="'+(h.y+24)+'" text-anchor="middle" font-size="7" fill="'+(red?"#c0392b":"#7a6a45")+'" letter-spacing="1">'+pips(t.number)+'</text>';
+    }
+    s+='</g>';
+  });
+
+  if(state.robberHex>=0){
+    var rh=board.hexes[state.robberHex];
+    s+='<g transform="translate('+(rh.x-20)+','+(rh.y-4)+')" pointer-events="none">'+
+       '<ellipse cx="0" cy="14" rx="8" ry="3" fill="rgba(0,0,0,.3)"/>'+
+       '<path d="M0,-12 C6,-12 7,-4 5,2 L7,14 L-7,14 L-5,2 C-7,-4 -6,-12 0,-12 Z" fill="#2c2c2c" stroke="#000" stroke-width="0.8"/>'+
+       '<circle cx="0" cy="-12" r="5" fill="#2c2c2c" stroke="#000" stroke-width="0.8"/></g>';
+  }
+
+  for(var rid in state.roads){
+    var e=board.edges[rid], va=board.vertices[e.v1], vb2=board.vertices[e.v2];
+    s+='<line x1="'+va.x+'" y1="'+va.y+'" x2="'+vb2.x+'" y2="'+vb2.y+'" stroke="'+PCOL[state.roads[rid].owner].main+'" stroke-width="9" stroke-linecap="round"/>';
+  }
+  for(var eid in le){
+    var e2=board.edges[eid];
+    s+='<line data-edge="'+eid+'" x1="'+board.vertices[e2.v1].x+'" y1="'+board.vertices[e2.v1].y+'" x2="'+board.vertices[e2.v2].x+'" y2="'+board.vertices[e2.v2].y+'" stroke="#fff7d6" stroke-width="9" stroke-linecap="round" opacity="0.55" style="cursor:pointer">'+
+       '<animate attributeName="opacity" values="0.3;0.75;0.3" dur="1.4s" repeatCount="indefinite"/></line>';
+  }
+
+  for(var bid in state.buildings){
+    var b=state.buildings[bid], v=board.vertices[bid], col=PCOL[b.owner], sz=b.type==="city"?13:9;
+    var d="M "+(v.x-sz)+" "+(v.y+sz)+" L "+(v.x-sz)+" "+(v.y-sz*0.25)+" L "+v.x+" "+(v.y-sz)+" L "+(v.x+sz)+" "+(v.y-sz*0.25)+" L "+(v.x+sz)+" "+(v.y+sz)+" Z";
+    s+='<g pointer-events="none"><path d="'+d+'" fill="'+col.main+'" stroke="'+col.dark+'" stroke-width="2" stroke-linejoin="round"/>';
+    if(sz>11)s+='<circle cx="'+v.x+'" cy="'+(v.y+sz*0.15)+'" r="'+(sz*0.28)+'" fill="'+col.dark+'" opacity="0.5"/>';
+    s+='</g>';
+  }
+  for(var vid in lv){
+    var vv=board.vertices[vid];
+    s+='<circle data-vert="'+vid+'" cx="'+vv.x+'" cy="'+vv.y+'" r="9" fill="#fff7d6" stroke="#caa33a" stroke-width="2" opacity="0.85" style="cursor:pointer">'+
+       '<animate attributeName="r" values="7;10;7" dur="1.3s" repeatCount="indefinite"/></circle>';
+  }
+  s+='</svg>';
+  return s;
 }
 
-function Header({ state, lang, setLang, t, onNew }) {
-  const c = PLAYER_COLORS[state.current];
-  const phaseLabel = state.phase === "setup" ? t("phase_setup") : state.phase === "gameover" ? t("phase_over") : t("phase_play");
-  return (
-    <div className="flex items-center justify-between gap-3 bg-[#1f3242]/85 text-[#f3ecda] rounded-xl px-4 py-2 shadow">
-      <div className="flex items-center gap-3 min-w-0">
-        <span className="display text-2xl tracking-[0.2em]">CATAN</span>
-        <span className="ui text-xs uppercase tracking-widest text-[#9fc0d4] hidden sm:inline">{phaseLabel}</span>
-      </div>
-      <div className="flex items-center gap-2 sm:gap-3">
-        <div className="ui flex items-center gap-2 text-sm">
-          <span className="text-[#9fc0d4] hidden sm:inline">{t("turn")}</span>
-          <span className="inline-flex items-center gap-1.5 font-semibold">
-            <span className="w-3.5 h-3.5 rounded-full border border-white/40" style={{ background: c.main }} />
-            {colorName(lang, state.current)}
-          </span>
-        </div>
-        <LangToggle lang={lang} setLang={setLang} dark />
-        <button onClick={onNew} className="ui text-xs px-3 py-1.5 rounded-md bg-[#33526a] hover:bg-[#3e637e]">{t("new_game")}</button>
-      </div>
-    </div>
-  );
+/* ---- sidebar ---- */
+function renderSidebar(){
+  var me=state.current, p=state.players[me], c=PCOL[me];
+  var isSetup=state.phase==="setup";
+  var blocking=!!state.pending&&state.pending.type!=="robber";
+  var mustRobber=state.uiMode==="moveRobber";
+  var canAct=state.phase==="play"&&!blocking&&!mustRobber;
+  var rolled=state.turn&&state.turn.rolled;
+  var canBuild=canAct&&rolled;
+  var canPlayDev=canAct&&!p.playedDevThisTurn;
+  var roadsLeft=PIECE.road-countRoads(me), settLeft=PIECE.settlement-countType(me,"settlement"), cityLeft=PIECE.city-countType(me,"city");
+
+  var resCells=RES.map(function(r){
+    return '<div class="res-cell" style="background:'+RES_META[r].token+'" title="'+esc(resLabel(r))+'"><div class="ic">'+RES_META[r].icon+'</div><div class="n">'+p.res[r]+'</div></div>';
+  }).join("");
+
+  var devSection="";
+  if(p.dev.length||p.newDev.length||p.vpCards){
+    var items=p.dev.map(function(d){return '<button class="devbtn" data-act="playdev" data-card="'+d+'" '+(canPlayDev?"":"disabled")+' title="'+esc(devDesc(d))+'">'+esc(devLabel(d))+'</button>';}).join("");
+    items+=p.newDev.map(function(d){return '<span class="newdev" title="'+esc(tr("tip_newdev"))+'">'+esc(devLabel(d))+' '+esc(tr("new_suffix"))+'</span>';}).join("");
+    if(p.vpCards)items+='<span class="vpbadge">'+esc(tr("vp_card"))+p.vpCards+'</span>';
+    devSection='<div style="margin-bottom:12px"><div class="seclbl">'+esc(tr("dev_cards"))+'</div><div class="devrow">'+items+'</div></div>';
+  }
+
+  var actions;
+  if(isSetup){
+    actions='<div class="hint">'+esc(tr("place_a"))+' <b>'+esc(state.setup.placing==="settlement"?tr("s_settlement"):tr("s_road"))+'</b> '+esc(tr("on_board"))+'</div>';
+  }else if(mustRobber){
+    actions='<div class="hint">'+esc(tr("click_robber"))+'</div>';
+  }else{
+    var rb=(state.pending&&state.pending.type==="roadbuilding")?'<div class="hint gold">'+esc(tr("rb_hint"))+' ('+state.pending.left+')</div>':'';
+    var rollRow= !rolled
+      ? '<button class="btn-roll" data-act="roll" '+(canAct?"":"disabled")+'>'+esc(tr("roll"))+'</button>'
+      : renderDice(state.turn.dice);
+    function bb(label,cost,mode,enabled,act){
+      var costStr=Object.keys(cost).map(function(k){return cost[k]+RES_META[k].icon;}).join(" ");
+      var cls="bbtn"+(state.uiMode===mode?" active":"");
+      var data=act?'data-act="'+act+'"':'data-act="mode" data-mode="'+mode+'"';
+      return '<button class="'+cls+'" '+data+' '+(enabled?"":"disabled")+'><div>'+esc(label)+'</div><div class="cost">'+costStr+'</div></button>';
+    }
+    var buildGrid='<div class="grid2">'+
+      bb(tr("b_road"),COSTS.road,"road",canBuild&&canAfford(p.res,COSTS.road)&&roadsLeft>0)+
+      bb(tr("b_settlement"),COSTS.settlement,"settlement",canBuild&&canAfford(p.res,COSTS.settlement)&&settLeft>0)+
+      bb(tr("b_city"),COSTS.city,"city",canBuild&&canAfford(p.res,COSTS.city)&&cityLeft>0&&countType(me,"settlement")>0)+
+      bb(tr("b_dev"),COSTS.dev,"dev",canBuild&&canAfford(p.res,COSTS.dev)&&state.devDeck.length>0,"buydev")+
+    '</div>';
+    var bankDisabled=(!canBuild)||p.res[state.ui.bankGive]<4||state.ui.bankGive===state.ui.bankGet;
+    var sel=function(side){return '<select data-act="setbank" data-side="'+side+'">'+RES.map(function(r){return '<option value="'+r+'"'+(state.ui[side]===r?" selected":"")+'>'+RES_META[r].icon+' '+esc(resLabel(r))+'</option>';}).join("")+'</select>';};
+    var bank='<div class="banktrade"><div class="seclbl" style="margin-bottom:4px">'+esc(tr("bank_trade"))+'</div>'+
+      '<div class="row">'+sel("bankGive")+'<span class="arrow">→</span>'+sel("bankGet")+
+      '<button class="tradebtn" data-act="trade" '+(bankDisabled?"disabled":"")+'>'+esc(tr("trade"))+'</button></div></div>';
+    var endBtn='<button class="btn-end" data-act="endturn" '+((rolled&&canAct)?"":"disabled")+'>'+esc(tr("end_turn"))+'</button>';
+    actions='<div class="actions">'+rb+rollRow+buildGrid+bank+endBtn+'</div>';
+  }
+
+  var card='<div class="panel"><div class="phead" style="background:'+c.main+';color:'+c.text+'">'+
+      '<span class="who"><span class="miniwhite"></span>'+esc(colorName(me))+'</span>'+
+      '<span style="font-size:14px;font-weight:700">'+fullVP(me)+' / 10 ★</span></div>'+
+    '<div class="pp">'+
+      '<div class="res-grid">'+resCells+'</div>'+
+      '<div class="supply"><span class="lbl">'+esc(tr("supply"))+'</span><span class="nums">'+
+        '<span title="'+esc(tr("b_road"))+'">🛤️ '+roadsLeft+'</span>'+
+        '<span title="'+esc(tr("b_settlement"))+'">🏠 '+settLeft+'</span>'+
+        '<span title="'+esc(tr("b_city"))+'">🏛️ '+cityLeft+'</span></span></div>'+
+      devSection+actions+
+    '</div></div>';
+
+  return '<div class="sidebar">'+card+renderScoreboard()+renderLog()+'</div>';
 }
 
-/* ---------- board ---------- */
-function Board({ state, dispatch }) {
-  const { board, tiles } = state;
-  const pad = 46;
-  const vb = {
-    x: board.bounds.minX - pad, y: board.bounds.minY - pad,
-    w: board.bounds.maxX - board.bounds.minX + pad * 2, h: board.bounds.maxY - board.bounds.minY + pad * 2,
-  };
-  const me = state.current;
-  const mode = state.uiMode;
-  const setup = state.setup;
-
-  const legalVerts = useMemo(() => {
-    const out = new Set();
-    if (state.phase === "setup" && setup?.placing === "settlement")
-      board.vertices.forEach((v) => { if (settlementLegal(v.id, setup.order[setup.idx], state.buildings, state.roads, board, true)) out.add(v.id); });
-    else if (mode === "settlement" && countType(state, me, "settlement") < PIECE.settlement)
-      board.vertices.forEach((v) => { if (settlementLegal(v.id, me, state.buildings, state.roads, board, false)) out.add(v.id); });
-    else if (mode === "city" && countType(state, me, "city") < PIECE.city)
-      Object.entries(state.buildings).forEach(([v, b]) => { if (b.owner === me && b.type === "settlement") out.add(Number(v)); });
-    return out;
-  }, [state, mode, setup]);
-
-  const legalEdges = useMemo(() => {
-    const out = new Set();
-    const canRoad = countRoads(state, state.phase === "setup" ? setup?.order[setup?.idx] : me) < PIECE.road;
-    if (!canRoad) return out;
-    if (state.phase === "setup" && setup?.placing === "road")
-      board.edges.forEach((e) => { if (roadLegal(e.id, setup.order[setup.idx], state.buildings, state.roads, board, setup.lastSettlement)) out.add(e.id); });
-    else if (mode === "road")
-      board.edges.forEach((e) => { if (roadLegal(e.id, me, state.buildings, state.roads, board)) out.add(e.id); });
-    return out;
-  }, [state, mode, setup]);
-
-  const moveRobber = state.uiMode === "moveRobber";
-
-  const clickVertex = (v) => {
-    if (state.phase === "setup" && setup.placing === "settlement" && legalVerts.has(v)) dispatch({ type: "SETUP_SETTLEMENT", vertexId: v });
-    else if (mode === "settlement" && legalVerts.has(v)) dispatch({ type: "BUILD_SETTLEMENT", vertexId: v });
-    else if (mode === "city" && legalVerts.has(v)) dispatch({ type: "BUILD_CITY", vertexId: v });
-  };
-  const clickEdge = (e) => {
-    if (state.phase === "setup" && setup.placing === "road" && legalEdges.has(e)) dispatch({ type: "SETUP_ROAD", edgeId: e });
-    else if (mode === "road" && legalEdges.has(e)) dispatch({ type: "BUILD_ROAD", edgeId: e });
-  };
-
-  return (
-    <div className="bg-[#2a6f97] rounded-2xl p-2 shadow-inner" style={{ boxShadow: "inset 0 0 40px rgba(0,0,0,.35)" }}>
-      <svg viewBox={`${vb.x} ${vb.y} ${vb.w} ${vb.h}`} className="w-full h-auto select-none" style={{ display: "block" }}>
-        {board.hexes.map((h) => {
-          const t = tiles[h.id];
-          const pts = h.vertices.map((vi) => `${board.vertices[vi].x},${board.vertices[vi].y}`).join(" ");
-          const robberClickable = moveRobber && h.id !== state.robberHex;
-          return (
-            <g key={`h${h.id}`} onClick={() => robberClickable && dispatch({ type: "MOVE_ROBBER", hexId: h.id })} style={{ cursor: robberClickable ? "pointer" : "default" }}>
-              <polygon points={pts} fill={RES_META[t.resource].tile} stroke="#244e36" strokeWidth="3" strokeLinejoin="round" />
-              <polygon points={pts} fill="none" stroke={robberClickable ? "#ffe08a" : "transparent"} strokeWidth="4" strokeLinejoin="round" />
-              <text x={h.x} y={h.y - SIZE * 0.42} textAnchor="middle" fontSize="20" opacity="0.9">{RES_META[t.resource].icon}</text>
-              {t.number !== null && (
-                <g>
-                  <circle cx={h.x} cy={h.y + 6} r="16" fill={RES_META[t.resource].token} stroke="#7a6a45" strokeWidth="1.2" />
-                  <text x={h.x} y={h.y + 12} textAnchor="middle" fontSize="17" fontWeight="700"
-                    fill={t.number === 6 || t.number === 8 ? "#c0392b" : "#3a3024"} style={{ fontFamily: "Georgia,serif" }}>{t.number}</text>
-                  <text x={h.x} y={h.y + 24} textAnchor="middle" fontSize="7" fill={t.number === 6 || t.number === 8 ? "#c0392b" : "#7a6a45"} letterSpacing="1">{pips(t.number)}</text>
-                </g>
-              )}
-            </g>
-          );
-        })}
-
-        {state.robberHex >= 0 && (() => {
-          const h = board.hexes[state.robberHex];
-          return <g key="robber" transform={`translate(${h.x - 20},${h.y - 4})`} pointerEvents="none">
-            <ellipse cx="0" cy="14" rx="8" ry="3" fill="rgba(0,0,0,.3)" />
-            <path d="M0,-12 C6,-12 7,-4 5,2 L7,14 L-7,14 L-5,2 C-7,-4 -6,-12 0,-12 Z" fill="#2c2c2c" stroke="#000" strokeWidth="0.8" />
-            <circle cx="0" cy="-12" r="5" fill="#2c2c2c" stroke="#000" strokeWidth="0.8" />
-          </g>;
-        })()}
-
-        {Object.entries(state.roads).map(([eid, r]) => {
-          const e = board.edges[eid]; const va = board.vertices[e.v1], vb2 = board.vertices[e.v2];
-          return <line key={`r${eid}`} x1={va.x} y1={va.y} x2={vb2.x} y2={vb2.y} stroke={PLAYER_COLORS[r.owner].main} strokeWidth="9" strokeLinecap="round" />;
-        })}
-        {[...legalEdges].map((eid) => {
-          const e = board.edges[eid];
-          return <line key={`le${eid}`} x1={board.vertices[e.v1].x} y1={board.vertices[e.v1].y} x2={board.vertices[e.v2].x} y2={board.vertices[e.v2].y}
-            stroke="#fff7d6" strokeWidth="9" strokeLinecap="round" opacity="0.55" style={{ cursor: "pointer" }} onClick={() => clickEdge(eid)}>
-            <animate attributeName="opacity" values="0.3;0.75;0.3" dur="1.4s" repeatCount="indefinite" />
-          </line>;
-        })}
-
-        {Object.entries(state.buildings).map(([vid, b]) => {
-          const v = board.vertices[vid]; const c = PLAYER_COLORS[b.owner];
-          return <g key={`b${vid}`} pointerEvents="none">{house(v.x, v.y, b.type === "city" ? 13 : 9, c.main, c.dark)}</g>;
-        })}
-        {[...legalVerts].map((vid) => {
-          const v = board.vertices[vid];
-          return <circle key={`lv${vid}`} cx={v.x} cy={v.y} r="9" fill="#fff7d6" stroke="#caa33a" strokeWidth="2" opacity="0.85" style={{ cursor: "pointer" }} onClick={() => clickVertex(vid)}>
-            <animate attributeName="r" values="7;10;7" dur="1.3s" repeatCount="indefinite" />
-          </circle>;
-        })}
-      </svg>
-    </div>
-  );
+function renderDice(d){
+  function die(n){var dots={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]}[n];
+    var cells="";for(var i=0;i<9;i++)cells+='<span>'+(dots.indexOf(i)>=0?'<span class="pip"></span>':'')+'</span>';
+    return '<div class="die">'+cells+'</div>';}
+  return '<div class="dice">'+die(d[0])+die(d[1])+'<span class="dsum">= '+(d[0]+d[1])+'</span></div>';
 }
 
-function house(x, y, s, fill, stroke) {
-  const d = `M ${x - s} ${y + s} L ${x - s} ${y - s * 0.25} L ${x} ${y - s} L ${x + s} ${y - s * 0.25} L ${x + s} ${y + s} Z`;
-  return <>
-    <path d={d} fill={fill} stroke={stroke} strokeWidth="2" strokeLinejoin="round" />
-    {s > 11 && <circle cx={x} cy={y + s * 0.15} r={s * 0.28} fill={stroke} opacity="0.5" />}
-  </>;
-}
-function pips(n) {
-  const map = { 2: "•", 12: "•", 3: "••", 11: "••", 4: "•••", 10: "•••", 5: "••••", 9: "••••", 6: "•••••", 8: "•••••" };
-  return map[n] || "";
-}
-
-/* ---------- sidebar ---------- */
-function Sidebar({ state, dispatch, lang, t }) {
-  const me = state.current;
-  const p = state.players[me];
-  const c = PLAYER_COLORS[me];
-  const isSetup = state.phase === "setup";
-  const blocking = !!state.pending && state.pending.type !== "robber";
-  const mustRobber = state.uiMode === "moveRobber";
-  const canAct = state.phase === "play" && !blocking && !mustRobber;
-  const rolled = state.turn?.rolled;
-  const canBuild = canAct && rolled;
-  const canPlayDev = canAct && !p.playedDevThisTurn; // dev cards may be played before rolling (Almanach)
-
-  const roadsLeft = PIECE.road - countRoads(state, me);
-  const settLeft = PIECE.settlement - countType(state, me, "settlement");
-  const cityLeft = PIECE.city - countType(state, me, "city");
-
-  return (
-    <div className="ui w-full lg:w-[320px] shrink-0 space-y-3">
-      <div className="rounded-xl shadow bg-[#f3ecda] overflow-hidden">
-        <div className="px-4 py-2 flex items-center justify-between" style={{ background: c.main, color: c.text }}>
-          <span className="font-bold tracking-wide flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-white/70" /> {colorName(lang, me)}</span>
-          <span className="text-sm font-semibold">{fullVP(me, state)} / 10 ★</span>
-        </div>
-        <div className="p-3">
-          <div className="grid grid-cols-5 gap-1.5 mb-2">
-            {RES.map((r) => (
-              <div key={r} className="text-center rounded-md py-1.5" style={{ background: RES_META[r].token }} title={resLabel(lang, r)}>
-                <div className="text-lg leading-none">{RES_META[r].icon}</div>
-                <div className="font-bold text-sm">{p.res[r]}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* piece supply */}
-          <div className="flex items-center justify-between text-[11px] text-[#7a6e52] mb-3 px-1">
-            <span className="uppercase tracking-widest text-[10px] text-[#8a7d5e]">{t("supply")}</span>
-            <span className="flex gap-2.5">
-              <span title={t("b_road")}>🛤️ {roadsLeft}</span>
-              <span title={t("b_settlement")}>🏠 {settLeft}</span>
-              <span title={t("b_city")}>🏛️ {cityLeft}</span>
-            </span>
-          </div>
-
-          {(p.dev.length > 0 || p.newDev.length > 0 || p.vpCards > 0) && (
-            <div className="mb-3">
-              <div className="text-[11px] uppercase tracking-widest text-[#8a7d5e] mb-1">{t("dev_cards")}</div>
-              <div className="flex flex-wrap gap-1.5">
-                {p.dev.map((d, i) => (
-                  <button key={`d${i}`} disabled={!canPlayDev} onClick={() => dispatch({ type: "PLAY_DEV", card: d })} title={devDesc(lang, d)}
-                    className="text-[11px] px-2 py-1 rounded bg-[#33526a] text-[#f3ecda] disabled:opacity-40 hover:bg-[#3e637e]">{devLabel(lang, d)}</button>
-                ))}
-                {p.newDev.map((d, i) => (
-                  <span key={`nd${i}`} title={t("tip_newdev")} className="text-[11px] px-2 py-1 rounded bg-[#9a9484]/40 text-[#5a523f]">{devLabel(lang, d)} {t("new_suffix")}</span>
-                ))}
-                {p.vpCards > 0 && <span className="text-[11px] px-2 py-1 rounded bg-[#caa33a]/30 text-[#7a5e12]">{t("vp_card")}{p.vpCards}</span>}
-              </div>
-            </div>
-          )}
-
-          {isSetup ? (
-            <div className="text-sm text-[#5a523f] bg-[#e6dcc2] rounded-md p-2">
-              {t("place_a")} <b>{state.setup.placing === "settlement" ? t("s_settlement") : t("s_road")}</b> {t("on_board")}
-            </div>
-          ) : mustRobber ? (
-            <div className="text-sm text-[#5a523f] bg-[#e6dcc2] rounded-md p-2">{t("click_robber")}</div>
-          ) : (
-            <div className="space-y-2">
-              {state.pending?.type === "roadbuilding" && (
-                <div className="text-xs text-[#7a5e12] bg-[#caa33a]/25 rounded-md p-2">{t("rb_hint")} ({state.pending.left})</div>
-              )}
-              {!rolled ? (
-                <button onClick={() => dispatch({ type: "ROLL" })} disabled={!canAct}
-                  className="w-full py-2.5 rounded-lg bg-[#cf3a36] hover:bg-[#b8302c] text-white font-semibold tracking-wide shadow disabled:opacity-50">{t("roll")}</button>
-              ) : <DiceRow dice={state.turn.dice} />}
-
-              <div className="grid grid-cols-2 gap-2">
-                <BuildBtn label={t("b_road")} cost={COSTS.road} active={state.uiMode === "road"}
-                  enabled={canBuild && canAfford(p.res, COSTS.road) && roadsLeft > 0}
-                  onClick={() => dispatch({ type: "SET_MODE", mode: "road" })} />
-                <BuildBtn label={t("b_settlement")} cost={COSTS.settlement} active={state.uiMode === "settlement"}
-                  enabled={canBuild && canAfford(p.res, COSTS.settlement) && settLeft > 0}
-                  onClick={() => dispatch({ type: "SET_MODE", mode: "settlement" })} />
-                <BuildBtn label={t("b_city")} cost={COSTS.city} active={state.uiMode === "city"}
-                  enabled={canBuild && canAfford(p.res, COSTS.city) && cityLeft > 0 && countType(state, me, "settlement") > 0}
-                  onClick={() => dispatch({ type: "SET_MODE", mode: "city" })} />
-                <BuildBtn label={t("b_dev")} cost={COSTS.dev} active={false}
-                  enabled={canBuild && canAfford(p.res, COSTS.dev) && state.devDeck.length > 0}
-                  onClick={() => dispatch({ type: "BUY_DEV" })} />
-              </div>
-
-              <BankTrade res={p.res} disabled={!canBuild} lang={lang} t={t}
-                onTrade={(give, get) => dispatch({ type: "BANK_TRADE", give, get })} />
-
-              <button disabled={!rolled || !canAct} onClick={() => dispatch({ type: "END_TURN" })}
-                className="w-full py-2 rounded-lg bg-[#33526a] hover:bg-[#3e637e] text-[#f3ecda] font-semibold disabled:opacity-40">{t("end_turn")}</button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <Scoreboard state={state} lang={lang} t={t} />
-
-      <div className="rounded-xl bg-[#1f3242]/85 text-[#dfe9ef] p-3 text-[12px] leading-relaxed">
-        <div className="uppercase tracking-widest text-[10px] text-[#7f9cae] mb-1">{t("game_log")}</div>
-        {state.log.map((l, i) => <div key={i} className={i === 0 ? "text-[#f3ecda]" : "opacity-60"}>{logText(lang, l)}</div>)}
-      </div>
-    </div>
-  );
+function renderScoreboard(){
+  var rows=state.players.map(function(p,pi){
+    var c=PCOL[pi];
+    return '<div class="score-row'+(pi===state.current?" cur":"")+'">'+
+      '<span class="dot" style="background:'+c.main+'"></span>'+
+      '<span class="nm">'+esc(colorName(pi))+'</span>'+
+      '<span class="vp">'+publicVP(pi)+' ★</span>'+
+      '<span class="meta"><span title="'+esc(tr("tip_hand"))+'">🂠 '+totalCards(p.res)+'</span>'+
+        '<span title="'+esc(tr("tip_knights"))+'">⚔ '+p.knights+'</span>'+
+        (state.longestRoadOwner===pi?'<span title="'+esc(tr("tip_lroad"))+'">🛤️</span>':'')+
+        (state.largestArmyOwner===pi?'<span title="'+esc(tr("tip_larmy"))+'">🏰</span>':'')+
+      '</span></div>';
+  }).join("");
+  return '<div class="panel pp scoreboard"><div class="seclbl">'+esc(tr("settlers"))+'</div>'+rows+'</div>';
 }
 
-function DiceRow({ dice }) {
-  return (
-    <div className="flex items-center justify-center gap-3 py-1">
-      {dice.map((d, i) => <Die key={i} n={d} />)}
-      <span className="text-2xl font-bold text-[#33526a]">= {dice[0] + dice[1]}</span>
-    </div>
-  );
-}
-function Die({ n }) {
-  const dots = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] }[n];
-  return (
-    <div className="grid grid-cols-3 grid-rows-3 gap-0.5 w-9 h-9 bg-white rounded-md shadow border border-[#d8cfb6] p-1">
-      {Array.from({ length: 9 }).map((_, i) => <span key={i} className="flex items-center justify-center">{dots.includes(i) && <span className="w-1.5 h-1.5 rounded-full bg-[#33526a]" />}</span>)}
-    </div>
-  );
-}
-function BuildBtn({ label, cost, enabled, active, onClick }) {
-  return (
-    <button disabled={!enabled} onClick={onClick}
-      className={`px-2 py-1.5 rounded-lg text-sm font-semibold transition border ${active ? "bg-[#e2882a] border-[#caa33a] text-white" : enabled ? "bg-[#e6dcc2] border-[#d8cfb6] text-[#3a3024] hover:bg-[#dcceac]" : "bg-[#e6dcc2]/50 border-transparent text-[#9a9484] cursor-not-allowed"}`}>
-      <div>{label}</div>
-      <div className="text-[10px] font-normal opacity-80">{Object.entries(cost).map(([k, v]) => `${v}${RES_META[k].icon}`).join(" ")}</div>
-    </button>
-  );
-}
-function BankTrade({ res, disabled, lang, t, onTrade }) {
-  const [give, setGive] = useState("wood");
-  const [get, setGet] = useState("ore");
-  return (
-    <div className="rounded-lg bg-[#e6dcc2] p-2">
-      <div className="text-[11px] uppercase tracking-widest text-[#8a7d5e] mb-1">{t("bank_trade")}</div>
-      <div className="flex items-center gap-1.5 text-sm">
-        <ResSelect value={give} onChange={setGive} lang={lang} />
-        <span className="text-[#8a7d5e]">→</span>
-        <ResSelect value={get} onChange={setGet} lang={lang} />
-        <button disabled={disabled || res[give] < 4 || give === get} onClick={() => onTrade(give, get)}
-          className="ml-auto px-2.5 py-1 rounded bg-[#33526a] text-[#f3ecda] text-xs font-semibold disabled:opacity-40">{t("trade")}</button>
-      </div>
-    </div>
-  );
-}
-function ResSelect({ value, onChange, lang }) {
-  return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="bg-white rounded px-1.5 py-1 text-sm border border-[#d8cfb6]">
-      {RES.map((r) => <option key={r} value={r}>{RES_META[r].icon} {resLabel(lang, r)}</option>)}
-    </select>
-  );
-}
-function Scoreboard({ state, lang, t }) {
-  return (
-    <div className="rounded-xl bg-[#f3ecda] p-3 shadow">
-      <div className="text-[11px] uppercase tracking-widest text-[#8a7d5e] mb-2">{t("settlers")}</div>
-      <div className="space-y-1.5">
-        {state.players.map((p, pi) => {
-          const c = PLAYER_COLORS[pi];
-          return (
-            <div key={pi} className={`flex items-center gap-2 text-sm rounded-md px-2 py-1 ${pi === state.current ? "bg-[#e6dcc2]" : ""}`}>
-              <span className="w-3 h-3 rounded-full border border-black/20" style={{ background: c.main }} />
-              <span className="font-semibold w-14">{colorName(lang, pi)}</span>
-              <span className="text-[#5a523f]">{publicVP(pi, state)} ★</span>
-              <span className="ml-auto flex items-center gap-2 text-[11px] text-[#7a6e52]">
-                <span title={t("tip_hand")}>🂠 {totalCards(p.res)}</span>
-                <span title={t("tip_knights")}>⚔ {p.knights}</span>
-                {state.longestRoadOwner === pi && <span title={t("tip_lroad")}>🛤️</span>}
-                {state.largestArmyOwner === pi && <span title={t("tip_larmy")}>🏰</span>}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+function renderLog(){
+  var lines=state.log.map(function(l,i){return '<div class="ln'+(i===0?" first":"")+'">'+esc(logText(l))+'</div>';}).join("");
+  return '<div class="log"><div class="lh">'+esc(tr("game_log"))+'</div>'+lines+'</div>';
 }
 
-/* ---------- modals ---------- */
-function ModalShell({ children, color = "#1f3242" }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="ui w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden" style={{ background: "#f3ecda" }}>
-        <div className="h-1.5" style={{ background: color }} />
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
-  );
+/* ---- modals ---- */
+function renderModals(){
+  if(!state.pending&&state.phase!=="gameover")return "";
+  if(state.phase==="gameover")return modalWin();
+  switch(state.pending.type){
+    case "discard": return modalDiscard();
+    case "steal": return modalSteal();
+    case "plenty": return modalPlenty();
+    case "monopoly": return modalMonopoly();
+  }
+  return "";
 }
-function DiscardModal({ state, dispatch, lang, t }) {
-  const cur = state.pending.queue[state.pending.qi];
-  const p = state.players[cur.pi];
-  const c = PLAYER_COLORS[cur.pi];
-  const [sel, setSel] = useState(emptyRes());
-  const selected = totalCards(sel);
-  const adj = (r, d) => setSel((s) => ({ ...s, [r]: Math.max(0, Math.min(p.res[r], s[r] + d)) }));
-  return (
-    <ModalShell color={c.main}>
-      <h3 className="display text-xl mb-1" style={{ color: c.main }}>{t("discard_title", { name: colorName(lang, cur.pi) })}</h3>
-      <p className="text-sm text-[#5a523f] mb-4">{t("discard_desc", { count: cur.count })}</p>
-      <div className="space-y-2 mb-4">
-        {RES.map((r) => p.res[r] > 0 && (
-          <div key={r} className="flex items-center gap-2">
-            <span className="w-28">{RES_META[r].icon} {resLabel(lang, r)}</span>
-            <span className="text-xs text-[#8a7d5e] w-14">{t("discard_have")} {p.res[r]}</span>
-            <button onClick={() => adj(r, -1)} className="w-7 h-7 rounded bg-[#e6dcc2]">−</button>
-            <span className="w-6 text-center font-bold">{sel[r]}</span>
-            <button onClick={() => adj(r, 1)} className="w-7 h-7 rounded bg-[#e6dcc2]">+</button>
-          </div>
-        ))}
-      </div>
-      <button disabled={selected !== cur.count}
-        onClick={() => dispatch({ type: "DISCARD", res: RES.reduce((a, r) => ({ ...a, [r]: p.res[r] - sel[r] }), {}) })}
-        className="w-full py-2.5 rounded-lg text-white font-semibold disabled:opacity-40" style={{ background: c.main }}>
-        {t("discard_btn", { sel: selected, count: cur.count })}
-      </button>
-    </ModalShell>
-  );
+function shell(color,inner){return '<div class="overlay"><div class="modal"><div class="bar" style="background:'+color+'"></div><div class="body">'+inner+'</div></div></div>';}
+function modalDiscard(){
+  var item=state.pending.queue[state.pending.qi], p=state.players[item.pi], c=PCOL[item.pi];
+  var sel=state.ui.discardSel, selected=totalCards(sel);
+  var rows=RES.filter(function(r){return p.res[r]>0;}).map(function(r){
+    return '<div class="drow"><span class="rn">'+RES_META[r].icon+' '+esc(resLabel(r))+'</span>'+
+      '<span class="have">'+esc(tr("discard_have"))+' '+p.res[r]+'</span>'+
+      '<button class="pm" data-act="discadj" data-res="'+r+'" data-d="-1">−</button>'+
+      '<span class="cnt">'+sel[r]+'</span>'+
+      '<button class="pm" data-act="discadj" data-res="'+r+'" data-d="1">+</button></div>';
+  }).join("");
+  var btn='<button class="mbtn" style="background:'+c.main+'" '+(selected===item.count?"":"disabled")+' data-act="disconfirm">'+
+    esc(tr("discard_btn",{sel:selected,count:item.count}))+'</button>';
+  return shell(c.main,'<h3 style="color:'+c.main+'">'+esc(tr("discard_title",{name:colorName(item.pi)}))+'</h3>'+
+    '<p>'+esc(tr("discard_desc",{count:item.count}))+'</p>'+rows+btn);
 }
-function StealModal({ state, dispatch, lang, t }) {
-  return (
-    <ModalShell>
-      <h3 className="display text-xl mb-3 text-[#1f3242]">{t("steal_title")}</h3>
-      <div className="space-y-2">
-        {state.pending.candidates.map((pi) => {
-          const c = PLAYER_COLORS[pi];
-          return (
-            <button key={pi} onClick={() => dispatch({ type: "STEAL", from: pi })}
-              className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-white font-semibold" style={{ background: c.main }}>
-              <span className="w-3 h-3 rounded-full bg-white/70" />{colorName(lang, pi)}
-              <span className="ml-auto text-sm opacity-90">{totalCards(state.players[pi].res)} {t("cards")}</span>
-            </button>
-          );
-        })}
-      </div>
-    </ModalShell>
-  );
+function modalSteal(){
+  var opts=state.pending.candidates.map(function(pi){var c=PCOL[pi];
+    return '<button class="steal-opt" style="background:'+c.main+'" data-act="steal" data-pi="'+pi+'">'+
+      '<span class="miniwhite"></span>'+esc(colorName(pi))+'<span class="c">'+totalCards(state.players[pi].res)+' '+esc(tr("cards"))+'</span></button>';}).join("");
+  return shell("#1f3242",'<h3 style="color:#1f3242">'+esc(tr("steal_title"))+'</h3>'+opts);
 }
-function PlentyModal({ dispatch, t }) {
-  const [picks, setPicks] = useState([]);
-  const toggle = (r) => setPicks((p) => (p.length < 2 ? [...p, r] : p));
-  return (
-    <ModalShell color="#caa33a">
-      <h3 className="display text-xl mb-1 text-[#7a5e12]">{t("plenty_title")}</h3>
-      <p className="text-sm text-[#5a523f] mb-3">{t("plenty_desc")}</p>
-      <div className="grid grid-cols-5 gap-1.5 mb-3">
-        {RES.map((r) => <button key={r} onClick={() => toggle(r)} className="rounded-md py-2 text-center" style={{ background: RES_META[r].token }}><div className="text-lg">{RES_META[r].icon}</div></button>)}
-      </div>
-      <div className="text-sm mb-3 text-[#5a523f]">{t("plenty_picked")} {picks.map((r) => RES_META[r].icon).join(" ") || "—"}
-        {picks.length > 0 && <button className="ml-2 text-xs underline" onClick={() => setPicks([])}>{t("plenty_reset")}</button>}</div>
-      <button disabled={picks.length !== 2} onClick={() => dispatch({ type: "PLENTY_PICK", picks })}
-        className="w-full py-2.5 rounded-lg bg-[#caa33a] text-white font-semibold disabled:opacity-40">{t("plenty_btn")}</button>
-    </ModalShell>
-  );
+function modalPlenty(){
+  var picks=state.ui.plentyPicks;
+  var grid=RES.map(function(r){return '<button data-act="plentytoggle" data-res="'+r+'" style="background:'+RES_META[r].token+'"><div class="ic">'+RES_META[r].icon+'</div></button>';}).join("");
+  var picked='<div class="picked">'+esc(tr("plenty_picked"))+' '+(picks.map(function(r){return RES_META[r].icon;}).join(" ")||"—")+
+    (picks.length?'<button class="reset" data-act="plentyreset">'+esc(tr("plenty_reset"))+'</button>':'')+'</div>';
+  var btn='<button class="mbtn" style="background:#caa33a" '+(picks.length===2?"":"disabled")+' data-act="plentyconfirm">'+esc(tr("plenty_btn"))+'</button>';
+  return shell("#caa33a",'<h3 style="color:#7a5e12">'+esc(tr("plenty_title"))+'</h3><p>'+esc(tr("plenty_desc"))+'</p>'+
+    '<div class="resgrid">'+grid+'</div>'+picked+btn);
 }
-function MonopolyModal({ dispatch, lang, t }) {
-  return (
-    <ModalShell color="#cf3a36">
-      <h3 className="display text-xl mb-1 text-[#8e221f]">{t("mono_title")}</h3>
-      <p className="text-sm text-[#5a523f] mb-3">{t("mono_desc")}</p>
-      <div className="grid grid-cols-5 gap-1.5">
-        {RES.map((r) => (
-          <button key={r} onClick={() => dispatch({ type: "MONOPOLY_PICK", res: r })} className="rounded-md py-3 text-center hover:scale-105 transition" style={{ background: RES_META[r].token }}>
-            <div className="text-xl">{RES_META[r].icon}</div><div className="text-[10px] mt-0.5">{resLabel(lang, r)}</div>
-          </button>
-        ))}
-      </div>
-    </ModalShell>
-  );
+function modalMonopoly(){
+  var grid=RES.map(function(r){return '<button data-act="monopoly" data-res="'+r+'" style="background:'+RES_META[r].token+'"><div class="ic">'+RES_META[r].icon+'</div><div class="nm">'+esc(resLabel(r))+'</div></button>';}).join("");
+  return shell("#cf3a36",'<h3 style="color:#8e221f">'+esc(tr("mono_title"))+'</h3><p>'+esc(tr("mono_desc"))+'</p><div class="resgrid">'+grid+'</div>');
 }
-function WinModal({ state, lang, t, onNew }) {
-  const pi = state.winner; const c = PLAYER_COLORS[pi];
-  return (
-    <ModalShell color={c.main}>
-      <div className="text-center">
-        <div className="text-5xl mb-2">🏆</div>
-        <h3 className="display text-3xl tracking-wide mb-1" style={{ color: c.main }}>{t("win_title", { name: colorName(lang, pi) })}</h3>
-        <p className="text-sm text-[#5a523f] mb-4">{t("win_sub")}</p>
-        <button onClick={onNew} className="display tracking-widest px-8 py-2.5 rounded-lg text-white" style={{ background: c.main }}>{t("win_again")}</button>
-      </div>
-    </ModalShell>
-  );
+function modalWin(){
+  var pi=state.winner, c=PCOL[pi];
+  return shell(c.main,'<div class="wincenter"><div class="trophy">🏆</div>'+
+    '<h3 style="color:'+c.main+'">'+esc(tr("win_title",{name:colorName(pi)}))+'</h3>'+
+    '<p>'+esc(tr("win_sub"))+'</p>'+
+    '<button class="again" data-act="newgame" style="background:'+c.main+'">'+esc(tr("win_again"))+'</button></div>');
 }
 
+/* ---- board click routing ---- */
+function clickVertex(v){
+  var setup=state.setup, mode=state.uiMode, lv=legalVertSet();
+  if(!lv[v])return;
+  if(state.phase==="setup"&&setup.placing==="settlement")dispatch({type:"SETUP_SETTLEMENT",vertexId:Number(v)});
+  else if(mode==="settlement")dispatch({type:"BUILD_SETTLEMENT",vertexId:Number(v)});
+  else if(mode==="city")dispatch({type:"BUILD_CITY",vertexId:Number(v)});
+}
+function clickEdge(e){
+  var setup=state.setup, mode=state.uiMode, le=legalEdgeSet();
+  if(!le[e])return;
+  if(state.phase==="setup"&&setup.placing==="road")dispatch({type:"SETUP_ROAD",edgeId:Number(e)});
+  else if(mode==="road")dispatch({type:"BUILD_ROAD",edgeId:Number(e)});
+}
 
-const _root = ReactDOM.createRoot(document.getElementById("root"));
-_root.render(<CatanGame />);
+/* ---- event delegation ---- */
+document.addEventListener("click",function(ev){
+  var t=ev.target.closest("[data-act],[data-vert],[data-edge],[data-hex]");
+  if(!t)return;
+  if(t.hasAttribute("data-vert")){clickVertex(t.getAttribute("data-vert"));return;}
+  if(t.hasAttribute("data-edge")){clickEdge(t.getAttribute("data-edge"));return;}
+  if(t.hasAttribute("data-hex")){dispatch({type:"MOVE_ROBBER",hexId:Number(t.getAttribute("data-hex"))});return;}
+  var act=t.getAttribute("data-act");
+  switch(act){
+    case "lang": dispatch({type:"SET_LANG",lang:t.getAttribute("data-lang")}); break;
+    case "setn": dispatch({type:"SET_N",n:Number(t.getAttribute("data-n"))}); break;
+    case "begin": dispatch({type:"NEW_GAME",n:state.ui.startN}); break;
+    case "newgame": dispatch({type:"NEW_GAME",n:(state.players?state.players.length:state.ui.startN)}); break;
+    case "roll": dispatch({type:"ROLL"}); break;
+    case "mode": dispatch({type:"SET_MODE",mode:t.getAttribute("data-mode")}); break;
+    case "buydev": dispatch({type:"BUY_DEV"}); break;
+    case "playdev": dispatch({type:"PLAY_DEV",card:t.getAttribute("data-card")}); break;
+    case "endturn": dispatch({type:"END_TURN"}); break;
+    case "trade": dispatch({type:"BANK_TRADE"}); break;
+    case "discadj": dispatch({type:"DISCARD_ADJ",res:t.getAttribute("data-res"),d:Number(t.getAttribute("data-d"))}); break;
+    case "disconfirm": dispatch({type:"DISCARD_CONFIRM"}); break;
+    case "steal": dispatch({type:"STEAL",from:Number(t.getAttribute("data-pi"))}); break;
+    case "plentytoggle": dispatch({type:"PLENTY_TOGGLE",res:t.getAttribute("data-res")}); break;
+    case "plentyreset": dispatch({type:"PLENTY_RESET"}); break;
+    case "plentyconfirm": dispatch({type:"PLENTY_CONFIRM"}); break;
+    case "monopoly": dispatch({type:"MONOPOLY",res:t.getAttribute("data-res")}); break;
+  }
+});
+document.addEventListener("change",function(ev){
+  var t=ev.target.closest('[data-act="setbank"]');
+  if(!t)return;
+  dispatch({type:"SET_BANK",side:t.getAttribute("data-side"),res:t.value});
+});
+
+/* ---- go ---- */
+render();
 </script>
 </body>
 </html>
