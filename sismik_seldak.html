@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sismik &amp; Seldak · Beobachtungsbögen (digital)</title>
+<meta name="theme-color" content="#2B3043">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F1EEE7; --surface:#FCFBF7; --surface2:#F6F3EC;
+  --ink:#262A38; --muted:#6B685F; --faint:#9B978C; --line:#E4DFD3; --line2:#EEEAE0;
+  /* Erhebungs-Farben (Stifte) */
+  --pen1:#2F7E86; --pen2:#C77B30; --pen3:#9C4A86;
+  /* Bogen-Akzente */
+  --seldak:#2F7E86; --sismik:#5A57A6;
+  --ok:#33786A; --warn:#B5664B;
+  --r:12px; --shadow:0 1px 2px rgba(38,42,56,.04),0 6px 20px rgba(38,42,56,.06);
+  --hh:62px; --accent:var(--seldak);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:calc(var(--hh) + 56px)}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.ff{font-family:'Fraunces',Georgia,serif;font-weight:500;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+a{color:var(--accent)}
+
+/* ── Header ── */
+header{position:sticky;top:0;z-index:100;background:var(--ink);color:#F1EDE4}
+.hwrap{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:1rem;padding:.6rem 1.1rem;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:.7rem;min-width:0}
+.ring{flex-shrink:0}
+.brand h1{font-size:1.04rem;line-height:1.05;font-weight:500;color:#F8F5EE}
+.brand .sub{font-size:.66rem;letter-spacing:.04em;color:#A9A59A;margin-top:2px}
+.hspace{flex:1}
+.prog{min-width:120px;max-width:210px;flex:1}
+.prog .pl{font-size:.62rem;color:#B4B0A4;margin-bottom:3px;display:flex;justify-content:space-between;gap:.5rem}
+.pbar{height:4px;background:rgba(255,255,255,.14);border-radius:99px;overflow:hidden}
+.pfill{height:100%;width:0;background:linear-gradient(90deg,var(--pen1),var(--pen3));transition:width .4s}
+.hbtns{display:flex;gap:.35rem;flex-wrap:wrap}
+.hb{display:inline-flex;align-items:center;gap:.32rem;padding:.38rem .6rem;border-radius:8px;border:1px solid rgba(255,255,255,.16);background:transparent;color:#EFEBE1;font-size:.74rem;font-weight:500;transition:.15s;white-space:nowrap}
+.hb:hover{background:rgba(255,255,255,.1)}
+.hb.pri{background:rgba(47,126,134,.85);border-color:transparent}
+.hb.pri:hover{background:var(--accent)}
+.hb svg{width:14px;height:14px}
+
+/* ── Layout ── */
+.app{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:262px 1fr;gap:0;min-height:calc(100vh - var(--hh))}
+nav{position:sticky;top:var(--hh);align-self:start;height:calc(100vh - var(--hh));overflow-y:auto;padding:.9rem .7rem 2rem;border-right:1px solid var(--line)}
+.bogtabs{display:flex;gap:.3rem;padding:.2rem;background:var(--surface2);border:1px solid var(--line);border-radius:11px;margin-bottom:.9rem}
+.bogtab{flex:1;border:0;background:transparent;border-radius:9px;padding:.5rem .3rem;font-size:.82rem;font-weight:600;color:var(--muted);line-height:1.15;transition:.14s}
+.bogtab small{display:block;font-size:.6rem;font-weight:500;color:var(--faint);margin-top:1px}
+.bogtab.on{background:var(--surface);box-shadow:var(--shadow);color:var(--ink)}
+.bogtab.on.seldak{box-shadow:inset 0 0 0 1.5px var(--seldak),var(--shadow)}
+.bogtab.on.sismik{box-shadow:inset 0 0 0 1.5px var(--sismik),var(--shadow)}
+.nsec{font-size:.6rem;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);padding:.7rem .6rem .25rem;font-weight:600}
+.nitem{display:flex;align-items:center;gap:.5rem;width:100%;text-align:left;background:transparent;border:0;border-radius:9px;padding:.46rem .6rem;font-size:.8rem;color:var(--ink);transition:.13s;position:relative}
+.nitem:hover{background:var(--surface2)}
+.nitem.on{background:var(--surface);box-shadow:var(--shadow);font-weight:600}
+.nitem.on::before{content:"";position:absolute;left:-.7rem;top:50%;transform:translateY(-50%);width:3px;height:20px;border-radius:99px;background:var(--accent)}
+.nitem.dis{opacity:.4;pointer-events:none}
+.nlet{font-size:.62rem;font-weight:700;width:1.35rem;height:1.35rem;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--surface2);color:var(--muted);flex-shrink:0}
+.nitem.on .nlet{background:var(--accent);color:#fff}
+.ntxt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ncheck{margin-left:auto;display:flex;gap:2px;flex-shrink:0}
+.ncheck i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+main{padding:1.5rem 1.8rem 4rem;min-width:0}
+
+/* ── Generic ── */
+.wrap{max-width:780px}
+.eyebrow{font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600}
+.h-lg{font-size:1.65rem;margin:.2rem 0 .3rem}
+.lead{color:var(--muted);font-size:.92rem;margin-bottom:1.3rem;line-height:1.55}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:1.05rem 1.15rem;box-shadow:var(--shadow);margin-bottom:1rem}
+.card>h3{font-size:1.02rem;margin-bottom:.2rem}
+.card .hint{font-size:.78rem;color:var(--muted);margin-bottom:.9rem;line-height:1.5}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.8rem}
+.fld{display:flex;flex-direction:column;gap:.28rem}
+.fld.full{grid-column:1/-1}
+.fld label{font-size:.64rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.fld input,.fld select,.fld textarea{width:100%;padding:.5rem .65rem;border:1px solid var(--line);border-radius:9px;background:var(--surface2);color:var(--ink);font-size:.88rem;transition:.13s}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(47,126,134,.12)}
+.fld input[readonly]{background:#ECE8DE;color:var(--muted)}
+.fld textarea{resize:vertical;min-height:62px;line-height:1.5}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.58rem 1.05rem;border-radius:10px;border:1px solid transparent;font-size:.88rem;font-weight:600;transition:.15s}
+.btn.pri{background:var(--ink);color:#F6F2E9}
+.btn.pri:hover{background:#363c52}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.row{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+
+/* ── Erhebungs-Auswahl (Stifte) ── */
+.rounds{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.rtab{display:flex;align-items:center;gap:.45rem;padding:.42rem .7rem;border-radius:99px;border:1.5px solid var(--line);background:var(--surface);font-size:.8rem;font-weight:600;color:var(--muted);transition:.14s}
+.rtab .rdot{width:11px;height:11px;border-radius:50%;flex-shrink:0;border:2px solid currentColor}
+.rtab.on{color:#fff}
+.rtab.on.r0{background:var(--pen1);border-color:var(--pen1)}
+.rtab.on.r1{background:var(--pen2);border-color:var(--pen2)}
+.rtab.on.r2{background:var(--pen3);border-color:var(--pen3)}
+.rtab.on .rdot{border-color:rgba(255,255,255,.7)}
+.rtab:not(.on).r0 .rdot{color:var(--pen1)} .rtab:not(.on).r1 .rdot{color:var(--pen2)} .rtab:not(.on).r2 .rdot{color:var(--pen3)}
+
+/* ── Abschnitt / Items ── */
+.ahead{display:flex;align-items:flex-start;gap:.85rem;margin-bottom:.1rem}
+.ahead .alet{font-size:.9rem;font-weight:700;width:2.1rem;height:2.1rem;border-radius:9px;display:flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;flex-shrink:0}
+.ahead .apart{font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--accent);text-transform:uppercase}
+.ahead h2{font-size:1.3rem;line-height:1.12}
+.aintro{font-style:italic;color:var(--muted);font-size:.86rem;margin:.7rem 0 0;line-height:1.5}
+
+.itemwrap{margin-top:1rem;display:flex;flex-direction:column;gap:.65rem}
+.note-row{font-style:italic;color:var(--muted);font-size:.83rem;padding:.3rem .2rem .1rem;border-top:1px dashed var(--line);margin-top:.3rem}
+.grp-row{font-size:.74rem;font-weight:700;color:var(--ink);letter-spacing:.02em;padding:.5rem .2rem .1rem}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:.8rem .9rem}
+.item.na-on{opacity:.62}
+.iq{display:flex;gap:.6rem;align-items:flex-start}
+.inum{font-size:.72rem;font-weight:700;color:var(--accent);min-width:1.1rem;padding-top:.12rem}
+.itext{font-size:.9rem;line-height:1.45;flex:1}
+.itext .ex{display:block;font-size:.79rem;color:var(--muted);font-style:italic;margin-top:.2rem;line-height:1.45}
+.opts{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.65rem}
+.opt{border:1.5px solid var(--line);background:var(--surface2);border-radius:9px;padding:.4rem .6rem;font-size:.8rem;font-weight:500;color:var(--ink);transition:.12s;display:inline-flex;align-items:center;gap:.4rem;line-height:1.2}
+.opt:hover{border-color:var(--muted)}
+.opt .ov{font-size:.66rem;font-weight:700;color:var(--faint);background:#fff;border-radius:5px;padding:.02rem .3rem}
+.opt.sel{color:#fff}
+.opt.sel.r0{background:var(--pen1);border-color:var(--pen1)} .opt.sel.r1{background:var(--pen2);border-color:var(--pen2)} .opt.sel.r2{background:var(--pen3);border-color:var(--pen3)}
+.opt.sel .ov{background:rgba(255,255,255,.25);color:#fff}
+/* Marker anderer Erhebungen */
+.othermk{display:inline-flex;gap:3px;margin-left:.3rem;vertical-align:middle}
+.othermk i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.itxtarea{width:100%;margin-top:.5rem;border:1px solid var(--line);border-radius:9px;background:var(--surface2);padding:.5rem .6rem;font-size:.86rem;line-height:1.5;resize:vertical;min-height:54px;color:var(--ink)}
+.itxtarea:focus{outline:none;border-color:var(--accent);background:#fff}
+.nacheck{display:inline-flex;align-items:center;gap:.4rem;margin-top:.6rem;font-size:.78rem;color:var(--muted);cursor:pointer}
+.nacheck input{width:16px;height:16px;accent-color:var(--accent)}
+
+.anav{display:flex;justify-content:space-between;gap:.8rem;margin-top:1.4rem}
+.anav .btn{max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── Auswertung ── */
+.note{background:var(--surface2);border:1px solid var(--line);border-left:3px solid var(--pen2);border-radius:9px;padding:.7rem .9rem;font-size:.8rem;color:var(--muted);line-height:1.55;margin-bottom:1.2rem}
+.legend{display:flex;gap:.9rem;flex-wrap:wrap;font-size:.72rem;color:var(--muted);margin:.2rem 0 1rem}
+.legend span{display:inline-flex;align-items:center;gap:.35rem}
+.legend i{width:10px;height:10px;border-radius:50%}
+.profile .prow{display:grid;grid-template-columns:160px 1fr 52px;gap:.7rem;align-items:center;margin-bottom:.5rem}
+.profile .pname{font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:.4rem;min-width:0}
+.profile .pname .pl{font-size:.6rem;font-weight:700;color:#fff;background:var(--accent);border-radius:5px;padding:.05rem .3rem;flex-shrink:0}
+.ptrack{position:relative;height:30px;background:var(--surface2);border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.ptick{position:absolute;top:0;bottom:0;width:1px;background:var(--line)}
+.pbarv{position:absolute;top:3px;height:9px;border-radius:5px;transition:width .5s}
+.pbarv.r0{background:var(--pen1)} .pbarv.r1{background:var(--pen2)} .pbarv.r2{background:var(--pen3)}
+.praw{font-size:.72rem;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+canvas{max-width:100%}
+.cols2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.chips{display:flex;flex-direction:column;gap:.45rem}
+.chip{display:flex;gap:.5rem;align-items:flex-start;font-size:.82rem;line-height:1.4;padding:.5rem .65rem;border-radius:9px;border:1px solid var(--line2)}
+.chip .ci{font-size:.62rem;font-weight:700;color:#fff;border-radius:5px;padding:.05rem .35rem;flex-shrink:0;margin-top:1px}
+.chip.str{background:rgba(51,120,106,.07)} .chip.str .ci{background:var(--ok)}
+.chip.foc{background:rgba(181,102,75,.06)} .chip.foc .ci{background:var(--warn)}
+.chip .ca{font-size:.66rem;color:var(--faint);display:block;margin-top:1px}
+.emptyc{font-size:.82rem;color:var(--faint);padding:.5rem}
+table.sk{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:.3rem}
+table.sk th,table.sk td{text-align:left;padding:.45rem .55rem;border-bottom:1px solid var(--line2)}
+table.sk th{font-size:.64rem;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);font-weight:600}
+table.sk td.num{text-align:right;font-variant-numeric:tabular-nums}
+.prband{display:inline-block;font-size:.72rem;font-weight:600;padding:.1rem .45rem;border-radius:99px}
+.codebox{background:#23262F;color:#D6E3DE;border-radius:9px;padding:.8rem .9rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.74rem;line-height:1.5;overflow:auto;white-space:pre}
+
+.toast{position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%) translateY(140%);background:var(--ink);color:#F6F2E9;padding:.7rem 1.1rem;border-radius:99px;font-size:.84rem;font-weight:500;box-shadow:0 8px 28px rgba(0,0,0,.25);z-index:400;transition:transform .35s;display:flex;gap:.5rem;align-items:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.modal-bg{position:fixed;inset:0;background:rgba(28,30,40,.5);backdrop-filter:blur(2px);z-index:300;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:1.3rem;max-width:400px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal h3{font-size:1.1rem;margin-bottom:.4rem}
+.modal p{font-size:.86rem;color:var(--muted);margin-bottom:1.1rem;line-height:1.5}
+.modal .mrow{display:flex;gap:.6rem;justify-content:flex-end}
+.checks{display:flex;flex-direction:column;gap:.55rem;margin-top:.3rem}
+.chk{display:flex;align-items:center;gap:.6rem;font-size:.88rem;cursor:pointer;line-height:1.35}
+.chk input{width:18px;height:18px;accent-color:var(--accent);flex:0 0 auto;cursor:pointer}
+
+.mobnav{display:none}
+@media(max-width:880px){
+  .app{grid-template-columns:1fr}
+  nav{display:none}
+  main{padding:1.05rem 1rem 5.2rem}
+  .cols2{grid-template-columns:1fr}
+  .profile .prow{grid-template-columns:104px 1fr 44px}
+  .mobnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--line);z-index:90;padding:.3rem;gap:.2rem;overflow-x:auto}
+  .mobnav button{flex:0 0 auto;background:transparent;border:0;border-radius:8px;padding:.4rem .55rem;font-size:.72rem;font-weight:700;opacity:.5;color:var(--ink)}
+  .mobnav button.on{opacity:1;background:var(--surface2)}
+}
+@media print{header,nav,.mobnav,.anav,.rounds,.hbtns{display:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div class="brand">
+      <span class="ring" id="ring"></span>
+      <div>
+        <h1 id="brand-title">Sismik &amp; Seldak</h1>
+        <div class="sub" id="brand-sub">Beobachtungsbögen · digital</div>
+      </div>
+    </div>
+    <div class="hspace"></div>
+    <div class="prog" id="prog" style="display:none">
+      <div class="pl"><span>Erhebung <span id="prog-round"></span></span><span id="prog-pct">0 %</span></div>
+      <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    </div>
+    <div class="hbtns">
+      <button class="hb pri" onclick="saveFile()" title="Als Datei speichern">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+        <span class="lbl">Speichern</span>
+      </button>
+      <button class="hb" onclick="document.getElementById('openf').click()" title="Datei öffnen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v9a2 2 0 0 1-2 2H3z"/></svg>
+        <span class="lbl">Öffnen</span>
+      </button>
+      <button class="hb" onclick="confirmNew()" title="Neue Erhebung">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="lbl">Neu</span>
+      </button>
+      <input type="file" id="openf" accept=".ssb,.json" style="display:none" onchange="openFile(event)">
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <nav id="nav"></nav>
+  <main id="main"></main>
+</div>
+
+<div class="mobnav" id="mobnav"></div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="modal-t"></h3>
+    <p id="modal-p"></p>
+    <div class="mrow">
+      <button class="btn ghost" id="modal-cancel" onclick="closeModal()">Abbrechen</button>
+      <button class="btn pri" id="modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<input type="file" id="normf" accept=".json" style="display:none" onchange="importNorms(event)">
+
+<script>
+/* =====================================================================
+   Sismik & Seldak – digitale Beobachtungsbögen
+   Itemtexte aus den Originalbögen: M. Ulich & T. Mayr, Staatsinstitut
+   für Frühpädagogik (IFP) / Verlag Herder. Sismik 2003, Seldak 2006/2007.
+   Diese App dient ausschließlich wissenschaftlichen Zwecken (keine Weitergabe).
+   ===================================================================== */
+</script>
+<script>
+/* ============================ Konstanten ============================ */
+const PENHEX = ['#2F7E86','#C77B30','#9C4A86'];
+const $ = id => document.getElementById(id);
+const esc = s => (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* Optionspresets — jeweils [wert, label] in Anzeigereihenfolge */
+const F6  = [[6,'sehr oft'],[5,'oft'],[4,'manchmal'],[3,'selten'],[2,'sehr selten'],[1,'nie']];        // Seldak-Häufigkeit
+const F6r = [[1,'sehr oft'],[2,'oft'],[3,'manchmal'],[4,'selten'],[5,'sehr selten'],[6,'nie']];        // umgekehrt gepolt
+const S6  = [[1,'nie'],[2,'sehr selten'],[3,'selten'],[4,'manchmal'],[5,'oft'],[6,'sehr oft']];        // Sismik-Häufigkeit
+const S6r = [[6,'nie'],[5,'sehr selten'],[4,'selten'],[3,'manchmal'],[2,'oft'],[1,'sehr oft']];        // umgekehrt gepolt
+const MUE = [[4,'mühelos'],[3,'mit etwas Mühe'],[2,'mit großer Mühe'],[1,'gar nicht']];
+const MUEs= [[1,'gar nicht'],[2,'mit großer Mühe'],[3,'mit etwas Mühe'],[4,'mühelos']];
+const RICHT=[[5,'durchgängig richtig'],[4,'überwiegend richtig'],[3,'teilweise richtig'],[2,'kaum richtig'],[1,'gar nicht']];
+const NACH =[[4,'vollständig richtig'],[3,'überwiegend richtig'],[2,'nur bruchstückhaft'],[1,'gar nicht']];
+const OMN  =[[4,'oft'],[3,'manchmal'],[2,'selten'],[1,'nie']];
+
+/* ============================ Bogen-Daten ============================
+   Jedes Item: { k, t, ex?, o?, na?, sc?, txt?, ph?, date?, grp?, note? }
+   o   = Optionen (Bewertung). sc:false → nicht in Profil/Auswertung.
+   na  = Label für „nicht zutreffend/möglich“. txt/date = Freitext/Datum.
+   grp = Gruppenüberschrift vor Item. note = kursive Hinweiszeile vor Item.   */
+
+const FORMS = {
+seldak: {
+  label:'seldak', sub:'Sprachentwicklung & Literacy · deutschsprachig aufwachsende Kinder',
+  cover:[
+    {k:'name',  label:'Name des Kindes', type:'text', full:true},
+    {k:'geb',   label:'Geburtsdatum (optional, für Alter)', type:'date'},
+    {k:'alter', label:'Alter', type:'text'},
+    {k:'zeitraum', label:'Zeitraum der Bearbeitung', type:'text', full:true},
+    {k:'fachkraft', label:'Fachkraft / Fachkräfte', type:'text', full:true},
+  ],
+  parts:[
+    { label:'Teil 1 — Sprachrelevante Situationen: Aktivität und Kompetenzen', areas:[
+      {id:'A', letter:'A', title:'Gesprächsrunden / Gruppendiskussionen', items:[
+        {k:'A1', t:'Kind hört bei Gruppengesprächen/Diskussionen sehr aufmerksam zu / mit großer Intensität', o:F6},
+        {k:'A2', t:'bringt von sich aus eigene Beiträge ein', o:F6},
+        {k:'A3', t:'greift Gesprächsbeiträge von anderen auf, geht darauf ein', o:F6},
+        {k:'A4', t:'stellt bei Gruppengesprächen gezielte Fragen', o:F6},
+        {k:'A5', t:'bleibt mit seinen Gesprächsbeiträgen beim Thema', o:F6},
+        {k:'A6', t:'spricht ohne Hemmungen vor einer größeren Gruppe', o:F6},
+        {k:'A7', t:'kann anderen gut etwas erklären', o:MUE},
+      ]},
+      {id:'B', letter:'B', title:'Bilderbuchbetrachtung (Kleingruppe / Zweiersituation)', items:[
+        {k:'B1', t:'Kind lässt sich von Bilderbuchbetrachtungen fesseln', o:F6},
+        {k:'B2', t:'stellt Fragen zur Geschichte, zu den Figuren', ex:'z. B. Motive, Gefühle', o:F6},
+        {k:'B3', t:'versucht einen Zusammenhang zwischen Bildern herzustellen, wird zum „Erzähler“', o:F6},
+        {k:'B4', t:'stellt Verbindungen her zwischen der Geschichte/den Figuren und eigenen Erlebnissen oder anderen Geschichten', ex:'z. B. „bei uns ist die Katze auch einmal weggelaufen“ / „die Katze in dem anderen Buch hatte viele Freunde“', o:F6},
+        {k:'B5', t:'zeigt Interesse auch am Text eines Bilderbuchs; fragt z. B. nach, was „da steht“, versucht zu lesen', o:F6},
+      ]},
+      {id:'C', letter:'C', title:'Vorlesen / Erzählen (pädagogisches Angebot, Kleingruppe)', items:[
+        {k:'C1', t:'Kind zeigt Interesse an Geschichten', o:F6},
+        {k:'C2', t:'hört aufmerksam zu bei einer kurzen Erzählung, die nicht durch Bilder/Gestik/Gegenstände veranschaulicht wird', o:F6},
+        {k:'C3', t:'beteiligt sich am Gespräch über eine kurze Erzählung, die nicht durch Bilder/Gestik/Gegenstände veranschaulicht wird', o:F6},
+        {k:'C4', t:'Nacherzählen: Kind kann die vorgelesene/erzählte Geschichte nacherzählen',
+          note:'Wählen Sie eine Geschichte aus, die nach Länge und Aufbau zur Altersgruppe passt, und beobachten Sie dann:',
+          o:[[5,'vollständig und detailliert'],[4,'die Hauptgedanken / Haupthandlung'],[3,'einzelne Ausschnitte'],[2,'einen einzelnen Satz/Gedanken'],[1,'gar nicht']]},
+      ]},
+      {id:'D', letter:'D', title:'Selbstständiger Umgang mit Büchern / Bilderbüchern (vom Kind ausgehend)', items:[
+        {k:'D1', t:'sucht sich selbständig ein (Bilder-)Buch aus', o:F6, na:'ist bei uns nicht üblich / nicht möglich'},
+        {k:'D2', t:'blättert langsam, schaut sich einzelne Seiten genauer an', o:F6, na:'ist bei uns nicht üblich / nicht möglich'},
+        {k:'D3', t:'tut so, als ob es liest', o:F6, na:'ist bei uns nicht üblich / nicht möglich'},
+        {k:'D4', t:'spricht von sich aus über die Bilder/Geschichten mit anderen Kindern', o:F6, na:'ist bei uns nicht üblich / nicht möglich'},
+        {k:'D5', t:'bittet, dass ihr/ihm etwas vorgelesen wird', o:F6, na:'ist bei uns nicht üblich / nicht möglich'},
+        {k:'D6', t:'bringt von zu Hause (Bilder-)Buch mit oder will ein (Bilder-)Buch nach Hause mitnehmen/ausleihen', o:F6, na:'ist bei uns nicht üblich / nicht möglich'},
+      ]},
+      {id:'E', letter:'E', title:'Kinder als Erzähler (eigene Erlebnisse, Geschichte, Märchen)', items:[
+        {k:'E1', t:'Kind zeigt Freude am Erzählen von Geschichten/Erlebnissen', o:F6},
+        {k:'E2', t:'„Erzählsprache“: versucht beim Erzählen umzuschalten – ahmt Erzählton nach, verändert Tonlage je nach Figur, benutzt Redewendungen', ex:'z. B. „es war einmal …“, „der König sprach zu seiner geliebten Tochter …“', o:F6},
+        {k:'E3', t:'hat Freude am Diktieren von Geschichten/Erlebnissen (Kind diktiert der Bezugsperson)', o:F6, na:'ist bei uns nicht üblich / nicht möglich'},
+        {k:'E4', t:'Erzählen von Fernem (von zu Hause, Wochenende, Urlaub): stellt es den Zusammenhang her oder „springt“ es mitten ins Geschehen?',
+          ex:'z. B. „Marco hat mich geärgert“ – ohne zu sagen, wer Marco war',
+          o:[[4,'„springt“ selten, stellt meist Zusammenhang her'],[3,'„springt“ manchmal'],[2,'„springt“ oft'],[1,'„springt“ sehr oft']]},
+      ]},
+      {id:'F', letter:'F', title:'Kommunikatives Verhalten in Gesprächssituationen', items:[
+        {k:'F1', t:'Kind ist in seinem Sprachgebrauch taktvoll, höflich', ex:'sagt z. B. „danke“, „bitte“, „könnte ich mal“ …', o:F6},
+        {k:'F2', t:'stellt sich in Tonfall und Lautstärke auf verschiedene Situationen und Gesprächspartner ein', ex:'z. B. Erzieherin, jüngere Kinder, Besucher', o:F6},
+        {k:'F3', t:'nimmt beim Sprechen Blickkontakt auf', o:F6},
+        {k:'F4', t:'versucht in schwierigen Situationen (z. B. Konflikten) das, worum es geht, auch sprachlich zu fassen', o:F6},
+        {k:'F5', t:'erzählt so, dass es für andere Kinder interessant ist', o:F6},
+      ]},
+      {id:'G', letter:'G', title:'Lausch- und Sprachspiele, Reime', items:[
+        {k:'G1', t:'kann bei Lauschspielen unterschiedliche Geräusche erkennen und unterscheiden', o:F6},
+        {k:'G2', t:'hat Freude an Reimen und Sprachspielen', o:F6},
+        {k:'G3', t:'Kind erfindet eigene Reime', ex:'z. B. „ich hab ’ne Maus / und du ’ne Laus“', o:F6},
+        {k:'G4', t:'interessiert sich für fremde Sprachen', ex:'z. B. bei einem Spruch oder Lied auf Englisch oder Türkisch', o:F6, na:'diese Situation gibt es bei uns nicht'},
+        {k:'G5', t:'merkt sich ein neues Phantasiewort mit 4 Silben und kann es nachsprechen', ex:'z. B. mó-na-lú-ra / fo-de-kí-na (beim Vorsprechen den Akzent betonen)', o:MUE},
+        {k:'G6', t:'Wortpaare – ähnlich klingende Wörter unterscheiden', ex:'z. B. Tisch–Fisch, Nadel–Nagel, Nase–Hase', o:MUE},
+        {k:'G7', t:'kann Wörter in einzelne Silben zerlegen', ex:'mit Klatschen/Hüpfen, Wörter unterschiedlicher Länge (Auto, Krokodil, Schokolade …)', o:MUE},
+      ]},
+      {id:'H', letter:'H', title:'Schreiben / Schrift', intro:'Falls ein Kind bereits lesen und schreiben kann, passen manche Fragen nicht.', items:[
+        {k:'H1', t:'„Als-ob-Schreiben“: ahmt im Spiel Schreibverhalten nach', ex:'z. B. Rollenspiel „im Büro“, „in der Schule“, „im Restaurant“ (nimmt auf Zettel Bestellungen auf)', o:F6},
+        {k:'H2', t:'bittet Erwachsene, dass sie etwas aufschreiben', ex:'z. B. Schild für die Bauecke, eine Liste, eine Geschichte, einen Brief …', o:F6},
+        {k:'H3', t:'interessiert sich für Geschriebenes; fragt nach, was das heißt', ex:'z. B. bei Buch, Aushang, Schild', o:F6},
+        {k:'H4', t:'Buchstaben entdecken (z. B. Detektivspiel): findet in der Umwelt einzelne Buchstaben', ex:'Bilderbuchseite, Straßenschild, Plakat, Zeitung …', o:F6, na:'trifft für uns nicht zu (z. B. Buchstaben nicht thematisiert)'},
+        {k:'H5', t:'entdeckt, „liest“ einzelne Wörter in der Umwelt', ex:'z. B. Bilderbuchseite, Straßenschild, Plakat, Zeitung …', o:F6, na:'trifft für uns nicht zu'},
+      ]},
+    ]},
+    { label:'Teil 2 — Sprachliche Kompetenzen im engeren Sinn', areas:[
+      {id:'I', letter:'I', title:'Verstehen von Handlungsaufträgen / Aufforderungen', items:[
+        {k:'I1', t:'kann eine einfache Handlungsanweisung umsetzen, die es nur sprachlich verstehen kann (nicht aus der Situation heraus)', ex:'z. B. „hol bitte deine Jacke“ – ohne zur Garderobe zu blicken', o:MUE},
+        {k:'I2', t:'kann eine mehrschrittige Handlungsanweisung umsetzen, die es nur sprachlich verstehen kann', ex:'z. B. Recorder holen, Kassette aus der Schublade nehmen, beides auf den Tisch stellen – ohne Hinzeigen', o:MUE},
+      ]},
+      {id:'J', letter:'J', title:'Wortschatz', items:[
+        {k:'J1', t:'beschreibt bei Rate- und Suchspielen Gegenstände (Farbe, Form, Größe, Verwendung, Teile …)', ex:'z. B. Kimspiele; „ich sehe was, was du nicht siehst“', o:[[4,'sehr differenziert'],[3,'eher differenziert'],[2,'eher grob'],[1,'sehr grob']]},
+        {k:'J2', t:'kann Oberbegriffe finden', ex:'z. B. „Kleider“, „Obst“, „Tiere“, „Pflanzen“, „Musikinstrumente“', o:MUE},
+        {k:'J3', t:'verwendet statt des genauen Wortes allgemeine, unbestimmte Ausdrücke', ex:'wie „Ding“, „das da“', o:F6r},
+        {k:'J4', t:'hat einen großen Wortschatz bei Gesprächen über Sachthemen', ex:'z. B. „Wald, Bäume“', o:[[4,'bei vielen Themen'],[3,'bei einigen Themen'],[2,'bei wenigen Themen'],[1,'bei keinem Thema']]},
+        {k:'J5', t:'Alltagswortschatz: kann Dinge und Handlungen, die täglich vorkommen, benennen', o:[[4,'reichhaltig'],[3,'ausreichend'],[2,'eingeschränkt'],[1,'sehr eingeschränkt']]},
+      ]},
+      {id:'K', letter:'K', title:'Grammatik – Morphologie, Syntax', items:[
+        {k:'K1', t:'Verbbeugung: beugt das Verb entsprechend der Person', ex:'ich spiele, du spielst, …, wir spielen, ihr spielt', o:RICHT},
+        {k:'K2', t:'Vergangenheit – Perfekt: bildet Perfektformen', ex:'das habe ich nicht gesagt / du hast verloren / dann bin ich gegangen', o:RICHT},
+        {k:'K3', t:'Vergangenheit – Imperfekt: bildet Imperfektformen', ex:'und der König sagte … / da fragte der Bär … / dann gingen sie in den Wald', o:RICHT},
+        {k:'K4', t:'Konjunktiv (würde, hätte, könnte …): bildet den Konjunktiv', ex:'Wenn ich eine Katze hätte, … / Wenn ich zaubern könnte, …', o:RICHT},
+        {k:'K5', t:'Mehrzahlbildung bei Wörtern aus dem Alltag', ex:'Stift–Stifte, Vogel–Vögel, Blatt–Blätter, Haus–Häuser, Auto–Autos', o:RICHT},
+        {k:'K6', t:'Wen-Fall (Akkusativ): bildet den Akkusativ richtig (inkl. Artikel, Adjektiv)', ex:'„Was hast du zum Frühstück dabei?“ … einen Apfel, eine Birne', o:RICHT},
+        {k:'K7', t:'Wem-Fall (Dativ): bildet den Dativ richtig (inkl. Artikel, Adjektiv)', ex:'„Wem schenkst du die Karotte?“ … dem kleinen Hasen, der Giraffe', o:RICHT},
+        {k:'K8', t:'Präpositionen: wendet Präpositionen im Satz korrekt an', ex:'auf dem Kissen / neben dem Schrank / zwischen den Stühlen / hinter der Tür / unter der Decke', o:RICHT},
+        {k:'K9', t:'Nebensätze: verbindet Sätze auch mit „weil“, „dass“, „ob“, „wenn“', ex:'„… weil sie mich gehauen hat“; „ich weiß nicht, ob ich das schaffe“', o:[[4,'häufig'],[3,'manchmal'],[2,'selten'],[1,'nie']]},
+        {k:'K10', t:'Verbstellung im Nebensatz: gebeugtes Verb steht am Satzende', ex:'„ich glaube, dass die Ente schwimmen kann“', o:[[4,'häufig'],[3,'manchmal'],[2,'selten'],[1,'nie'],[1,'das Kind bildet keine Nebensätze']]},
+      ]},
+      {id:'L', letter:'L', title:'Dialekt – Hochdeutsch', sc:false, items:[
+        {k:'L1', t:'Kind spricht', sc:false, o:[[0,'immer/meist Dialekt'],[0,'teils hochdeutsch/teils Dialekt'],[0,'immer/meist hochdeutsch']]},
+        {k:'L2', t:'Wenn das Kind Dialekt spricht, kann es bei Bedarf ins Hochdeutsche umschalten', sc:false, o:MUE},
+      ]},
+      {id:'M', letter:'M', title:'Sprechweise', sc:false, items:[
+        {k:'M1', t:'Laute', sc:false, o:[[0,'bildet alle Laute (z. B. „sch“, „k“) und Lautverbindungen richtig'],[0,'bildet Laute/Lautverbindungen nicht richtig / ersetzt sie durch andere']]},
+        {k:'M1b', t:'Welche Laute/Lautverbindungen sind betroffen?', txt:true},
+        {k:'M2a', t:'Redefluss: Kind spricht überhastet', sc:false, o:[[0,'nie'],[0,'manchmal'],[0,'oft']]},
+        {k:'M2b', t:'Redefluss: Kind spricht stockend', sc:false, o:[[0,'nie'],[0,'manchmal'],[0,'oft']]},
+        {k:'M2c', t:'andere Auffälligkeiten in Sprechweise / Redefluss', txt:true},
+      ]},
+      {id:'N', letter:'N', title:'Sätze nachsprechen', intro:'Wichtig v. a. bei sprachlich nicht so gut entwickelten Kindern. Übungssatz: „Peter geht weg“. Die Sätze einzeln nachsprechen lassen, ohne sie zu üben.', items:[
+        {k:'N1', t:'der Hund schläft', o:NACH},
+        {k:'N2', t:'morgen wird das Zimmer neu gestrichen', o:NACH},
+        {k:'N3', t:'unter der Dusche singe ich immer ein lustiges Lied', o:NACH},
+        {k:'N4', t:'auf dem Tisch liegt ein Bilderbuch, das mir gehört', o:NACH},
+        {k:'N5', t:'unter dem großen Kastanienbaum sitzt eine alte Frau auf einer roten Bank', o:NACH},
+        {k:'Nh', t:'Kind ist/war in heilpädagogischer Behandlung (z. B. Logopädie, Frühförderung)?', sc:false, o:[[0,'nein'],[0,'ja'],[0,'weiß ich nicht']]},
+      ]},
+    ]},
+    { label:'Abschluss', areas:[
+      {id:'FAM', letter:'›', title:'Die Familie in ihrer Beziehung zur Einrichtung', sc:false, items:[
+        {k:'FAM1', t:'wir sehen die Mutter', sc:false, o:OMN},
+        {k:'FAM2', t:'wir sehen den Vater', sc:false, o:OMN},
+        {k:'FAM3', t:'Vater oder Mutter erkundigen sich nach dem Geschehen in der Einrichtung', sc:false, o:OMN},
+        {k:'FAM4', t:'Vater oder Mutter kommen zu Veranstaltungen in der Einrichtung', sc:false, o:OMN},
+        {k:'FAM5', t:'es gab/gibt Gespräche mit Vater oder Mutter über Erziehung, Lernen des Kindes', sc:false, o:OMN},
+      ]},
+      {id:'VOR', letter:'✓', title:'Weiteres Vorgehen', sc:false, items:[
+        {k:'VOR', t:'Welche Konsequenzen ziehe ich aus meinen Beobachtungen, und wie geht es weiter? (Termine, Arbeitsschritte, Ergebnisse)', txt:true},
+      ]},
+    ]},
+  ]
+},
+
+sismik: {
+  label:'sismik', sub:'Sprachverhalten & Interesse an Sprache · Migrantenkinder',
+  cover:[
+    {k:'name', label:'Name des Kindes', type:'text', full:true},
+    {k:'geb', label:'Geburtsdatum', type:'date'},
+    {k:'geschlecht', label:'Geschlecht', type:'select', options:['','Junge','Mädchen']},
+    {k:'famsprache', label:'Familiensprache(n) des Kindes', type:'text', full:true},
+    {k:'nationalitaet', label:'Nationalität des Kindes', type:'text'},
+    {k:'einrichtung', label:'Einrichtung', type:'text'},
+    {k:'besuchSeit', label:'in Einrichtung seit (Monat / Jahr)', type:'text'},
+    {k:'stunden', label:'Stunden pro Tag (Ø)', type:'select', options:['','bis ca. 4 Std.','5–6 Std.','7–8 Std.','mehr als 8 Std.']},
+    {k:'ausgefuelltVon', label:'Bogen ausgefüllt von', type:'text'},
+    {k:'ausgefuelltWann', label:'ausgefüllt am (Monat, Jahr)', type:'text'},
+  ],
+  parts:[
+    { label:'Teil 1 — Sprachverhalten in verschiedenen Situationen', areas:[
+      {id:'A', letter:'A', title:'Am Frühstückstisch', items:[
+        {k:'A1', t:'Kind schweigt', o:S6r},
+        {k:'A2', t:'hört aufmerksam zu bei deutschsprachigen Gesprächen', o:S6},
+        {k:'A3', t:'geht ein auf deutschsprachige Fragen und Aufforderungen von Kindern', o:S6},
+        {k:'A4', t:'beteiligt sich aktiv an Gesprächen in deutscher Sprache', o:S6},
+        {k:'A5', t:'erzählt auf Deutsch verständlich von etwas, das der Gesprächspartner nicht kennt oder sieht', ex:'z. B. von zu Hause', o:S6},
+        {k:'A6', t:'sitzt vor allem bei Kindern derselben Familiensprache', grp:'Falls es Kinder mit derselben Familiensprache gibt:', sc:false, o:S6},
+        {k:'A7', t:'hört aufmerksam zu bei Gesprächen in der Familiensprache', sc:false, o:S6},
+        {k:'A8', t:'beteiligt sich aktiv an Gesprächen in der Familiensprache', sc:false, o:S6},
+      ]},
+      {id:'B', letter:'B', title:'Rollenspiele', items:[
+        {k:'B1', t:'Kind ist an Rollenspielen beteiligt', o:S6},
+        {k:'B2', t:'beteiligt sich aktiv an Rollenspielen, die in deutscher Sprache ablaufen', o:S6},
+        {k:'B3', t:'beteiligt sich aktiv an Rollenspielen, die in seiner Familiensprache ablaufen', sc:false, o:S6, na:'diese Situation kommt nicht vor'},
+      ]},
+      {id:'C', letter:'C', title:'Spielpartner in der Freispielzeit', items:[
+        {k:'C1', t:'Kind spielt allein', o:S6r},
+        {k:'C2', t:'ist bei anderen Kindern als Spielpartner gefragt', o:S6},
+        {k:'C3', t:'spielt mit deutschsprachigen Kindern', o:S6},
+        {k:'C4', t:'spielt mit Kindern, die seine Familiensprache sprechen', sc:false, o:S6, na:'diese Situation kommt nicht vor'},
+      ]},
+      {id:'D', letter:'D', title:'Einzelgespräche mit pädagog. Bezugsperson (auf Deutsch)', items:[
+        {k:'D1', t:'Kind geht Kontakten mit uns aus dem Weg', o:S6r},
+        {k:'D2', t:'spricht mit uns', o:S6},
+        {k:'D3', t:'spricht sehr leise', o:S6r},
+        {k:'D4', t:'spricht mit uns in deutscher Sprache', o:S6},
+        {k:'D5', t:'äußert sich im Deutschen so, dass wir es nur mit großer Mühe verstehen können', o:S6r},
+        {k:'D6', t:'beantwortet unsere Fragen ungenau, ausweichend', o:S6r},
+        {k:'D7', t:'reagiert nicht, wenn wir es ansprechen', o:S6r},
+        {k:'D8', t:'hört aufmerksam zu, wenn wir sprechen', o:S6},
+        {k:'D9', t:'stellt Fragen an uns (in Deutsch)', o:S6},
+        {k:'D10', t:'erzählt auf Deutsch verständlich von etwas, das wir nicht kennen oder sehen können', ex:'z. B. von zu Hause', o:S6},
+      ]},
+      {id:'E', letter:'E', title:'Gesprächsrunden / Stuhlkreis', items:[
+        {k:'E1', t:'Kind ist still und zurückgezogen', o:S6r},
+        {k:'E2', t:'spricht sehr leise', o:S6r},
+        {k:'E3', t:'hört aufmerksam zu', o:S6},
+        {k:'E4', t:'gibt eine angemessene Antwort, wenn es direkt gefragt wird', o:S6},
+        {k:'E5', t:'bringt von sich aus eigene Beiträge ein', o:S6},
+      ]},
+      {id:'F', letter:'F', title:'Verständigungsprobleme / Ausdrucksnot (im Deutschen)', sc:false, items:[
+        {k:'F1', t:'Kind zieht sich zurück, verstummt', sc:false, o:S6},
+        {k:'F2', t:'wird wütend', sc:false, o:S6},
+        {k:'F3', t:'versucht sich mit Gesten und Mimik zu verständigen', sc:false, o:S6},
+        {k:'F4', t:'holt sich Hilfe bei zweisprachigen Personen, die seine Familiensprache sprechen', sc:false, o:S6, na:'es gibt diese Personen nicht'},
+        {k:'F5', t:'sucht Ersatzwörter, Umschreibungen', sc:false, o:S6},
+        {k:'F6', t:'benutzt seine Familiensprache', sc:false, o:S6},
+      ]},
+      {id:'G', letter:'G', title:'Bilderbuchbetrachtung (pädagog. Angebot, Kleingruppe, deutsch)', items:[
+        {k:'G1', t:'Kind hört aufmerksam zu und schaut sich die Bilder an', o:S6},
+        {k:'G2', t:'benennt einzelne Dinge auf der Bilderbuchseite (auf Deutsch)', o:S6},
+        {k:'G3', t:'versucht (auf Deutsch) einen Zusammenhang zwischen Bildern herzustellen, wird zum „Erzähler“', o:S6},
+        {k:'G4', t:'ist sich des Unterschiedes zwischen Bild und Text bewusst; fragt z. B. nach, was „da steht“', o:S6},
+      ]},
+      {id:'H', letter:'H', title:'Vorlesen / Erzählen (pädagog. Angebot, Kleingruppe, deutsch)', items:[
+        {k:'H1', t:'Kind hört aufmerksam zu bei einer kurzen Erzählung, die nicht durch Bilder/Gestik/Gegenstände veranschaulicht wird', o:S6},
+        {k:'H2', t:'beteiligt sich am Gespräch über eine kurze Erzählung, die nicht durch Bilder/Gestik/Gegenstände veranschaulicht wird', o:S6},
+        {k:'H3', t:'merkt sich eine einfache Geschichte und kann sie nacherzählen (auf Deutsch)', o:MUEs},
+      ]},
+      {id:'I', letter:'I', title:'Selbständiger Umgang mit Bilderbüchern (vom Kind ausgehend)', items:[
+        {k:'I1', t:'Kind sucht sich selbständig Bilderbuch aus', o:S6},
+        {k:'I2', t:'blättert langsam, schaut einzelne Bilder an', o:S6},
+        {k:'I3', t:'tut so, als ob es liest', o:S6},
+        {k:'I4', t:'spricht zu den Bildern mit sich selbst (deutsch oder Familiensprache)', o:S6},
+        {k:'I5', t:'spricht über die Bilder mit anderen Kindern (deutsch oder Familiensprache)', o:S6},
+        {k:'I6', t:'bittet, dass ihm etwas vorgelesen wird', o:S6},
+      ]},
+      {id:'J', letter:'J', title:'Interesse an Schrift („Lesen“ und „Schreiben“)', items:[
+        {k:'J1', t:'interessiert sich für Geschriebenes; fragt nach, was das heißt', ex:'z. B. bei Buch, Aushang in der Einrichtung, Schild', o:S6},
+        {k:'J2', t:'malt von sich aus Buchstaben', o:S6},
+        {k:'J3', t:'will schreiben; schreibt z. B. eigenen Namen, einen „Brief“', o:S6},
+      ]},
+      {id:'K', letter:'K', title:'Reime – Fantasiewörter – verschiedene Sprachen', items:[
+        {k:'K1', t:'Kind hat Spaß an Fantasiewörtern und Zaubersprüchen', o:S6},
+        {k:'K2', t:'merkt sich ein neues Fantasiewort mit 4 Silben und kann es aufsagen', ex:'z. B. mó-na-lú-ra oder gá-bu-di-la', o:MUEs},
+        {k:'K3', t:'beteiligt sich aktiv an Reimen und Sprachspielen', o:S6},
+        {k:'K4', t:'merkt sich einen kurzen deutschen Reim (etwa 4 Zeilen) und kann ihn aufsagen', ex:'„Hexe Minka / Kater Pinka / Vogel Fu / raus bist du“', o:MUEs},
+        {k:'K5', t:'hat Spaß an neuen, fremden Sprachen (nicht Deutsch, nicht Familiensprache)', ex:'z. B. ein türkisches Kind will auf Englisch oder Italienisch zählen/singen', o:S6, na:'diese Situation gibt es in der Gruppe nicht'},
+        {k:'Kx', t:'Beobachtungen aus anderen Situationen, besondere Interessen des Kindes', txt:true},
+      ]},
+    ]},
+    { label:'Teil 2 — Sprachliche Kompetenz im engeren Sinn (deutsch)', areas:[
+      {id:'L', letter:'L', title:'Verstehen von Handlungsaufträgen / Aufforderungen', items:[
+        {k:'L1', t:'kann einfache Handlungsanweisungen umsetzen, die es nur sprachlich verstehen kann', ex:'z. B. „hol bitte deine Jacke“ – ohne zur Garderobe zu blicken', o:MUEs},
+        {k:'L2', t:'kann „mehrschrittige“ Handlungsanweisungen umsetzen, die es nur sprachlich verstehen kann', ex:'z. B. Recorder holen, Kassette aus der Schublade nehmen, beides auf den Tisch stellen – ohne Hinzeigen', o:MUEs},
+      ]},
+      {id:'M', letter:'M', title:'Sprechweise, Wortschatz', items:[
+        {k:'M1', t:'das Kind spricht im Deutschen', o:[[1,'sehr undeutlich'],[2,'etwas undeutlich'],[3,'deutlich']]},
+        {k:'M2', t:'spricht im Deutschen stockend, zögernd', o:[[6,'nie'],[5,'sehr selten'],[4,'selten'],[3,'manchmal'],[2,'oft'],[1,'sehr oft']]},
+        {k:'M3', t:'kann Gegenstände benennen', grp:'Gegenstände benennen und beschreiben (z. B. Kim-Spiele, „ich sehe was, was du nicht siehst“)', ex:'z. B. „Apfel“, „Stift“, „Schere“, „Auto“', o:[[1,'kann keine benennen'],[2,'kann einige benennen'],[3,'kann die meisten benennen']]},
+        {k:'M4', t:'kann Gegenstände beschreiben', ex:'z. B. Apfel … ist rot, … ist rund, … kann man essen', o:[[1,'gar nicht'],[2,'Beschreibung eher grob'],[3,'Beschreibung eher differenziert']]},
+        {k:'M5', t:'der deutsche Wortschatz des Kindes ist (verglichen mit deutschen Kindern seines Alters)', grp:'Wortschatz', o:[[1,'sehr eingeschränkt'],[2,'eingeschränkt'],[3,'ausreichend'],[4,'reichhaltig']]},
+      ]},
+      {id:'N', letter:'N', title:'Satzbau, Grammatik', intro:'Es geht um Spontansprache – inwieweit ein Kind von sich aus Sätze/Satzteile bildet, nicht um Nachsprechen oder auswendig Gelerntes.', items:[
+        {k:'N1', t:'verwendet Einwortäußerungen oder formelhafte Wendungen', ex:'z. B. „Saft“, „Schuhe“, „habdu“ (hast du)', o:[[1,'vorwiegend'],[2,'manchmal'],[3,'selten/nie']]},
+        {k:'N2', t:'bildet Sätze, indem es Wörter hintereinander reiht', ex:'z. B. „Toilette gehen“, „… Mario Garten“, „… Saft haben“, „… ich Haus“', o:[[1,'vorwiegend'],[2,'manchmal'],[3,'selten/nie']]},
+        {k:'N3', t:'bildet Nebensätze, z. B. mit „weil“, „dass“, „wo“ oder „wenn“', ex:'z. B. „… weil der ist blöd“; „… der will, dass ich mein Stuhl gebe“', o:[[1,'nie'],[2,'selten'],[3,'manchmal'],[4,'häufig']]},
+        {k:'N4', t:'verwendet Artikel', ex:'z. B. „das ist ein Haus“, „… ich gebe dir das Buch“', o:[[1,'nein, Artikel werden meist ausgelassen'],[2,'Artikel sind meist fehlerhaft'],[3,'Artikel sind manchmal fehlerhaft'],[4,'Artikel sind meist korrekt']]},
+        {k:'N5', t:'wird das Verb gebeugt?', ex:'z. B. „ich spiele …“, „du spielst …“, „die spielen …“', o:[[1,'meist nur eine feststehende Form („spiel“/„spiele“/„spielen“)'],[2,'manchmal korrekte Formen'],[3,'meistens korrekte Formen']]},
+        {k:'N6', t:'im Hauptsatz steht das Verb an der richtigen Stelle', ex:'z. B. „der macht immer so“, „… ich habe Durst“, „… ich muss (auf die) Toilette“', o:[[1,'nie'],[2,'selten'],[3,'manchmal'],[4,'häufig'],[0,'das Kind bildet keine Sätze']]},
+        {k:'N7', t:'verwendet Konstruktionen mit Modal- und Hauptverb', ex:'z. B. „… ich darf das machen“, „… ich will auch noch Saft haben“', o:[[1,'nie'],[2,'selten'],[3,'manchmal'],[4,'häufig']]},
+        {k:'N8', t:'im Nebensatz steht das gebeugte Verb am Satzende', ex:'z. B. „… ich glaube, dass die Ente schwimmt“, „… das ist ein Kind, wo noch schläft“', o:[[1,'nie'],[2,'selten'],[3,'manchmal'],[4,'häufig'],[0,'das Kind bildet keine Sätze/Nebensätze']]},
+      ]},
+    ]},
+    { label:'Teil 3 — Die Familiensprache des Kindes', areas:[
+      {id:'O', letter:'O', title:'Umgang des Kindes mit seiner Familiensprache (Einschätzung durch deutschsprachige Erzieherin)', sc:false, items:[
+        {k:'O1', t:'Wenn ich höre, wie das Kind in seiner Familiensprache spricht, habe ich den Eindruck, es spricht', sc:false, o:[[0,'längere Passagen'],[0,'mehrere Wörter'],[0,'einzelne Wörter']]},
+        {k:'O2', t:'Wird es von Verwandten/Bekannten in der Familiensprache angesprochen (z. B. beim Abholen), antwortet das Kind', sc:false, o:[[0,'meist in Familiensprache'],[0,'teils Familiensprache / teils Deutsch'],[0,'meist auf Deutsch']]},
+        {k:'O3', t:'Bei Gruppenaktivitäten mit Familiensprache (z. B. Lied, mehrsprachige Begrüßung) benutzt das Kind seine Familiensprache', sc:false, o:[[0,'gerne / zeigt, was es kann'],[0,'macht mit'],[0,'beteiligt sich zögerlich'],[0,'reagiert nicht'],[0,'zieht sich zurück']], na:'es gibt keine solchen Aktivitäten'},
+        {k:'O4', t:'Das Kind benutzt Deutsch und Familiensprache innerhalb einer Äußerung', sc:false, o:[[0,'nein'],[0,'ja']]},
+        {k:'O4b', t:'… wenn ja:', sc:false, o:[[0,'vor allem mit Partnern, die beide Sprachen können'],[0,'auch bei Partnern, die nur deutsch sprechen']]},
+        {k:'O5', t:'Kann von einer Sprache in die andere umschalten, wenn die Situation es erfordert', sc:false, o:[[0,'mühelos'],[0,'mit Mühe'],[0,'gar nicht']]},
+        {k:'O6', t:'Betätigt sich als „Mittler“ zwischen den Sprachen', sc:false, o:[[0,'sehr bereitwillig'],[0,'bereitwillig'],[0,'nicht so gern'],[0,'ungern / gar nicht']], na:'diese Situation gibt es nicht'},
+      ]},
+      {id:'P', letter:'P', title:'Sicht der Eltern und anderer Erwachsener mit derselben Familiensprache', sc:false, items:[
+        {k:'P1', t:'Eltern berichten, das Kind spricht in der Familiensprache', sc:false, o:[[0,'deutlich'],[0,'undeutlich']]},
+        {k:'P2', t:'Eltern berichten, das Kind kann sich in der Familiensprache', sc:false, o:[[0,'gut verständigen'],[0,'etwas verständigen'],[0,'nicht verständigen']]},
+        {k:'P3', t:'Andere Kolleg/innen bzw. Erwachsene aus demselben Sprachkreis berichten über den Stand der Familiensprache', txt:true},
+      ]},
+    ]},
+    { label:'Teil 4 — Die Familie des Kindes', areas:[
+      {id:'Q', letter:'Q', title:'Lebenssituation / Sprachpraxis in der Familie', sc:false, items:[
+        {k:'Q1', t:'Mit wem lebt das Kind zusammen?', sc:false, o:[[0,'mit zwei Elternteilen'],[0,'mit einem Elternteil']]},
+        {k:'Q2', t:'Hat das Kind ältere Geschwister, die relativ gut deutsch sprechen?', sc:false, o:[[0,'nein'],[0,'ja']]},
+        {k:'Q3', t:'Das Kind lebt in Notunterkunft / Asylbewerberheim', sc:false, o:[[0,'nein'],[0,'ja']]},
+        {k:'Q4', t:'Vater/Mutter haben in der Freizeit Kontakte mit deutschsprachigen Familien', sc:false, o:OMN},
+        {k:'Q5', t:'Mutter in Deutschland seit', txt:true},
+        {k:'Q5b', t:'Herkunftsland der Mutter', txt:true},
+        {k:'Q6', t:'Vater in Deutschland seit', txt:true},
+        {k:'Q6b', t:'Herkunftsland des Vaters', txt:true},
+        {k:'Q7', t:'Welche Sprache(n) spricht die Mutter mit dem Kind?', txt:true},
+        {k:'Q8', t:'Welche Sprache(n) spricht der Vater mit dem Kind?', txt:true},
+        {k:'Q9m', t:'Deutschkenntnisse der Mutter (Einschätzung)', sc:false, o:[[0,'gut'],[0,'mittel'],[0,'gering'],[0,'keine']]},
+        {k:'Q9v', t:'Deutschkenntnisse des Vaters (Einschätzung)', sc:false, o:[[0,'gut'],[0,'mittel'],[0,'gering'],[0,'keine']]},
+        {k:'Q10', t:'Beruf der Mutter', txt:true},
+        {k:'Q10b', t:'Erwerbssituation der Mutter', sc:false, o:[[0,'ganztägig'],[0,'Teilzeit'],[0,'Hausfrau'],[0,'arbeitslos']]},
+        {k:'Q11', t:'Beruf des Vaters', txt:true},
+        {k:'Q11b', t:'Erwerbssituation des Vaters', sc:false, o:[[0,'ganztägig'],[0,'Teilzeit'],[0,'arbeitslos']]},
+      ]},
+      {id:'R', letter:'R', title:'Die Familie in ihrer Beziehung zur Einrichtung', sc:false, items:[
+        {k:'R1', t:'Ich sehe Vater/Mutter', sc:false, o:OMN},
+        {k:'R2', t:'Vater/Mutter erkundigen sich nach dem Geschehen in der Einrichtung', sc:false, o:OMN},
+        {k:'R3', t:'Vater/Mutter kommen zu Veranstaltungen in der Einrichtung', sc:false, o:OMN},
+        {k:'R4', t:'Es gab/gibt Gespräche mit Vater/Mutter über Erziehungsfragen / über das Kind', sc:false, o:OMN},
+        {k:'R5', t:'Vater/Mutter haben Ängste/Befürchtungen', sc:false, o:[[0,'nein'],[0,'ja']]},
+        {k:'R5b', t:'… wenn ja, welche?', txt:true},
+      ]},
+      {id:'VOR', letter:'✓', title:'Weiteres Vorgehen', sc:false, items:[
+        {k:'VOR', t:'Welche Konsequenzen ziehe ich aus meinen Beobachtungen, und wie geht es weiter? (Termine, Arbeitsschritte, Ergebnisse)', txt:true},
+      ]},
+    ]},
+  ]
+}
+};
+
+/* ============================ Zustand ============================ */
+function blankBogen(){ return { child:{}, rounds:[{date:'',obs:''},{date:'',obs:''},{date:'',obs:''}], ans:{}, idx:{}, txt:{} }; }
+let S = { v:1, bogen:'seldak', active:0, view:'setup',
+          data:{ seldak:blankBogen(), sismik:blankBogen() },
+          norms:{ seldak:null, sismik:null }, focus:null };
+
+const F = () => FORMS[S.bogen];
+const D = () => S.data[S.bogen];
+const allAreas = () => F().parts.flatMap(p=>p.areas);
+const areaById = id => allAreas().find(a=>a.id===id);
+function itemByKey(k){ for(const a of allAreas()) for(const it of a.items) if(it.k===k) return {it,a}; return null; }
+function isScored(a,it){ return a.sc!==false && it.sc!==false && it.o && !it.txt; }
+
+function ansArr(areaId,k){ const d=D(); d.ans[areaId]=d.ans[areaId]||{}; if(!d.ans[areaId][k]) d.ans[areaId][k]=[null,null,null]; return d.ans[areaId][k]; }
+function idxArr(areaId,k){ const d=D(); d.idx=d.idx||{}; d.idx[areaId]=d.idx[areaId]||{}; if(!d.idx[areaId][k]) d.idx[areaId][k]=[null,null,null]; return d.idx[areaId][k]; }
+function chosenIdx(areaId,k,r){ const d=D(); return (d.idx&&d.idx[areaId]&&d.idx[areaId][k])? d.idx[areaId][k][r] : null; }
+function getVal(areaId,k,r){ const d=D(); return d.ans[areaId]&&d.ans[areaId][k]? d.ans[areaId][k][r] : null; }
+
+/* zählt bewertbare Items im Bogen */
+function scoredItems(){ const out=[]; allAreas().forEach(a=>a.items.forEach(it=>{ if(isScored(a,it)) out.push({a,it}); })); return out; }
+function ratedCount(r){ return scoredItems().filter(({a,it})=>{ const v=getVal(a.id,it.k,r); return typeof v==='number'; }).length; }
+function totalScored(){ return scoredItems().length; }
+function areaHasData(areaId,r){ const a=areaById(areaId); return a.items.some(it=>{ const v=getVal(areaId,it.k,r); return v!=null; }); }
+const hasDataRound = r => allAreas().some(a=>areaHasData(a.id,r));
+
+/* normierter Itemwert 0..1 anhand eigener Skala */
+function norm01(it,v){ if(typeof v!=='number'||v===0) return null; const vals=it.o.map(o=>o[0]).filter(x=>x>0); const mn=Math.min(...vals), mx=Math.max(...vals); if(mx===mn) return null; return (v-mn)/(mx-mn); }
+function areaMean(areaId,r){ const a=areaById(areaId); let s=0,n=0; a.items.forEach(it=>{ if(!isScored(a,it))return; const x=norm01(it,getVal(areaId,it.k,r)); if(x!=null){s+=x;n++;} }); return n? s/n : null; }
+
+/* ============================ Rendering ============================ */
+function applyAccent(){ document.documentElement.style.setProperty('--accent', S.bogen==='seldak'?'var(--seldak)':'var(--sismik)'); }
+function syncBrand(){ const c=D().child; $('brand-sub').textContent = c.name ? c.name+' · '+F().label : 'Beobachtungsbögen · digital'; }
+function render(){ applyAccent(); renderNav(); renderMain(); renderMob(); updateProg(); syncBrand(); }
+
+function renderNav(){
+  let h = `<div class="bogtabs">
+     <button class="bogtab seldak ${S.bogen==='seldak'?'on seldak':''}" onclick="switchBogen('seldak')">seldak<small>deutschsprachig</small></button>
+     <button class="bogtab sismik ${S.bogen==='sismik'?'on sismik':''}" onclick="switchBogen('sismik')">sismik<small>mehrsprachig</small></button>
+   </div>`;
+  h += navItem('setup','✎','Kind & Erhebungen', S.view==='setup');
+  F().parts.forEach(p=>{
+    h += `<div class="nsec">${esc(p.label)}</div>`;
+    p.areas.forEach(a=>{
+      const checks=[0,1,2].map(r=>`<i style="background:${areaHasData(a.id,r)?PENHEX[r]:'var(--line)'}"></i>`).join('');
+      h += `<button class="nitem ${S.view===a.id?'on':''}" onclick="go('${a.id}')">
+        <span class="nlet">${esc(a.letter)}</span><span class="ntxt">${esc(a.title)}</span>
+        <span class="ncheck">${checks}</span></button>`;
+    });
+  });
+  h += navItem('aus','▣','Auswertung', S.view==='aus');
+  $('nav').innerHTML = h;
+}
+function navItem(v,ico,label,on){ return `<button class="nitem ${on?'on':''}" onclick="go('${v}')"><span class="nlet">${ico}</span><span class="ntxt">${esc(label)}</span></button>`; }
+
+function renderMob(){
+  const tabs=[['setup','✎'],...allAreas().map(a=>[a.id,a.letter]),['aus','▣']];
+  $('mobnav').innerHTML = tabs.map(([v,l])=>`<button class="${S.view===v?'on':''}" onclick="go('${v}')">${esc(l)}</button>`).join('');
+}
+function go(v){ S.view=v; render(); window.scrollTo(0,0); }
+function switchBogen(b){ if(b===S.bogen)return; S.bogen=b; S.view='setup'; S.focus=null; render(); window.scrollTo(0,0); }
+
+function renderMain(){
+  if(S.view==='setup') return renderSetup();
+  if(S.view==='aus') return renderAus();
+  return renderArea(S.view);
+}
+
+/* ---- Setup ---- */
+function renderSetup(){
+  const c=D().child;
+  let h=`<div class="wrap">
+    <div class="eyebrow">${esc(F().label)} · ${esc(F().sub)}</div>
+    <h2 class="h-lg">Kind & Erhebungen</h2>
+    <p class="lead">Stammdaten erfassen und bis zu drei Beobachtungszeitpunkte („Erhebungen“) anlegen. Jede Erhebung hat eine eigene Farbe und kann im Verlauf verglichen werden.</p>
+    <div class="card"><h3>Stammdaten</h3><div class="hint">Wortlaut der Felder gemäß ${esc(F().label)}-Deckblatt.</div><div class="grid">`;
+  F().cover.forEach(f=>{
+    const val=c[f.k]||'';
+    h+=`<div class="fld ${f.full?'full':''}"><label>${esc(f.label)}</label>`;
+    if(f.type==='select'){ h+=`<select onchange="setChild('${f.k}',this.value)">${f.options.map(o=>`<option ${o===val?'selected':''}>${esc(o)}</option>`).join('')}</select>`; }
+    else { h+=`<input type="${f.type==='date'?'date':'text'}" value="${esc(val)}" oninput="setChild('${f.k}',this.value)">`; }
+    h+=`</div>`;
+  });
+  h+=`</div></div>`;
+
+  h+=`<div class="card"><h3>Erhebungen (Beobachtungszeitpunkte)</h3><div class="hint">Datum und Beobachter/in je Erhebung. Beim Ausfüllen oben rechts in jedem Abschnitt die aktive Erhebung wählen.</div>`;
+  D().rounds.forEach((rd,r)=>{
+    h+=`<div class="rndrow">
+      <div class="rlabel"><span class="rdot" style="background:${PENHEX[r]}"></span>${r+1}. Erhebung</div>
+      <div class="fld"><label>Datum</label><input type="date" value="${esc(rd.date)}" oninput="setRound(${r},'date',this.value)"></div>
+      <div class="fld"><label>Beobachter/in</label><input type="text" value="${esc(rd.obs)}" oninput="setRound(${r},'obs',this.value)"></div>
+    </div>`;
+  });
+  h+=`</div>
+    <div class="anav"><span></span><button class="btn pri" onclick="go('${allAreas()[0].id}')">Beobachtung beginnen →</button></div>
+  </div>`;
+  $('main').innerHTML=h;
+}
+function setChild(k,v){ D().child[k]=v; if(k==='name')syncBrand(); }
+function setRound(r,k,v){ D().rounds[r][k]=v; renderNav(); }
+
+/* ---- Erhebungs-Auswahl (Stiftleiste) ---- */
+function roundBar(){
+  return `<div class="rounds">${[0,1,2].map(r=>{
+    const rd=D().rounds[r], lbl=rd.date?fmtDate(rd.date):`${r+1}. Erhebung`;
+    return `<button class="rtab r${r} ${S.active===r?'on':''}" onclick="setActive(${r})"><span class="rdot"></span>${esc(lbl)}</button>`;
+  }).join('')}</div>`;
+}
+function setActive(r){ S.active=r; renderMain(); renderNav(); updateProg(); }
+function fmtDate(d){ if(!d)return''; const x=new Date(d); return isNaN(x)?d:x.toLocaleDateString('de-DE'); }
+
+/* ---- Abschnitt / Items ---- */
+function renderArea(areaId){
+  const a=areaById(areaId); if(!a) return renderSetup();
+  const parts=F().parts, part=parts.find(p=>p.areas.includes(a));
+  let h=`<div class="wrap">
+    <div class="ahead"><div class="alet">${esc(a.letter)}</div><div>
+      <div class="apart">${esc(part?part.label.split(' — ')[0]:'')}</div>
+      <h2>${esc(a.title)}</h2></div></div>`;
+  if(a.intro) h+=`<p class="aintro">${esc(a.intro)}</p>`;
+  h+=roundBar();
+  h+=`<div class="itemwrap">`;
+  a.items.forEach(it=>{
+    if(it.grp) h+=`<div class="grp-row">${esc(it.grp)}</div>`;
+    if(it.note) h+=`<div class="note-row">${esc(it.note)}</div>`;
+    h+=renderItem(a,it);
+  });
+  h+=`</div>`;
+
+  const flat=allAreas(), i=flat.indexOf(a);
+  const prev=i>0?flat[i-1].id:'setup', next=i<flat.length-1?flat[i+1].id:'aus';
+  const prevL=i>0?flat[i-1].letter+' · '+flat[i-1].title:'Kind & Erhebungen';
+  const nextL=i<flat.length-1?flat[i+1].letter+' · '+flat[i+1].title:'Auswertung';
+  h+=`<div class="anav">
+    <button class="btn ghost" onclick="go('${prev}')">← ${esc(prevL)}</button>
+    <button class="btn pri" onclick="go('${next}')">${esc(nextL)} →</button>
+  </div></div>`;
+  $('main').innerHTML=h;
+}
+
+function renderItem(a,it){
+  const r=S.active, naOn = getVal(a.id,it.k,r)==='na';
+  let h=`<div class="item ${naOn?'na-on':''}" id="it-${a.id}-${it.k}">`;
+  const num = /^[A-Za-z]+(\d+)/.exec(it.k); const nlabel = num?num[1]:'';
+  h+=`<div class="iq"><div class="inum">${nlabel}</div><div class="itext">${esc(it.t)}${it.ex?`<span class="ex">${esc(it.ex)}</span>`:''}</div></div>`;
+  if(it.txt){
+    const val=D().txt[a.id+'.'+it.k]||'';
+    h+=`<textarea class="itxtarea" placeholder="Notiz …" oninput="setTxt('${a.id}','${it.k}',this.value)">${esc(val)}</textarea>`;
+  } else if(it.o){
+    const cur=getVal(a.id,it.k,r), ci=chosenIdx(a.id,it.k,r);
+    h+=`<div class="opts">`;
+    it.o.forEach((o,oi)=>{
+      const [v,lab]=o;
+      const isSel = (ci!=null) ? (ci===oi) : (typeof cur==='number' && cur===v);
+      const numbadge = (v>0)?`<span class="ov">${v}</span>`:'';
+      h+=`<button class="opt ${isSel?'sel r'+r:''}" onclick="mark('${a.id}','${it.k}',${v},${oi})">${numbadge}${esc(lab)}${otherMarks(a.id,it.k,oi,r)}</button>`;
+    });
+    h+=`</div>`;
+    if(it.na){ h+=`<label class="nacheck"><input type="checkbox" ${naOn?'checked':''} onchange="toggleNa('${a.id}','${it.k}',this.checked)"> ${esc(it.na)}</label>`; }
+  }
+  h+=`</div>`;
+  return h;
+}
+function otherMarks(areaId,k,oi,curR){
+  let dots='';
+  [0,1,2].forEach(r=>{ if(r===curR)return; if(chosenIdx(areaId,k,r)===oi) dots+=`<i style="background:${PENHEX[r]}"></i>`; });
+  return dots?`<span class="othermk">${dots}</span>`:'';
+}
+function mark(areaId,k,v,oi){
+  const arr=ansArr(areaId,k), ix=idxArr(areaId,k), r=S.active;
+  if(ix[r]===oi){ arr[r]=null; ix[r]=null; }      // erneut klicken = abwählen
+  else { arr[r]=v; ix[r]=oi; }
+  renderArea(areaId); renderNav(); updateProg();
+}
+function toggleNa(areaId,k,on){ const arr=ansArr(areaId,k), ix=idxArr(areaId,k), r=S.active; if(on){arr[r]='na'; ix[r]=null;} else if(arr[r]==='na'){arr[r]=null;} renderArea(areaId); renderNav(); updateProg(); }
+function setTxt(areaId,k,v){ D().txt[areaId+'.'+k]=v; }
+
+function updateProg(){
+  const tot=totalScored(), r=ratedCount(S.active), pct=tot?Math.round(r/tot*100):0;
+  $('prog').style.display = S.view==='setup'?'none':'block';
+  $('prog-round').textContent=S.active+1; $('prog-pct').textContent=pct+' %'; $('pfill').style.width=pct+'%';
+}
+
+/* ============================ Auswertung ============================ */
+function renderAus(){
+  const rounds=[0,1,2].filter(hasDataRound);
+  if(!rounds.length){ $('main').innerHTML=`<div class="wrap"><div class="eyebrow">Auswertung</div><h2 class="h-lg">Noch keine Daten</h2><p class="lead">Sobald Sie Items bewertet haben, erscheinen hier Profil, Netzdiagramm und – sobald Normtabellen hinterlegt sind – normbasierte Skalenwerte.</p><button class="btn pri" onclick="go('${allAreas()[0].id}')">Zur Beobachtung</button></div>`; return; }
+  const focus = (S.focus!=null && rounds.includes(S.focus))?S.focus:rounds[rounds.length-1];
+  const c=D().child;
+  let h=`<div class="wrap"><div class="eyebrow">Auswertung · ${esc(F().label)}</div>
+    <h2 class="h-lg">Auswertung${c.name?' · '+esc(c.name):''}</h2>
+    <div class="note">Die Profilwerte unten sind <b>vorläufige, skalenübergreifende Anhaltspunkte</b> (Itemwerte je nach eigener Skala auf 0–100 % normiert) – <b>keine</b> normierten Vergleichswerte. Die offizielle, an der Normstichprobe geeichte Auswertung erscheint, sobald die Skalendefinitionen und Normtabellen aus dem ${esc(F().label)}-Begleitheft hinterlegt sind (siehe unten).</div>`;
+
+  h+=`<div class="legend">`+rounds.map(r=>`<span><i style="background:${PENHEX[r]}"></i>${r+1}. Erhebung${D().rounds[r].date?' · '+fmtDate(D().rounds[r].date):''}</span>`).join('')+`</div>`;
+
+  // Profil
+  const profAreas=allAreas().filter(a=>a.items.some(it=>isScored(a,it)));
+  h+=`<div class="card profile"><h3>Profil nach Abschnitten</h3><div class="hint">Mittel der normierten Itemwerte je Abschnitt (0 % links … 100 % rechts).</div>`;
+  profAreas.forEach(a=>{
+    h+=`<div class="prow"><div class="pname"><span class="pl">${esc(a.letter)}</span><span class="ntxt">${esc(a.title)}</span></div><div class="ptrack">`;
+    [25,50,75].forEach(p=>h+=`<span class="ptick" style="left:${p}%"></span>`);
+    rounds.forEach((r,k)=>{ const m=areaMean(a.id,r); if(m==null)return; h+=`<span class="pbarv r${r}" style="width:${(m*100).toFixed(0)}%;top:${4+k*9}px" title="${(m*100).toFixed(0)} %"></span>`; });
+    h+=`</div><div class="praw">${rounds.map(r=>{const m=areaMean(a.id,r);return m==null?'·':(m*100).toFixed(0);}).join(' / ')}</div></div>`;
+  });
+  h+=`</div>`;
+
+  // Radar
+  h+=`<div class="card"><h3>Netzdiagramm</h3><div class="hint">Abschnitte mit bewertbaren Items.</div><canvas id="radar" width="640" height="460" style="display:block;margin:.4rem auto 0"></canvas></div>`;
+
+  // Stärken / Förderschwerpunkte
+  h+=`<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">Stärken & Förderschwerpunkte</h3>
+    <div class="fld" style="min-width:160px"><label>Grundlage</label><select onchange="S.focus=+this.value;renderAus()">${rounds.map(r=>`<option value="${r}" ${r===focus?'selected':''}>${r+1}. Erhebung</option>`).join('')}</select></div></div>
+    <div class="cols2" style="margin-top:.8rem">${chipsCol('str',focus)}${chipsCol('foc',focus)}</div></div>`;
+
+  // Normbasierte Auswertung
+  h+=normPanel();
+
+  h+=`</div>`;
+  $('main').innerHTML=h;
+  requestAnimationFrame(()=>drawRadar($('radar'),rounds,profAreas));
+}
+
+function chipsCol(kind,r){
+  const items=scoredItems();
+  const want = kind==='str'? (x=>x!=null&&x>=0.8) : (x=>x!=null&&x<=0.34);
+  const title= kind==='str'?'Stärken':'Förderschwerpunkte', tag=kind==='str'?'+':'•';
+  let rows='';
+  items.forEach(({a,it})=>{ const x=norm01(it,getVal(a.id,it.k,r)); if(want(x)) rows+=`<div class="chip ${kind}"><span class="ci">${tag}</span><div>${esc(it.t)}<span class="ca">${esc(a.letter)} · ${esc(a.title)}</span></div></div>`; });
+  if(!rows) rows=`<div class="emptyc">– keine –</div>`;
+  return `<div><div class="eyebrow" style="margin-bottom:.5rem">${title}</div><div class="chips">${rows}</div></div>`;
+}
+
+function drawRadar(cv,rounds,areas){
+  if(!cv)return; const dpr=window.devicePixelRatio||1; const W=cv.clientWidth||cv.width,H=460;
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.height=H+'px'; const x=cv.getContext('2d'); x.scale(dpr,dpr); x.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2+4, R=Math.min(W,H)/2-66, N=areas.length, ang=i=>-Math.PI/2+i*2*Math.PI/N;
+  for(let g=1;g<=4;g++){ const rr=R*g/4; x.beginPath(); for(let i=0;i<=N;i++){const a=ang(i%N),px=cx+rr*Math.cos(a),py=cy+rr*Math.sin(a); i?x.lineTo(px,py):x.moveTo(px,py);} x.closePath(); x.strokeStyle=g===4?'#D8D2C5':'#E9E4D8'; x.lineWidth=1; x.stroke(); }
+  x.fillStyle='#6B685F'; x.font='600 11px Inter,sans-serif'; x.textAlign='center'; x.textBaseline='middle';
+  for(let i=0;i<N;i++){ const a=ang(i),ex=cx+R*Math.cos(a),ey=cy+R*Math.sin(a); x.beginPath(); x.moveTo(cx,cy); x.lineTo(ex,ey); x.strokeStyle='#E9E4D8'; x.stroke(); const lx=cx+(R+16)*Math.cos(a),ly=cy+(R+13)*Math.sin(a); x.fillText(areas[i].letter,lx,ly); }
+  rounds.forEach(r=>{ const pts=areas.map((a,i)=>{ const m=areaMean(a.id,r),an=ang(i),val=m==null?0:m,rad=R*Math.max(.03,val); return [cx+rad*Math.cos(an),cy+rad*Math.sin(an),m]; });
+    x.beginPath(); pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])); x.closePath(); x.fillStyle=hexA(PENHEX[r],.12); x.fill(); x.strokeStyle=PENHEX[r]; x.lineWidth=2; x.stroke();
+    pts.forEach(p=>{ if(p[2]==null)return; x.beginPath(); x.arc(p[0],p[1],3,0,7); x.fillStyle=PENHEX[r]; x.fill(); }); });
+}
+function hexA(hex,a){ const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+
+/* ---- normbasierte Auswertung (Schnittstelle) ---- */
+function normPanel(){
+  const nm=S.norms[S.bogen];
+  let h=`<div class="card"><div class="row" style="justify-content:space-between"><h3 style="margin:0">Normbasierte Skalenauswertung</h3>
+    <button class="btn ghost" onclick="document.getElementById('normf').click()">Normtabellen importieren …</button></div>`;
+  if(!nm){
+    h+=`<div class="note norm" style="margin-top:.8rem">Noch keine Normtabellen hinterlegt. Erwartet wird eine JSON-Datei für den <b>${esc(S.bogen)}</b>-Bogen mit (1) Skalendefinitionen (welche Item-Codes zu welcher Skala gehören) und (2) den Normwerten je Rohwert und Altersgruppe. Format:</div>
+    <div class="codebox">${esc(NORM_SCHEMA(S.bogen))}</div>
+    <div class="hint" style="margin-top:.6rem">Item-Codes entsprechen den Kürzeln links an jedem Item (z. B. <b>A1</b>, <b>K10</b>). Umgekehrt gepolte Items sind in der App bereits korrekt gewertet; in der Tabelle den tatsächlichen Itemwert summieren.</div>`;
+  } else {
+    const r=(S.focus!=null?S.focus:[0,1,2].filter(hasDataRound).slice(-1)[0]);
+    h+=`<div class="hint" style="margin-top:.6rem">Grundlage: ${r+1}. Erhebung. Altersgruppe: ${esc(nm.ageGroup||'—')}.</div>`;
+    h+=`<table class="sk"><thead><tr><th>Skala</th><th class="num">Rohwert</th><th class="num">Items</th><th class="num">Prozentrang</th><th class="num">T-Wert</th></tr></thead><tbody>`;
+    (nm.scales||[]).forEach(sc=>{
+      let sum=0,n=0,miss=0;
+      sc.items.forEach(code=>{ const f=itemByKey(code); if(!f){miss++;return;} const v=getVal(f.a.id,f.it.k,r); if(typeof v==='number'){sum+=v;n++;} });
+      const norm = lookupNorm(nm,sc.id,sum);
+      h+=`<tr><td>${esc(sc.name||sc.id)}</td><td class="num">${n?sum:'—'}</td><td class="num">${n}/${sc.items.length}</td>
+        <td class="num">${norm&&norm.pr!=null?prBand(norm.pr):'—'}</td><td class="num">${norm&&norm.t!=null?norm.t:'—'}</td></tr>`;
+    });
+    h+=`</tbody></table>`;
+  }
+  h+=`</div>`;
+  return h;
+}
+function lookupNorm(nm,scaleId,raw){ try{ const tbl=nm.norms[scaleId][nm.ageGroup||Object.keys(nm.norms[scaleId])[0]]; return tbl[String(raw)]||null; }catch(e){ return null; } }
+function prBand(pr){ let col= pr<16?'var(--warn)':pr<50?'#C7923A':'var(--ok)'; return `<span class="prband" style="background:${hexA(col[0]==='#'?col:'#33786A',.15)};color:${col}">PR ${pr}</span>`; }
+function NORM_SCHEMA(b){
+  return `{
+  "bogen": "${b}",
+  "ageGroup": "5;0–5;5",
+  "scales": [
+    { "id": "S1", "name": "Beispiel-Skala",
+      "items": ["A1","A2","A3","B1","B2"] }
+  ],
+  "norms": {
+    "S1": {
+      "5;0–5;5": {
+        "12": { "pr": 5,  "t": 34 },
+        "13": { "pr": 9,  "t": 37 },
+        "14": { "pr": 16, "t": 40 }
+      }
+    }
+  }
+}`;
+}
+function importNorms(e){ const f=e.target.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>{ try{ const d=JSON.parse(rd.result); const b=d.bogen&&FORMS[d.bogen]?d.bogen:S.bogen; S.norms[b]=d; if(b===S.bogen)renderAus(); toast('Normtabellen geladen ('+b+')'); }catch(_){ toast('Datei konnte nicht gelesen werden'); } e.target.value=''; }; rd.readAsText(f); }
+
+/* ============================ Speichern / Öffnen / Neu ============================ */
+function saveFile(){
+  const name=D().child.name||'kind';
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const a=document.createElement('a'); const safe=name.replace(/[^\wäöüÄÖÜß -]/g,'').replace(/[ ,]+/g,'_');
+  a.href=URL.createObjectURL(blob); a.download=`${S.bogen}_${safe}_${new Date().toISOString().slice(0,10)}.ssb`; a.click(); URL.revokeObjectURL(a.href);
+  toast('Gespeichert');
+}
+function openFile(e){ const f=e.target.files[0]; if(!f)return; const rd=new FileReader();
+  rd.onload=()=>{ try{ const d=JSON.parse(rd.result); if(!d.data||!d.bogen)throw 0;
+      S=Object.assign({v:1,active:0,view:'setup',focus:null,norms:{seldak:null,sismik:null}},d);
+      S.view='setup'; S.focus=null; render(); toast('Geöffnet: '+(D().child.name||'')); }
+    catch(_){ toast('Ungültige Datei'); } e.target.value=''; };
+  rd.readAsText(f);
+}
+function confirmNew(){ modal('Neuer Bogen','Alle nicht gespeicherten Eingaben gehen verloren. Fortfahren?',()=>{ const b=S.bogen; S={v:1,bogen:b,active:0,view:'setup',data:{seldak:blankBogen(),sismik:blankBogen()},norms:{seldak:null,sismik:null},focus:null}; render(); }); }
+
+/* ============================ Modal / Toast ============================ */
+function modal(t,p,ok){ $('modal-t').textContent=t; $('modal-p').textContent=p; $('modal').classList.add('open'); $('modal-ok').onclick=()=>{ closeModal(); ok&&ok(); }; }
+function closeModal(){ $('modal').classList.remove('open'); }
+let toT; function toast(m){ const el=$('toast'); el.textContent=m; el.classList.add('show'); clearTimeout(toT); toT=setTimeout(()=>el.classList.remove('show'),2200); }
+
+/* ============================ Init ============================ */
+render();
+
+</script>
+</body>
+</html>
