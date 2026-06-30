@@ -121,6 +121,7 @@
   .banktrade .row{display:flex;align-items:center;gap:6px;font-size:14px}
   .banktrade select{background:#fff;border-radius:6px;padding:4px 6px;font-size:13px;border:1px solid #d8cfb6}
   .banktrade .arrow{color:var(--muted)}
+  .banktrade .ratio{font-weight:700;color:var(--slate2);font-size:13px}
   .banktrade .tradebtn{margin-left:auto;padding:4px 10px;border-radius:6px;background:var(--slate2);
     color:#f3ecda;font-size:12px;font-weight:600}
   .banktrade .tradebtn:disabled{opacity:.4}
@@ -222,7 +223,7 @@ var I18N={
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     roll:"🎲 Würfeln", end_turn:"Zug beenden →", dev_cards:"Entwicklungskarten",
     new_suffix:"·neu", vp_card:"★ Siegpunkt ×", settlers:"Siedler", game_log:"Spielprotokoll",
-    bank_trade:"Seehandel · 4 : 1", trade:"Tauschen", supply:"Vorrat", cards:"Karten",
+    bank_trade:"Seehandel", trade:"Tauschen", supply:"Vorrat", cards:"Karten",
     tip_hand:"Handkarten", tip_knights:"gespielte Ritter", tip_lroad:"Längste Handelsstraße (+2)",
     tip_larmy:"Größte Rittermacht (+2)", tip_newdev:"Diese Runde gekauft – ab dem nächsten Zug spielbar",
     b_road:"Straße", b_settlement:"Siedlung", b_city:"Stadt", b_dev:"Entw.-Karte",
@@ -239,7 +240,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß",
-    foot:"v0.2 · Grundspiel · offline · eine Datei",
+    foot:"v0.3 · Grundspiel + Häfen · offline · eine Datei",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     log_setup_done:"Gründung abgeschlossen. {name} würfelt.",
@@ -250,7 +251,7 @@ var I18N={
     log_built_road:"{name} baut eine Straße.", log_built_settle:"{name} baut eine Siedlung.", log_built_city:"{name} baut eine Stadt.",
     log_bought_dev:"{name} kauft eine Entwicklungskarte.", log_played_dev:"{name} spielt {card}.",
     log_plenty:"{name} nimmt {resList}.", log_monopoly:"{name} monopolisiert {res} (+{count}).",
-    log_bank:"{name} tauscht 4 {give} → 1 {get}.", log_next:"{name} ist am Zug.", log_wins:"{name} gewinnt!"
+    log_bank:"{name} tauscht {ratio} {give} → 1 {get}.", log_next:"{name} ist am Zug.", log_wins:"{name} gewinnt!"
   },
   en:{
     subtitle:"Pass & Play · Settle the Island", choose:"Choose your number of settlers", begin:"BEGIN",
@@ -261,7 +262,7 @@ var I18N={
     click_robber:"Click a hex to move the robber.",
     roll:"🎲 Roll dice", end_turn:"End turn →", dev_cards:"Development cards",
     new_suffix:"·new", vp_card:"★ Victory ×", settlers:"Settlers", game_log:"Game log",
-    bank_trade:"Bank trade · 4 : 1", trade:"Trade", supply:"Supply", cards:"cards",
+    bank_trade:"Maritime trade", trade:"Trade", supply:"Supply", cards:"cards",
     tip_hand:"cards in hand", tip_knights:"knights played", tip_lroad:"Longest Road (+2)",
     tip_larmy:"Largest Army (+2)", tip_newdev:"Bought this turn — playable next turn",
     b_road:"Road", b_settlement:"Settlement", b_city:"City", b_dev:"Dev card",
@@ -278,7 +279,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White",
-    foot:"v0.2 · base game · offline · single file",
+    foot:"v0.3 · base game + harbors · offline · single file",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     log_setup_done:"Setup complete. {name} to roll.",
@@ -289,7 +290,7 @@ var I18N={
     log_built_road:"{name} built a road.", log_built_settle:"{name} built a settlement.", log_built_city:"{name} upgraded to a city.",
     log_bought_dev:"{name} bought a development card.", log_played_dev:"{name} played {card}.",
     log_plenty:"{name} took {resList}.", log_monopoly:"{name} monopolized {res} (+{count}).",
-    log_bank:"{name} traded 4 {give} → 1 {get}.", log_next:"{name}'s turn.", log_wins:"{name} wins!"
+    log_bank:"{name} traded {ratio} {give} → 1 {get}.", log_next:"{name}'s turn.", log_wins:"{name} wins!"
   }
 };
 function fmt(s,p){ if(!p) return s; return s.replace(/\{(\w+)\}/g,function(_,k){return p[k]!==undefined?p[k]:"{"+k+"}";}); }
@@ -331,8 +332,9 @@ function buildBoard(){
   hexes.forEach(function(h){h.vertices.forEach(function(v){if(vertices[v].hexes.indexOf(h.id)<0)vertices[v].hexes.push(h.id);});});
   var emap={}, edges=[];
   function eid(a,b){var key=a<b?a+"-"+b:b+"-"+a;if(emap[key]!==undefined)return emap[key];
-    var id=edges.length;var va=vertices[a],vb=vertices[b];edges.push({id:id,v1:a,v2:b,x:(va.x+vb.x)/2,y:(va.y+vb.y)/2});emap[key]=id;return id;}
+    var id=edges.length;var va=vertices[a],vb=vertices[b];edges.push({id:id,v1:a,v2:b,x:(va.x+vb.x)/2,y:(va.y+vb.y)/2,hexes:[]});emap[key]=id;return id;}
   hexes.forEach(function(h){for(var i=0;i<6;i++){var a=h.vertices[i],b=h.vertices[(i+1)%6];var e=eid(a,b);
+    if(edges[e].hexes.indexOf(h.id)<0)edges[e].hexes.push(h.id);
     if(vertices[a].edges.indexOf(e)<0)vertices[a].edges.push(e);if(vertices[b].edges.indexOf(e)<0)vertices[b].edges.push(e);}});
   edges.forEach(function(e){if(vertices[e.v1].adj.indexOf(e.v2)<0)vertices[e.v1].adj.push(e.v2);if(vertices[e.v2].adj.indexOf(e.v1)<0)vertices[e.v2].adj.push(e.v1);});
   var minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
@@ -348,6 +350,33 @@ function assignTiles(){
 }
 function buildDevDeck(){
   return shuffle([].concat(Array(14).fill("knight"),Array(5).fill("vp"),Array(2).fill("road"),Array(2).fill("plenty"),Array(2).fill("monopoly")));
+}
+function assignHarbors(board){
+  var c={x:(board.bounds.minX+board.bounds.maxX)/2,y:(board.bounds.minY+board.bounds.maxY)/2};
+  var outer=board.edges.filter(function(e){return e.hexes.length===1;});
+  outer.sort(function(a,b){return Math.atan2(a.y-c.y,a.x-c.x)-Math.atan2(b.y-c.y,b.x-c.x);});
+  var types=shuffle([
+    {kind:"any",ratio:3},{kind:"any",ratio:3},{kind:"any",ratio:3},{kind:"any",ratio:3},
+    {kind:"wood",ratio:2},{kind:"brick",ratio:2},{kind:"sheep",ratio:2},{kind:"wheat",ratio:2},{kind:"ore",ratio:2}
+  ]);
+  var harbors=[];
+  for(var i=0;i<9&&outer.length>0;i++){
+    var idx=Math.round(i*outer.length/9)%outer.length, e=outer[idx], t=types[i];
+    var dx=e.x-c.x, dy=e.y-c.y, len=Math.hypot(dx,dy)||1;
+    harbors.push({edgeId:e.id,kind:t.kind,ratio:t.ratio,v1:e.v1,v2:e.v2,x:e.x,y:e.y,dx:dx/len,dy:dy/len});
+  }
+  return harbors;
+}
+function bestRatio(pi,res){
+  var r=4;
+  for(var k=0;k<state.harbors.length;k++){
+    var hb=state.harbors[k];
+    var b1=state.buildings[hb.v1], b2=state.buildings[hb.v2];
+    var owns=(b1&&b1.owner===pi)||(b2&&b2.owner===pi);
+    if(!owns)continue;
+    if(hb.kind==="any")r=Math.min(r,3); else if(hb.kind===res)r=Math.min(r,2);
+  }
+  return r;
 }
 
 /* ---------- rules helpers ---------- */
@@ -431,10 +460,11 @@ function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{star
 function freshGame(n,lang){
   var board=buildBoard(), tiles=assignTiles();
   var robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
+  var harbors=assignHarbors(board);
   var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false});
   var order=[]; for(var a=0;a<n;a++)order.push(a); for(var b=n-1;b>=0;b--)order.push(b);
   return{
-    phase:"setup", lang:lang, board:board, tiles:tiles, robberHex:robberHex, players:players,
+    phase:"setup", lang:lang, board:board, tiles:tiles, robberHex:robberHex, harbors:harbors, players:players,
     buildings:{}, roads:{}, current:order[0], devDeck:buildDevDeck(),
     setup:{order:order,idx:0,placing:"settlement",lastSettlement:null},
     turn:null, uiMode:null, pending:null,
@@ -594,8 +624,9 @@ function apply(a){
     case "SET_BANK": state.ui[a.side]=a.res; return;
     case "BANK_TRADE":{
       var pb=state.players[state.current], g=state.ui.bankGive, ge=state.ui.bankGet;
-      if(pb.res[g]<4||g===ge)return; pb.res[g]-=4; pb.res[ge]+=1;
-      pushLog("log_bank",{name:state.current,give:g,get:ge}); return;
+      var ratio=bestRatio(state.current,g);
+      if(pb.res[g]<ratio||g===ge)return; pb.res[g]-=ratio; pb.res[ge]+=1;
+      pushLog("log_bank",{name:state.current,ratio:ratio,give:g,get:ge}); return;
     }
 
     case "END_TURN":{
@@ -702,6 +733,21 @@ function renderBoard(){
     s+='</g>';
   });
 
+  state.harbors.forEach(function(hb){
+    var mx=hb.x+hb.dx*26, my=hb.y+hb.dy*26, va=board.vertices[hb.v1], vb3=board.vertices[hb.v2];
+    s+='<g pointer-events="none">';
+    s+='<line x1="'+va.x+'" y1="'+va.y+'" x2="'+mx+'" y2="'+my+'" stroke="#cdb98a" stroke-width="2.5" stroke-dasharray="3 3" opacity="0.8"/>';
+    s+='<line x1="'+vb3.x+'" y1="'+vb3.y+'" x2="'+mx+'" y2="'+my+'" stroke="#cdb98a" stroke-width="2.5" stroke-dasharray="3 3" opacity="0.8"/>';
+    s+='<circle cx="'+mx+'" cy="'+my+'" r="13" fill="#1f3242" stroke="#cdb98a" stroke-width="1.5"/>';
+    if(hb.kind==="any"){
+      s+='<text x="'+mx+'" y="'+(my+4)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#f3ecda">3:1</text>';
+    }else{
+      s+='<text x="'+mx+'" y="'+(my-2)+'" text-anchor="middle" font-size="11">'+RES_META[hb.kind].icon+'</text>';
+      s+='<text x="'+mx+'" y="'+(my+9)+'" text-anchor="middle" font-size="8" font-weight="700" fill="#f3ecda">2:1</text>';
+    }
+    s+='</g>';
+  });
+
   if(state.robberHex>=0){
     var rh=board.hexes[state.robberHex];
     s+='<g transform="translate('+(rh.x-20)+','+(rh.y-4)+')" pointer-events="none">'+
@@ -782,10 +828,11 @@ function renderSidebar(){
       bb(tr("b_city"),COSTS.city,"city",canBuild&&canAfford(p.res,COSTS.city)&&cityLeft>0&&countType(me,"settlement")>0)+
       bb(tr("b_dev"),COSTS.dev,"dev",canBuild&&canAfford(p.res,COSTS.dev)&&state.devDeck.length>0,"buydev")+
     '</div>';
-    var bankDisabled=(!canBuild)||p.res[state.ui.bankGive]<4||state.ui.bankGive===state.ui.bankGet;
+    var giveRatio=bestRatio(me,state.ui.bankGive);
+    var bankDisabled=(!canBuild)||p.res[state.ui.bankGive]<giveRatio||state.ui.bankGive===state.ui.bankGet;
     var sel=function(side){return '<select data-act="setbank" data-side="'+side+'">'+RES.map(function(r){return '<option value="'+r+'"'+(state.ui[side]===r?" selected":"")+'>'+RES_META[r].icon+' '+esc(resLabel(r))+'</option>';}).join("")+'</select>';};
     var bank='<div class="banktrade"><div class="seclbl" style="margin-bottom:4px">'+esc(tr("bank_trade"))+'</div>'+
-      '<div class="row">'+sel("bankGive")+'<span class="arrow">→</span>'+sel("bankGet")+
+      '<div class="row">'+sel("bankGive")+'<span class="ratio">'+giveRatio+':1</span><span class="arrow">→</span>'+sel("bankGet")+
       '<button class="tradebtn" data-act="trade" '+(bankDisabled?"disabled":"")+'>'+esc(tr("trade"))+'</button></div></div>';
     var endBtn='<button class="btn-end" data-act="endturn" '+((rolled&&canAct)?"":"disabled")+'>'+esc(tr("end_turn"))+'</button>';
     actions='<div class="actions">'+rb+rollRow+buildGrid+bank+endBtn+'</div>';
