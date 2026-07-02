@@ -116,6 +116,16 @@
   .btn-end{width:100%;padding:9px;border-radius:10px;background:var(--slate2);color:#f3ecda;font-weight:600}
   .btn-end:hover:not(:disabled){background:var(--slate3)}
   .btn-end:disabled{opacity:.4}
+  .btn-trade{width:100%;padding:9px;border-radius:10px;background:#6b8f4e;color:#fff;font-weight:600}
+  .btn-trade:hover:not(:disabled){background:#5b7d3a}
+  .btn-trade:disabled{opacity:.4}
+  .partrow{display:flex;flex-wrap:wrap;gap:6px}
+  .partpill{padding:6px 12px;border-radius:8px;font-weight:600;font-size:13px}
+  .costlist{display:flex;flex-direction:column;gap:6px}
+  .costrow{display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:8px;padding:8px 10px}
+  .costrow .cname{font-weight:600;width:96px}
+  .costrow .cicons{flex:1;display:flex;gap:8px;font-size:15px}
+  .costrow .cvp{color:#7a5e12;font-weight:700;font-size:13px}
 
   .banktrade{border-radius:10px;background:var(--panel2);padding:8px}
   .banktrade .row{display:flex;align-items:center;gap:6px;font-size:14px}
@@ -201,7 +211,9 @@ var PCOL=[
   {main:"#cf3a36",dark:"#8e221f",text:"#fff"},
   {main:"#2f6fd0",dark:"#1d4a91",text:"#fff"},
   {main:"#e2882a",dark:"#a85d12",text:"#fff"},
-  {main:"#f3efe2",dark:"#9a9484",text:"#3a3730"}
+  {main:"#f3efe2",dark:"#9a9484",text:"#3a3730"},
+  {main:"#3f8f4f",dark:"#256b33",text:"#fff"},
+  {main:"#8a5a2b",dark:"#5f3c18",text:"#fff"}
 ];
 var COSTS={
   road:{wood:1,brick:1},
@@ -219,6 +231,7 @@ var I18N={
     blurb:"Eine originalgetreue Umsetzung des Klassikers · Straßen, Siedlungen, Städte, Räuber, Entwicklungskarten, Längste Handelsstraße & Größte Rittermacht · wer zuerst 10 Punkte erreicht, gewinnt.",
     phase_setup:"Gründungsphase", phase_play:"Spielzug", phase_over:"Spielende",
     turn:"Am Zug:", new_game:"Neues Spiel",
+    costs_btn:"💰 Kosten", costs_title:"Baukosten", close:"Schließen",
     place_a:"Setze die hervorgehobene", s_settlement:"Siedlung", s_road:"Straße", on_board:"auf den Plan.",
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     roll:"🎲 Würfeln", end_turn:"Zug beenden →", dev_cards:"Entwicklungskarten",
@@ -232,6 +245,11 @@ var I18N={
     steal_title:"Wem Karte rauben?", plenty_title:"Erfindung", plenty_desc:"Nimm dir 2 beliebige Rohstoffe aus dem Vorrat.",
     plenty_picked:"Gewählt:", plenty_reset:"zurücksetzen", plenty_btn:"Rohstoffe nehmen",
     mono_title:"Monopol", mono_desc:"Wähle einen Rohstoff – alle Mitspieler geben dir alle Karten dieser Sorte.",
+    trade_btn:"Binnenhandel", trade_title:"Binnenhandel", trade_partner:"Handelspartner",
+    trade_give:"Du gibst", trade_want:"Du erhältst", trade_send:"Angebot senden", trade_cancel:"Abbrechen",
+    trade_offer:"{name} bietet dir an", trade_arrow:"gegen", trade_accept:"Annehmen", trade_decline:"Ablehnen",
+    trade_cant:"Du hast nicht genug dafür.",
+    log_trade:"{name} tauscht mit {victim}: {g} → {w}.", log_trade_decline:"{victim} lehnt {name}s Angebot ab.",
     win_title:"{name} gewinnt!", win_sub:"10 Siegpunkte erreicht und die Insel besiedelt.", win_again:"NEUES SPIEL",
     rb_hint:"Lege 2 Straßen kostenlos.",
     dev_knight:"Ritter", dev_road:"Straßenbau", dev_plenty:"Erfindung", dev_monopoly:"Monopol", dev_vp:"Siegpunkt",
@@ -239,8 +257,8 @@ var I18N={
     devd_plenty:"Nimm 2 beliebige Rohstoffe aus dem Vorrat.", devd_monopoly:"Nenne einen Rohstoff; nimm alle davon von allen.",
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
-    c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß",
-    foot:"v0.3 · Grundspiel + Häfen · offline · eine Datei",
+    c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
+    foot:"v0.4 · Grundspiel · 2–6 Spieler · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     log_setup_done:"Gründung abgeschlossen. {name} würfelt.",
@@ -258,6 +276,7 @@ var I18N={
     blurb:"A faithful take on the classic island game · roads, settlements, cities, the robber, development cards, Longest Road & Largest Army · first to 10 points wins.",
     phase_setup:"Setup", phase_play:"In play", phase_over:"Game over",
     turn:"Turn:", new_game:"New game",
+    costs_btn:"💰 Costs", costs_title:"Build costs", close:"Close",
     place_a:"Place a highlighted", s_settlement:"settlement", s_road:"road", on_board:"on the board.",
     click_robber:"Click a hex to move the robber.",
     roll:"🎲 Roll dice", end_turn:"End turn →", dev_cards:"Development cards",
@@ -271,6 +290,11 @@ var I18N={
     steal_title:"Steal from whom?", plenty_title:"Year of Plenty", plenty_desc:"Take any two resources from the bank.",
     plenty_picked:"Picked:", plenty_reset:"reset", plenty_btn:"Take resources",
     mono_title:"Monopoly", mono_desc:"Name a resource — every other player hands you all of theirs.",
+    trade_btn:"Trade", trade_title:"Player trade", trade_partner:"Trading partner",
+    trade_give:"You give", trade_want:"You receive", trade_send:"Send offer", trade_cancel:"Cancel",
+    trade_offer:"{name} offers you", trade_arrow:"for", trade_accept:"Accept", trade_decline:"Decline",
+    trade_cant:"You don't have enough.",
+    log_trade:"{name} trades with {victim}: {g} → {w}.", log_trade_decline:"{victim} declined {name}'s offer.",
     win_title:"{name} wins!", win_sub:"Reached 10 victory points and settled the island.", win_again:"PLAY AGAIN",
     rb_hint:"Place 2 roads for free.",
     dev_knight:"Knight", dev_road:"Road Building", dev_plenty:"Year of Plenty", dev_monopoly:"Monopoly", dev_vp:"Victory Point",
@@ -278,8 +302,8 @@ var I18N={
     devd_plenty:"Take any 2 resources from the bank.", devd_monopoly:"Name a resource; take everyone's of it.",
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
-    c0:"Red", c1:"Blue", c2:"Orange", c3:"White",
-    foot:"v0.3 · base game + harbors · offline · single file",
+    c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
+    foot:"v0.4 · base game · 2–6 players · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     log_setup_done:"Setup complete. {name} to roll.",
@@ -318,9 +342,10 @@ function canAfford(r,c){for(var k in c){if(r[k]<c[k])return false;}return true;}
 function pay(r,c){var n={};for(var k in r)n[k]=r[k];for(var k2 in c)n[k2]-=c[k2];return n;}
 
 /* ---------- board geometry ---------- */
-function buildBoard(){
+function buildBoard(rows){
+  rows=rows||ROWS;
   var hSp=SQRT3*SIZE, vSp=1.5*SIZE, centers=[];
-  ROWS.forEach(function(count,r){
+  rows.forEach(function(count,r){
     var y=r*vSp, rowW=(count-1)*hSp;
     for(var i=0;i<count;i++) centers.push({x:i*hSp-rowW/2,y:y});
   });
@@ -341,27 +366,36 @@ function buildBoard(){
   vertices.forEach(function(v){minX=Math.min(minX,v.x);minY=Math.min(minY,v.y);maxX=Math.max(maxX,v.x);maxY=Math.max(maxY,v.y);});
   return{hexes:hexes,vertices:vertices,edges:edges,bounds:{minX:minX,minY:minY,maxX:maxX,maxY:maxY}};
 }
-function assignTiles(){
-  var pool=shuffle([].concat(
-    Array(4).fill("wood"),Array(3).fill("brick"),Array(4).fill("sheep"),
-    Array(4).fill("wheat"),Array(3).fill("ore"),["desert"]));
-  var tokens=shuffle([2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12]); var ti=0;
+function rowsFor(n){return n>=5?[3,4,5,6,5,4,3]:[3,4,5,4,3];}
+function tilePool(n){
+  if(n>=5) return [].concat(Array(6).fill("wood"),Array(5).fill("brick"),Array(6).fill("sheep"),Array(6).fill("wheat"),Array(5).fill("ore"),["desert","desert"]);
+  return [].concat(Array(4).fill("wood"),Array(3).fill("brick"),Array(4).fill("sheep"),Array(4).fill("wheat"),Array(3).fill("ore"),["desert"]);
+}
+function tokenSet(n){
+  if(n>=5) return [].concat(Array(2).fill(2),Array(3).fill(3),Array(3).fill(4),Array(3).fill(5),Array(3).fill(6),Array(3).fill(8),Array(3).fill(9),Array(3).fill(10),Array(3).fill(11),Array(2).fill(12));
+  return [2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12];
+}
+function assignTiles(n){
+  var pool=shuffle(tilePool(n)), tokens=shuffle(tokenSet(n)), ti=0;
   return pool.map(function(res){return{resource:res,number:res==="desert"?null:tokens[ti++]};});
 }
-function buildDevDeck(){
-  return shuffle([].concat(Array(14).fill("knight"),Array(5).fill("vp"),Array(2).fill("road"),Array(2).fill("plenty"),Array(2).fill("monopoly")));
+function buildDevDeck(n){
+  var kn=n>=5?20:14, pr=n>=5?3:2;
+  return shuffle([].concat(Array(kn).fill("knight"),Array(5).fill("vp"),Array(pr).fill("road"),Array(pr).fill("plenty"),Array(pr).fill("monopoly")));
 }
-function assignHarbors(board){
+function harborTypes(n){
+  var t=[{kind:"any",ratio:3},{kind:"any",ratio:3},{kind:"any",ratio:3},{kind:"any",ratio:3},
+    {kind:"wood",ratio:2},{kind:"brick",ratio:2},{kind:"sheep",ratio:2},{kind:"wheat",ratio:2},{kind:"ore",ratio:2}];
+  if(n>=5){ t.push({kind:"any",ratio:3}); t.push({kind:"sheep",ratio:2}); }
+  return t;
+}
+function assignHarbors(board,n){
   var c={x:(board.bounds.minX+board.bounds.maxX)/2,y:(board.bounds.minY+board.bounds.maxY)/2};
   var outer=board.edges.filter(function(e){return e.hexes.length===1;});
   outer.sort(function(a,b){return Math.atan2(a.y-c.y,a.x-c.x)-Math.atan2(b.y-c.y,b.x-c.x);});
-  var types=shuffle([
-    {kind:"any",ratio:3},{kind:"any",ratio:3},{kind:"any",ratio:3},{kind:"any",ratio:3},
-    {kind:"wood",ratio:2},{kind:"brick",ratio:2},{kind:"sheep",ratio:2},{kind:"wheat",ratio:2},{kind:"ore",ratio:2}
-  ]);
-  var harbors=[];
-  for(var i=0;i<9&&outer.length>0;i++){
-    var idx=Math.round(i*outer.length/9)%outer.length, e=outer[idx], t=types[i];
+  var types=shuffle(harborTypes(n)), count=types.length, harbors=[];
+  for(var i=0;i<count&&outer.length>0;i++){
+    var idx=Math.round(i*outer.length/count)%outer.length, e=outer[idx], t=types[i];
     var dx=e.x-c.x, dy=e.y-c.y, len=Math.hypot(dx,dy)||1;
     harbors.push({edgeId:e.id,kind:t.kind,ratio:t.ratio,v1:e.v1,v2:e.v2,x:e.x,y:e.y,dx:dx/len,dy:dy/len});
   }
@@ -416,6 +450,8 @@ function longestRoad(pl,roads,board,b){
 }
 function countRoads(pl){var n=0;for(var k in state.roads)if(state.roads[k].owner===pl)n++;return n;}
 function countType(pl,type){var n=0;for(var k in state.buildings){var b=state.buildings[k];if(b.owner===pl&&b.type===type)n++;}return n;}
+function activePlayer(){return state.setup?state.setup.order[state.setup.idx]:state.current;}
+function resIcons(map){var o=[];RES.forEach(function(r){if(map[r]>0)o.push(map[r]+RES_META[r].icon);});return o.join(" ")||"–";}
 
 /* ---------- victory points ---------- */
 function publicVP(pi){
@@ -458,19 +494,19 @@ function recomputeAwards(){
 var state=menuState();
 function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3}};}
 function freshGame(n,lang){
-  var board=buildBoard(), tiles=assignTiles();
+  var board=buildBoard(rowsFor(n)), tiles=assignTiles(n);
   var robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
-  var harbors=assignHarbors(board);
+  var harbors=assignHarbors(board,n);
   var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false});
   var order=[]; for(var a=0;a<n;a++)order.push(a); for(var b=n-1;b>=0;b--)order.push(b);
   return{
     phase:"setup", lang:lang, board:board, tiles:tiles, robberHex:robberHex, harbors:harbors, players:players,
-    buildings:{}, roads:{}, current:order[0], devDeck:buildDevDeck(),
+    buildings:{}, roads:{}, current:order[0], devDeck:buildDevDeck(n),
     setup:{order:order,idx:0,placing:"settlement",lastSettlement:null},
     turn:null, uiMode:null, pending:null,
     longestRoadOwner:null,longestRoadLength:0,largestArmyOwner:null,largestArmySize:0,
     winner:null, log:[{k:"log_setup_first"}],
-    ui:{bankGive:"wood",bankGet:"ore",discardSel:emptyRes(),plentyPicks:[]}
+    ui:{bankGive:"wood",bankGet:"ore",discardSel:emptyRes(),plentyPicks:[],trade:{give:emptyRes(),want:emptyRes(),partner:null},showCosts:false}
   };
 }
 function pushLog(k,p){state.log.unshift({k:k,p:p});state.log=state.log.slice(0,7);}
@@ -490,6 +526,7 @@ function dispatch(a){ apply(a); render(); }
 function apply(a){
   switch(a.type){
     case "SET_LANG": state.lang=a.lang; return;
+    case "TOGGLE_COSTS": state.ui.showCosts=!state.ui.showCosts; return;
     case "SET_N": state.ui.startN=a.n; return;
     case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang); return;
 
@@ -621,12 +658,45 @@ function apply(a){
       pm.res[a.res]+=taken; pushLog("log_monopoly",{name:state.current,res:a.res,count:taken}); state.pending=null; return;
     }
 
-    case "SET_BANK": state.ui[a.side]=a.res; return;
-    case "BANK_TRADE":{
+    case "SET_BANK": state.ui[a.side]=a.res; return;    case "BANK_TRADE":{
       var pb=state.players[state.current], g=state.ui.bankGive, ge=state.ui.bankGet;
       var ratio=bestRatio(state.current,g);
       if(pb.res[g]<ratio||g===ge)return; pb.res[g]-=ratio; pb.res[ge]+=1;
       pushLog("log_bank",{name:state.current,ratio:ratio,give:g,get:ge}); return;
+    }
+
+    case "OPEN_TRADE":
+      if(state.phase!=="play"||!state.turn.rolled||state.pending||state.uiMode==="moveRobber")return;
+      state.ui.trade={give:emptyRes(),want:emptyRes(),partner:null};
+      state.pending={type:"trade_compose"}; return;
+    case "TRADE_ADJ":{
+      var slot=a.slot, r=a.res, p=state.players[state.current];
+      var max=slot==="give"?p.res[r]:19;
+      var v=Math.max(0,Math.min(max,state.ui.trade[slot][r]+a.d));
+      state.ui.trade[slot][r]=v; return;
+    }
+    case "TRADE_PARTNER": state.ui.trade.partner=a.pi; return;
+    case "TRADE_CANCEL": state.pending=null; return;
+    case "TRADE_SEND":{
+      var T=state.ui.trade;
+      if(T.partner===null||totalCards(T.give)<1||totalCards(T.want)<1)return;
+      var pg=state.players[state.current];
+      if(!RES.every(function(x){return pg.res[x]>=T.give[x];}))return;
+      var g={},w={};RES.forEach(function(x){g[x]=T.give[x];w[x]=T.want[x];});
+      state.pending={type:"trade_offer",partner:T.partner,give:g,want:w}; return;
+    }
+    case "TRADE_DECLINE":
+      pushLog("log_trade_decline",{name:state.current,victim:state.pending.partner});
+      state.pending=null; return;
+    case "TRADE_ACCEPT":{
+      var o=state.pending, act=state.players[state.current], par=state.players[o.partner];
+      if(!RES.every(function(x){return par.res[x]>=o.want[x];}))return;
+      RES.forEach(function(x){
+        act.res[x]-=o.give[x]; act.res[x]+=o.want[x];
+        par.res[x]+=o.give[x]; par.res[x]-=o.want[x];
+      });
+      pushLog("log_trade",{name:state.current,victim:o.partner,g:resIcons(o.give),w:resIcons(o.want)});
+      state.pending=null; return;
     }
 
     case "END_TURN":{
@@ -663,27 +733,28 @@ function renderMenu(){
     '<h1>CATAN</h1>'+
     '<div class="sub">'+esc(tr("subtitle"))+'</div>'+
     '<div class="q">'+esc(tr("choose"))+'</div>'+
-    '<div class="ns">'+[2,3,4].map(function(k){return '<button data-act="setn" data-n="'+k+'" class="'+(n===k?"on":"")+'">'+k+'</button>';}).join("")+'</div>'+
+    '<div class="ns">'+[2,3,4,5,6].map(function(k){return '<button data-act="setn" data-n="'+k+'" class="'+(n===k?"on":"")+'">'+k+'</button>';}).join("")+'</div>'+
     '<button class="begin" data-act="begin">'+esc(tr("begin"))+'</button>'+
     '<div class="blurb">'+esc(tr("blurb"))+'</div>'+
   '</div></div>';
 }
 
 function renderGame(){
-  var c=PCOL[state.current];
+  var ap=activePlayer();
+  var c=PCOL[ap];
   var phase=state.phase==="setup"?tr("phase_setup"):state.phase==="gameover"?tr("phase_over"):tr("phase_play");
   var header='<div class="header">'+
     '<div style="display:flex;align-items:center;gap:12px;min-width:0">'+
       '<span class="title">CATAN</span><span class="phase">'+esc(phase)+'</span></div>'+
     '<div class="right">'+
       '<div class="turn"><span style="color:#9fc0d4">'+esc(tr("turn"))+'</span>'+
-        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(state.current))+'</span></div>'+
-      langToggle(false)+
+        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(ap))+'</span></div>'+
+      '<button class="btn-new" data-act="costs">'+esc(tr("costs_btn"))+'</button>'+
       '<button class="btn-new" data-act="newgame">'+esc(tr("new_game"))+'</button>'+
     '</div></div>';
   var layout='<div class="layout"><div class="board-wrap">'+renderBoard()+'</div>'+renderSidebar()+'</div>';
   var foot='<div class="foot">'+esc(tr("foot"))+'</div>';
-  return '<div class="wrap">'+header+layout+foot+'</div>'+renderModals();
+  return '<div class="wrap">'+header+layout+foot+'</div>'+renderModals()+(state.ui.showCosts?costsOverlay():"");
 }
 
 /* ---- board ---- */
@@ -784,7 +855,7 @@ function renderBoard(){
 
 /* ---- sidebar ---- */
 function renderSidebar(){
-  var me=state.current, p=state.players[me], c=PCOL[me];
+  var me=activePlayer(), p=state.players[me], c=PCOL[me];
   var isSetup=state.phase==="setup";
   var blocking=!!state.pending&&state.pending.type!=="robber";
   var mustRobber=state.uiMode==="moveRobber";
@@ -834,8 +905,9 @@ function renderSidebar(){
     var bank='<div class="banktrade"><div class="seclbl" style="margin-bottom:4px">'+esc(tr("bank_trade"))+'</div>'+
       '<div class="row">'+sel("bankGive")+'<span class="ratio">'+giveRatio+':1</span><span class="arrow">→</span>'+sel("bankGet")+
       '<button class="tradebtn" data-act="trade" '+(bankDisabled?"disabled":"")+'>'+esc(tr("trade"))+'</button></div></div>';
+    var tradeBtn='<button class="btn-trade" data-act="opentrade" '+(canBuild?"":"disabled")+'>'+esc(tr("trade_btn"))+'</button>';
     var endBtn='<button class="btn-end" data-act="endturn" '+((rolled&&canAct)?"":"disabled")+'>'+esc(tr("end_turn"))+'</button>';
-    actions='<div class="actions">'+rb+rollRow+buildGrid+bank+endBtn+'</div>';
+    actions='<div class="actions">'+rb+rollRow+buildGrid+bank+tradeBtn+endBtn+'</div>';
   }
 
   var card='<div class="panel"><div class="phead" style="background:'+c.main+';color:'+c.text+'">'+
@@ -863,7 +935,7 @@ function renderDice(d){
 function renderScoreboard(){
   var rows=state.players.map(function(p,pi){
     var c=PCOL[pi];
-    return '<div class="score-row'+(pi===state.current?" cur":"")+'">'+
+    return '<div class="score-row'+(pi===activePlayer()?" cur":"")+'">'+
       '<span class="dot" style="background:'+c.main+'"></span>'+
       '<span class="nm">'+esc(colorName(pi))+'</span>'+
       '<span class="vp">'+publicVP(pi)+' ★</span>'+
@@ -890,6 +962,8 @@ function renderModals(){
     case "steal": return modalSteal();
     case "plenty": return modalPlenty();
     case "monopoly": return modalMonopoly();
+    case "trade_compose": return modalTradeCompose();
+    case "trade_offer": return modalTradeOffer();
   }
   return "";
 }
@@ -928,6 +1002,55 @@ function modalMonopoly(){
   var grid=RES.map(function(r){return '<button data-act="monopoly" data-res="'+r+'" style="background:'+RES_META[r].token+'"><div class="ic">'+RES_META[r].icon+'</div><div class="nm">'+esc(resLabel(r))+'</div></button>';}).join("");
   return shell("#cf3a36",'<h3 style="color:#8e221f">'+esc(tr("mono_title"))+'</h3><p>'+esc(tr("mono_desc"))+'</p><div class="resgrid">'+grid+'</div>');
 }
+function modalTradeCompose(){
+  var me=state.current, p=state.players[me], T=state.ui.trade;
+  var pills=state.players.map(function(_,pi){return pi;}).filter(function(pi){return pi!==me;}).map(function(pi){
+    var c=PCOL[pi], on=T.partner===pi;
+    return '<button class="partpill" data-act="tradepartner" data-pi="'+pi+'" style="background:'+(on?c.main:"#e6dcc2")+';color:'+(on?"#fff":"#5a523f")+'">'+esc(colorName(pi))+'</button>';
+  }).join("");
+  function rows(slot){
+    return RES.map(function(r){
+      return '<div class="drow"><span class="rn">'+RES_META[r].icon+' '+esc(resLabel(r))+'</span>'+
+        (slot==="give"?'<span class="have">'+esc(tr("discard_have"))+' '+p.res[r]+'</span>':'<span class="have"></span>')+
+        '<button class="pm" data-act="tradeadj" data-slot="'+slot+'" data-res="'+r+'" data-d="-1">−</button>'+
+        '<span class="cnt">'+T[slot][r]+'</span>'+
+        '<button class="pm" data-act="tradeadj" data-slot="'+slot+'" data-res="'+r+'" data-d="1">+</button></div>';
+    }).join("");
+  }
+  var ok=totalCards(T.give)>=1&&totalCards(T.want)>=1&&T.partner!==null;
+  var body='<h3 style="color:#5b7d3a">'+esc(tr("trade_title"))+'</h3>'+
+    '<div class="seclbl" style="margin:2px 0 6px">'+esc(tr("trade_partner"))+'</div><div class="partrow">'+pills+'</div>'+
+    '<div class="seclbl" style="margin:12px 0 4px">'+esc(tr("trade_give"))+'</div>'+rows("give")+
+    '<div class="seclbl" style="margin:12px 0 4px">'+esc(tr("trade_want"))+'</div>'+rows("want")+
+    '<div style="display:flex;gap:8px;margin-top:14px">'+
+      '<button class="mbtn" style="background:#8a7d5e;flex:1" data-act="tradecancel">'+esc(tr("trade_cancel"))+'</button>'+
+      '<button class="mbtn" style="background:#5b7d3a;flex:1" '+(ok?"":"disabled")+' data-act="tradesend">'+esc(tr("trade_send"))+'</button>'+
+    '</div>';
+  return shell("#5b7d3a",body);
+}
+function modalTradeOffer(){
+  var o=state.pending, me=state.current, par=state.players[o.partner], c=PCOL[o.partner];
+  var canCover=RES.every(function(r){return par.res[r]>=o.want[r];});
+  var body='<h3 style="color:'+c.main+'">'+esc(tr("trade_offer",{name:colorName(me)}))+'</h3>'+
+    '<p style="font-size:17px;color:#3a3024">'+resIcons(o.give)+' &nbsp;'+esc(tr("trade_arrow"))+'&nbsp; '+resIcons(o.want)+'</p>'+
+    (canCover?'':'<p style="color:#b8302c">'+esc(tr("trade_cant"))+'</p>')+
+    '<div style="display:flex;gap:8px;margin-top:6px">'+
+      '<button class="mbtn" style="background:#8a7d5e;flex:1" data-act="tradedecline">'+esc(tr("trade_decline"))+'</button>'+
+      '<button class="mbtn" style="background:'+c.main+';flex:1" '+(canCover?"":"disabled")+' data-act="tradeaccept">'+esc(tr("trade_accept"))+'</button>'+
+    '</div>';
+  return shell(c.main,body);
+}
+function costsOverlay(){
+  var rows=[["b_road",COSTS.road,"0"],["b_settlement",COSTS.settlement,"1"],["b_city",COSTS.city,"2"],["b_dev",COSTS.dev,"?"]];
+  var body='<h3 style="color:#33526a">'+esc(tr("costs_title"))+'</h3><div class="costlist">';
+  rows.forEach(function(r){
+    var cost=r[1];
+    var ic=Object.keys(cost).map(function(k){return '<span class="ci">'+cost[k]+RES_META[k].icon+'</span>';}).join("");
+    body+='<div class="costrow"><span class="cname">'+esc(tr(r[0]))+'</span><span class="cicons">'+ic+'</span><span class="cvp">'+r[2]+'★</span></div>';
+  });
+  body+='</div><button class="mbtn" style="background:#33526a;margin-top:10px" data-act="costs">'+esc(tr("close"))+'</button>';
+  return shell("#33526a",body);
+}
 function modalWin(){
   var pi=state.winner, c=PCOL[pi];
   return shell(c.main,'<div class="wincenter"><div class="trophy">🏆</div>'+
@@ -961,6 +1084,7 @@ document.addEventListener("click",function(ev){
   var act=t.getAttribute("data-act");
   switch(act){
     case "lang": dispatch({type:"SET_LANG",lang:t.getAttribute("data-lang")}); break;
+    case "costs": dispatch({type:"TOGGLE_COSTS"}); break;
     case "setn": dispatch({type:"SET_N",n:Number(t.getAttribute("data-n"))}); break;
     case "begin": dispatch({type:"NEW_GAME",n:state.ui.startN}); break;
     case "newgame": dispatch({type:"NEW_GAME",n:(state.players?state.players.length:state.ui.startN)}); break;
@@ -977,6 +1101,13 @@ document.addEventListener("click",function(ev){
     case "plentyreset": dispatch({type:"PLENTY_RESET"}); break;
     case "plentyconfirm": dispatch({type:"PLENTY_CONFIRM"}); break;
     case "monopoly": dispatch({type:"MONOPOLY",res:t.getAttribute("data-res")}); break;
+    case "opentrade": dispatch({type:"OPEN_TRADE"}); break;
+    case "tradepartner": dispatch({type:"TRADE_PARTNER",pi:Number(t.getAttribute("data-pi"))}); break;
+    case "tradeadj": dispatch({type:"TRADE_ADJ",slot:t.getAttribute("data-slot"),res:t.getAttribute("data-res"),d:Number(t.getAttribute("data-d"))}); break;
+    case "tradesend": dispatch({type:"TRADE_SEND"}); break;
+    case "tradecancel": dispatch({type:"TRADE_CANCEL"}); break;
+    case "tradeaccept": dispatch({type:"TRADE_ACCEPT"}); break;
+    case "tradedecline": dispatch({type:"TRADE_DECLINE"}); break;
   }
 });
 document.addEventListener("change",function(ev){
