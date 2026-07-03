@@ -260,6 +260,10 @@ var I18N={
     menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer",
     menu_sea_blurb:"Seefahrer – freies Spiel: Erkunde das Meer, baue Schiffe und besiedle neue Inseln.",
     b_ship:"Schiff",
+    moveship_btn:"Schiff versetzen", cancel:"Abbrechen",
+    moveship_from:"Wähle ein versetzbares Schiff (orange).",
+    moveship_to:"Wähle das Zielfeld für das Schiff.",
+    log_moved_ship:"{name} versetzt ein Schiff.",
     rc_title:"Räuber oder Seeräuber?", rc_desc:"Du hast eine 7 gewürfelt bzw. einen Ritter gespielt – wähle, welche Figur du versetzt.",
     rc_robber:"Räuber", rc_searobber:"Seeräuber",
     gold_title:"Goldfluss – {name} wählt", gold_desc:"Nimm {count} Rohstoff(e) deiner Wahl.", gold_btn:"Nehmen {sel}/{count}",
@@ -322,6 +326,10 @@ var I18N={
     menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers",
     menu_sea_blurb:"Seafarers – free play: explore the sea, build ships and settle new islands.",
     b_ship:"Ship",
+    moveship_btn:"Move ship", cancel:"Cancel",
+    moveship_from:"Pick a movable ship (orange).",
+    moveship_to:"Pick the destination for the ship.",
+    log_moved_ship:"{name} moved a ship.",
     rc_title:"Robber or pirate?", rc_desc:"You rolled a 7 or played a knight – choose which figure to move.",
     rc_robber:"Robber", rc_searobber:"Pirate",
     gold_title:"Gold river – {name} chooses", gold_desc:"Take {count} resource(s) of your choice.", gold_btn:"Take {sel}/{count}",
@@ -538,6 +546,24 @@ function shipLegal(eid,pl,restrict){
     return board.vertices[w].edges.some(function(oe){return ships[oe]&&ships[oe].owner===pl;});
   });
 }
+function shipMovable(eid,pl){
+  var sh=state.ships[eid]; if(!sh||sh.owner!==pl)return false;
+  if(sh.fresh)return false;
+  if(seaRobberBlocks(eid))return false;
+  var e=state.board.edges[eid], b=state.buildings, ships=state.ships, board=state.board;
+  return [e.v1,e.v2].some(function(v){
+    if(b[v]&&b[v].owner===pl)return false;
+    var other=board.vertices[v].edges.some(function(oe){return oe!==Number(eid)&&ships[oe]&&ships[oe].owner===pl;});
+    return !other;
+  });
+}
+function hasMovableShip(pl){ for(var k in state.ships){ if(shipMovable(Number(k),pl))return true; } return false; }
+function shipMoveTargets(pl,fromEid){
+  var out={}, saved=state.ships[fromEid]; delete state.ships[fromEid];
+  state.board.edges.forEach(function(e){ if(e.id!==fromEid&&shipLegal(e.id,pl)) out[e.id]="moveto"; });
+  state.ships[fromEid]=saved;
+  return out;
+}
 function longestRoute(pl){
   var board=state.board, roads=state.roads, ships=state.ships||{}, b=state.buildings, owned=[];
   board.edges.forEach(function(e){
@@ -638,7 +664,7 @@ function freshGame(n,lang,mode){
   var order=[]; for(var a=0;a<n;a++)order.push(a); for(var b=n-1;b>=0;b--)order.push(b);
   return{
     phase:"setup", lang:lang, mode:mode, board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
-    buildings:{}, roads:{}, ships:{}, current:order[0], devDeck:buildDevDeck(n),
+    buildings:{}, roads:{}, ships:{}, current:order[0], devDeck:buildDevDeck(n), movedShip:false,
     setup:{order:order,idx:0,placing:"settlement",lastSettlement:null},
     turn:null, uiMode:null, pending:null, special:null,
     longestRoadOwner:null,longestRoadLength:0,largestArmyOwner:null,largestArmySize:0,
@@ -823,7 +849,7 @@ function apply(a){
       if(countShips(meS)>=PIECE.ship)return;
       if(!shipLegal(a.edgeId,meS))return;
       if(!freeS){ if(!canAfford(psh.res,COSTS.ship))return; psh.res=pay(psh.res,COSTS.ship); }
-      state.ships[a.edgeId]={owner:meS}; pushLog("log_built_ship",{name:meS}); recomputeAwards();
+      state.ships[a.edgeId]={owner:meS,fresh:true}; pushLog("log_built_ship",{name:meS}); recomputeAwards();
       if(freeS){
         state.pending.left-=1;
         var anyS=countShips(meS)<PIECE.ship&&state.board.edges.some(function(e){return shipLegal(e.id,meS);});
@@ -831,6 +857,18 @@ function apply(a){
         if(state.pending.left<=0||(!anyS&&!anyR)){state.pending=null;state.uiMode=null;}
       }
       checkWin(); return;
+    }
+    case "START_MOVE_SHIP": state.uiMode=(state.uiMode==="moveShipFrom"?null:"moveShipFrom"); state.ui.moveShipFrom=null; return;
+    case "PICK_MOVE_SHIP": if(!shipMovable(a.edgeId,activePlayer()))return; state.ui.moveShipFrom=a.edgeId; state.uiMode="moveShipTo"; return;
+    case "CANCEL_MOVE_SHIP": state.uiMode=null; state.ui.moveShipFrom=null; return;
+    case "MOVE_SHIP":{
+      var mv=activePlayer(), from=state.ui.moveShipFrom;
+      if(from==null||state.movedShip)return;
+      var saved=state.ships[from]; delete state.ships[from];
+      if(!shipLegal(a.edgeId,mv)){ state.ships[from]=saved; return; }
+      state.ships[a.edgeId]={owner:mv,fresh:false};
+      state.movedShip=true; state.ui.moveShipFrom=null; state.uiMode=null;
+      pushLog("log_moved_ship",{name:mv}); recomputeAwards(); checkWin(); return;
     }
     case "BUILD_SETTLEMENT":{
       var me1=activePlayer(), ps=state.players[me1];
@@ -944,6 +982,8 @@ function apply(a){
 function advanceTurn(){
   state.current=(state.current+1)%state.players.length;
   state.turn={rolled:false,dice:null}; state.uiMode=null; state.pending=null; state.special=null;
+  state.movedShip=false;
+  for(var k in state.ships) state.ships[k].fresh=false;
   pushLog("log_next",{name:state.current});
 }
 function trailingReducerEnd(){}
@@ -1029,6 +1069,10 @@ function legalEdgeSet(){
       board.edges.forEach(function(e){if(shipLegal(e.id,me))out[e.id]="ship";});
   }else if(mode==="ship"){
     if(countShips(me)<PIECE.ship)board.edges.forEach(function(e){if(shipLegal(e.id,me))out[e.id]="ship";});
+  }else if(mode==="moveShipFrom"){
+    for(var mk in state.ships){ if(shipMovable(Number(mk),me)) out[mk]="movefrom"; }
+  }else if(mode==="moveShipTo"){
+    var tg=shipMoveTargets(me,state.ui.moveShipFrom); for(var tk in tg) out[tk]=tg[tk];
   }
   return out;
 }
@@ -1102,8 +1146,9 @@ function renderBoard(){
     s+='<line x1="'+va.x+'" y1="'+va.y+'" x2="'+vb2.x+'" y2="'+vb2.y+'" stroke="'+PCOL[state.roads[rid].owner].main+'" stroke-width="9" stroke-linecap="round"/>';
   }
   for(var eid in le){
-    var e2=board.edges[eid], isShip=le[eid]==="ship";
-    s+='<line data-edge="'+eid+'" x1="'+board.vertices[e2.v1].x+'" y1="'+board.vertices[e2.v1].y+'" x2="'+board.vertices[e2.v2].x+'" y2="'+board.vertices[e2.v2].y+'" stroke="'+(isShip?"#bfe3f5":"#fff7d6")+'" stroke-width="9" stroke-linecap="round" opacity="0.6" style="cursor:pointer">'+
+    var e2=board.edges[eid], k2=le[eid];
+    var ecol = k2==="movefrom" ? "#ffcf87" : (k2==="ship"||k2==="moveto") ? "#bfe3f5" : "#fff7d6";
+    s+='<line data-edge="'+eid+'" x1="'+board.vertices[e2.v1].x+'" y1="'+board.vertices[e2.v1].y+'" x2="'+board.vertices[e2.v2].x+'" y2="'+board.vertices[e2.v2].y+'" stroke="'+ecol+'" stroke-width="9" stroke-linecap="round" opacity="0.6" style="cursor:pointer">'+
        '<animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.4s" repeatCount="indefinite"/></line>';
   }
 
@@ -1170,6 +1215,10 @@ function renderSidebar(){
       '<button class="btn-end" data-act="specialdone">'+esc(tr("special_done"))+'</button></div>';
   }else if(mustRobber){
     actions='<div class="hint">'+esc(state.uiMode==="moveSeaRobber"?tr("click_searobber"):tr("click_robber"))+'</div>';
+  }else if(state.uiMode==="moveShipFrom"){
+    actions='<div class="actions"><div class="hint">'+esc(tr("moveship_from"))+'</div><button class="btn-end" data-act="cancelmoveship">'+esc(tr("cancel"))+'</button></div>';
+  }else if(state.uiMode==="moveShipTo"){
+    actions='<div class="actions"><div class="hint gold">'+esc(tr("moveship_to"))+'</div><button class="btn-end" data-act="cancelmoveship">'+esc(tr("cancel"))+'</button></div>';
   }else{
     var rb=(state.pending&&state.pending.type==="roadbuilding")?'<div class="hint gold">'+esc(tr("rb_hint"))+' ('+state.pending.left+')</div>':'';
     var rollRow= !rolled
@@ -1189,8 +1238,9 @@ function renderSidebar(){
       '<div class="row">'+sel("bankGive")+'<span class="ratio">'+giveRatio+':1</span><span class="arrow">→</span>'+sel("bankGet")+
       '<button class="tradebtn" data-act="trade" '+(bankDisabled?"disabled":"")+'>'+esc(tr("trade"))+'</button></div></div>';
     var tradeBtn='<button class="btn-trade" data-act="opentrade" '+(canBuild?"":"disabled")+'>'+esc(tr("trade_btn"))+'</button>';
+    var moveShipBtn=sea?('<button class="btn-trade" data-act="startmoveship" '+((canBuild&&!state.movedShip&&hasMovableShip(me))?"":"disabled")+'>'+esc(tr("moveship_btn"))+'</button>'):'';
     var endBtn='<button class="btn-end" data-act="endturn" '+((rolled&&canAct)?"":"disabled")+'>'+esc(tr("end_turn"))+'</button>';
-    actions='<div class="actions">'+rb+rollRow+buildGrid+bank+tradeBtn+endBtn+'</div>';
+    actions='<div class="actions">'+rb+rollRow+buildGrid+bank+tradeBtn+moveShipBtn+endBtn+'</div>';
   }
 
   var card='<div class="panel"><div class="phead" style="background:'+c.main+';color:'+c.text+'">'+
@@ -1407,6 +1457,8 @@ function clickVertex(v){
 function clickEdge(e){
   var setup=state.setup, le=legalEdgeSet(), kind=le[e];
   if(!kind)return;
+  if(kind==="movefrom"){dispatch({type:"PICK_MOVE_SHIP",edgeId:Number(e)});return;}
+  if(kind==="moveto"){dispatch({type:"MOVE_SHIP",edgeId:Number(e)});return;}
   if(state.phase==="setup"&&setup.placing==="road")dispatch({type:(kind==="ship"?"SETUP_SHIP":"SETUP_ROAD"),edgeId:Number(e)});
   else dispatch({type:(kind==="ship"?"BUILD_SHIP":"BUILD_ROAD"),edgeId:Number(e)});
 }
@@ -1431,6 +1483,8 @@ document.addEventListener("click",function(ev){
     case "setn": dispatch({type:"SET_N",n:Number(t.getAttribute("data-n"))}); break;
     case "setstartmode": dispatch({type:"SET_STARTMODE",mode:t.getAttribute("data-mode")}); break;
     case "begin": dispatch({type:"NEW_GAME",n:state.ui.startN}); break;
+    case "startmoveship": dispatch({type:"START_MOVE_SHIP"}); break;
+    case "cancelmoveship": dispatch({type:"CANCEL_MOVE_SHIP"}); break;
     case "robberchoice": dispatch({type:"ROBBER_CHOICE",which:t.getAttribute("data-which")}); break;
     case "goldadj": dispatch({type:"GOLD_ADJ",res:t.getAttribute("data-res"),d:Number(t.getAttribute("data-d"))}); break;
     case "goldconfirm": dispatch({type:"GOLD_CONFIRM"}); break;
