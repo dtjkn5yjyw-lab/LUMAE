@@ -1347,7 +1347,9 @@ function modalTradeOffer(){
   return shell(c.main,body);
 }
 function costsOverlay(){
-  var rows=[["b_road",COSTS.road,"0"],["b_settlement",COSTS.settlement,"1"],["b_city",COSTS.city,"2"],["b_dev",COSTS.dev,"?"]];
+  var rows=[["b_road",COSTS.road,"–"]];
+  if(state.mode==="sea")rows.push(["b_ship",COSTS.ship,"–"]);
+  rows=rows.concat([["b_settlement",COSTS.settlement,"1"],["b_city",COSTS.city,"2"],["b_dev",COSTS.dev,"?"]]);
   var body='<h3 style="color:#33526a">'+esc(tr("costs_title"))+'</h3><div class="costlist">';
   rows.forEach(function(r){
     var cost=r[1];
