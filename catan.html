@@ -103,6 +103,13 @@
   .vpbadge{font-size:11px;padding:4px 8px;border-radius:6px;background:rgba(202,163,58,.3);color:#7a5e12}
 
   .hint{font-size:13px;color:#5a523f;background:var(--panel2);border-radius:8px;padding:8px}
+  .frlist{margin:10px 0}
+  .frrow{display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;margin-bottom:5px;background:var(--panel2);font-size:14px}
+  .frrow.active{outline:2px solid var(--orange);background:#fff}
+  .frrow .frname{display:flex;align-items:center;gap:7px;font-weight:600}
+  .frrow .frname .dot{width:11px;height:11px;border-radius:50%;display:inline-block}
+  .frrow .frval{font-weight:700;color:#3a3024}
+  .frrow .frd{color:#9a8f78;font-weight:400;font-size:12px}
   .hint.gold{color:#7a5e12;background:rgba(202,163,58,.25);font-size:12px}
 
   .actions{display:flex;flex-direction:column;gap:8px}
@@ -258,7 +265,11 @@ var I18N={
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     click_searobber:"Klicke ein Seefeld, um den Seeräuber zu versetzen.",
     menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer",
+    menu_scenario:"Szenario", menu_scn_frei:"Freies Spiel", menu_scn_ufern:"Zu neuen Ufern",
     menu_sea_blurb:"Seefahrer – freies Spiel: Erkunde das Meer, baue Schiffe und besiedle neue Inseln.",
+    menu_ufern_blurb:"Zu neuen Ufern: große Heimatinsel + kleine Gold-Inseln. Erste Siedlung auf einer kleinen Insel = 2 Extra-Siegpunkte. Ziel: 14 Punkte.",
+    tip_island:"Insel-Siegpunkte",
+    log_island_vp:"{name} erreicht eine neue Insel (+2 Siegpunkte).",
     b_ship:"Schiff",
     moveship_btn:"Schiff versetzen", cancel:"Abbrechen",
     moveship_from:"Wähle ein versetzbares Schiff (orange).",
@@ -291,9 +302,17 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v0.6 · Grundspiel + Seefahrer · speichern · offline",
+    foot:"v0.8 · Seefahrer-Szenarien · Zu neuen Ufern · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
+    phase_firstroll:"Startspieler ermitteln",
+    first_hint:"Reihum würfeln – die höchste Augenzahl beginnt.",
+    first_tie:"Gleichstand! Die Gleichauf-Spieler würfeln erneut.",
+    first_roll_btn:"🎲 {name} würfelt",
+    log_first_intro:"Ermittelt den Startspieler: reihum würfeln.",
+    log_first_roll:"{name} würfelt {sum} ({d1}+{d2}).",
+    log_first_tie:"Gleichstand – erneutes Würfeln.",
+    log_first_start:"{name} beginnt und setzt zuerst.",
     log_setup_done:"Gründung abgeschlossen. {name} würfelt.",
     log_roll:"{name} würfelt {sum} ({d1}+{d2}).",
     log_robber_discard:"Räuber! Spieler mit 8+ Karten werfen die Hälfte ab.", log_move_robber:"Versetze den Räuber.",
@@ -324,7 +343,11 @@ var I18N={
     click_robber:"Click a hex to move the robber.",
     click_searobber:"Click a sea hex to move the pirate.",
     menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers",
+    menu_scenario:"Scenario", menu_scn_frei:"Free play", menu_scn_ufern:"New Shores",
     menu_sea_blurb:"Seafarers – free play: explore the sea, build ships and settle new islands.",
+    menu_ufern_blurb:"New Shores: large home island + small gold islands. First settlement on a small island = 2 bonus points. Target: 14 points.",
+    tip_island:"Island victory points",
+    log_island_vp:"{name} reached a new island (+2 points).",
     b_ship:"Ship",
     moveship_btn:"Move ship", cancel:"Cancel",
     moveship_from:"Pick a movable ship (orange).",
@@ -357,9 +380,17 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v0.6 · base + Seafarers · save · offline",
+    foot:"v0.8 · Seafarers scenarios · New Shores · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
+    phase_firstroll:"Determine first player",
+    first_hint:"Roll in turn – highest total goes first.",
+    first_tie:"Tie! The tied players roll again.",
+    first_roll_btn:"🎲 {name} rolls",
+    log_first_intro:"Determine the first player: roll in turn.",
+    log_first_roll:"{name} rolled {sum} ({d1}+{d2}).",
+    log_first_tie:"Tie – rolling again.",
+    log_first_start:"{name} goes first.",
     log_setup_done:"Setup complete. {name} to roll.",
     log_roll:"{name} rolled {sum} ({d1}+{d2}).",
     log_robber_discard:"Robber! Players with 8+ cards discard half.", log_move_robber:"Move the robber.",
@@ -593,6 +624,7 @@ function countRoads(pl){var n=0;for(var k in state.roads)if(state.roads[k].owner
 function countShips(pl){var n=0,s=state.ships||{};for(var k in s)if(s[k].owner===pl)n++;return n;}
 function countType(pl,type){var n=0;for(var k in state.buildings){var b=state.buildings[k];if(b.owner===pl&&b.type===type)n++;}return n;}
 function activePlayer(){
+  if(state.firstRoll)return state.firstRoll.active[state.firstRoll.idx];
   if(state.setup)return state.setup.order[state.setup.idx];
   if(state.special)return state.special.queue[state.special.idx];
   return state.current;
@@ -605,6 +637,7 @@ function publicVP(pi){
   for(var k in state.buildings){var b=state.buildings[k];if(b.owner===pi)vp+=b.type==="city"?2:1;}
   if(state.longestRoadOwner===pi)vp+=2;
   if(state.largestArmyOwner===pi)vp+=2;
+  vp+=state.players[pi].islandVP||0;   // Seefahrer Sondersiegpunkte
   return vp;
 }
 function fullVP(pi){return publicVP(pi)+state.players[pi].vpCards;}
@@ -638,7 +671,12 @@ function recomputeAwards(){
 
 /* ---------- state ---------- */
 var state=menuState();
-function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3,startMode:"base"}};}
+function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3,startMode:"base",startScn:"frei"}};}
+function menuCounts(){
+  if(state.ui.startMode==="sea"){ return (SCEN[state.ui.startScn]||SCEN.frei).players; }
+  return [2,3,4,5,6];
+}
+function clampStartN(){ var c=menuCounts(); if(c.indexOf(state.ui.startN)<0) state.ui.startN=c[0]; }
 function freshUi(){return{bankGive:"wood",bankGet:"ore",discardSel:emptyRes(),plentyPicks:[],goldSel:emptyRes(),trade:{give:emptyRes(),want:emptyRes(),partner:null},showCosts:false,showSave:false,saveMsg:""};}
 function serialize(){var snap={};for(var k in state){if(k==="ui")continue;snap[k]=state[k];}return JSON.stringify(snap);}
 function applyLoad(json){var parsed=JSON.parse(json);parsed.ui=freshUi();state=parsed;}
@@ -646,31 +684,79 @@ function lsAvailable(){try{localStorage.setItem("__catan_t","1");localStorage.re
 function saveToSlot(slot){try{localStorage.setItem("catan_save_"+slot,serialize());localStorage.setItem("catan_meta_"+slot,JSON.stringify({at:Date.now(),players:state.players?state.players.length:0,phase:state.phase}));return true;}catch(e){return false;}}
 function loadFromSlot(slot){try{var j=localStorage.getItem("catan_save_"+slot);if(!j)return false;applyLoad(j);return true;}catch(e){return false;}}
 function slotMeta(slot){try{var m=localStorage.getItem("catan_meta_"+slot);return m?JSON.parse(m):null;}catch(e){return null;}}
-function freshGame(n,lang,mode){
+function spreadRes(k){var kinds=["brick","wood","sheep","wheat","ore"],out=[];for(var i=0;i<k;i++)out.push(kinds[i%5]);return out;}
+function makeTokens(k){
+  var base=[2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12], extra=[3,4,5,9,10,11,4,8,5,10], out=base.slice();
+  while(out.length<k)out.push(extra[(out.length-18)%extra.length]);
+  return shuffle(out.slice(0,k));
+}
+var SCEN={
+  frei:{key:"menu_scn_frei",players:[2,3,4],vpTarget:10,build:function(n){
+    var R=3, board=buildSeaBoard(R), tiles=assignSeaTiles(board,R);
+    var robberHex=tiles.findIndex(function(t){return t.resource==="desert";}); if(robberHex<0)robberHex=tiles.findIndex(function(t){return t.resource!=="sea";});
+    var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+    return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null};
+  }},
+  ufern:{key:"menu_scn_ufern",players:[3,4],vpTarget:14,build:function(n){return buildUfern(n);}}
+};
+// "Zu neuen Ufern" – official variable setup: big home island (dist<=2) + small gold islands (isolated) + sea + harbors
+function buildUfern(n){
+  var R=4, coords=seaCoords(R);
+  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
+  var board=assembleBoard(centers); board.coords=coords;
+  var ring4=coords.map(function(c,i){return{c:c,i:i};}).filter(function(o){return o.c.dist===4;});
+  ring4.sort(function(a,b){return Math.atan2(centers[a.i].y,centers[a.i].x)-Math.atan2(centers[b.i].y,centers[b.i].x);});
+  var smallSet={}; ring4.forEach(function(o,k){ if(k%4===0) smallSet[o.i]=true; }); // 6 isolated island hexes
+  var region=coords.map(function(c,i){ return c.dist<=2?"main":(smallSet[i]?"small":"sea"); });
+  var M=region.filter(function(r){return r==="main";}).length, S=region.filter(function(r){return r==="small";}).length;
+  var mainBag=shuffle(["desert"].concat(spreadRes(M-1)));
+  var smallBag=shuffle(["gold","gold"].concat(spreadRes(S-2)));
+  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
+  region.forEach(function(rg,hi){ if(rg==="main")tiles[hi]={resource:mainBag.pop(),number:null}; else if(rg==="small")tiles[hi]={resource:smallBag.pop(),number:null}; });
+  var producing=tiles.filter(function(t){return t.resource!=="sea"&&t.resource!=="desert";}).length;
+  var toks=makeTokens(producing);
+  tiles.forEach(function(t){ if(t.resource!=="sea"&&t.resource!=="desert") t.number=toks.pop(); });
+  var islandOf=region.map(function(){return null;}), iid=0;
+  region.forEach(function(rg,hi){ if(rg==="small") islandOf[hi]=iid++; });
+  var robberHex=tiles.findIndex(function(t){return t.resource==="desert";}); if(robberHex<0)robberHex=0;
+  var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
+}
+function freshGame(n,lang,mode,scnId){
   mode=mode||"base";
-  var board,tiles,harbors,robberHex,seaRobberHex=null,R=3;
+  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,R=3;
   if(mode==="sea"){
-    board=buildSeaBoard(R); tiles=assignSeaTiles(board,R);
-    robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
-    if(robberHex<0) robberHex=tiles.findIndex(function(t){return t.resource!=="sea";});
-    seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
-    harbors=assignSeaHarbors(board,tiles);
+    scnId=scnId||"frei"; if(!SCEN[scnId])scnId="frei"; scenario=scnId;
+    var built=SCEN[scnId].build(n);
+    board=built.board; tiles=built.tiles; harbors=built.harbors; robberHex=built.robberHex; seaRobberHex=built.seaRobberHex;
+    islandOf=built.islandOf; vpTarget=SCEN[scnId].vpTarget;
   }else{
     board=buildBoard(rowsFor(n)); tiles=assignTiles(n);
     robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
     harbors=assignHarbors(board,n);
   }
-  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false});
-  var order=[]; for(var a=0;a<n;a++)order.push(a); for(var b=n-1;b>=0;b--)order.push(b);
+  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0});
+  var active=[]; for(var a=0;a<n;a++)active.push(a);
   return{
-    phase:"setup", lang:lang, mode:mode, board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
-    buildings:{}, roads:{}, ships:{}, current:order[0], devDeck:buildDevDeck(n), movedShip:false,
-    setup:{order:order,idx:0,placing:"settlement",lastSettlement:null},
+    phase:"firstroll", lang:lang, mode:mode, scenario:scenario, vpTarget:vpTarget,
+    board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
+    islandOf:islandOf, islandScored:{},
+    buildings:{}, roads:{}, ships:{}, current:0, devDeck:buildDevDeck(n), movedShip:false,
+    setup:null, firstRoll:{active:active,idx:0,rolls:{},lastRoller:null,tie:false},
     turn:null, uiMode:null, pending:null, special:null,
     longestRoadOwner:null,longestRoadLength:0,largestArmyOwner:null,largestArmySize:0,
-    winner:null, log:[{k:"log_setup_first"}],
+    winner:null, log:[{k:"log_first_intro"}],
     ui:freshUi()
   };
+}
+function beginSetup(starter){
+  var n=state.players.length, order=[];
+  for(var i=0;i<n;i++) order.push((starter+i)%n);
+  for(var j=n-1;j>=0;j--) order.push((starter+j)%n);
+  state.setup={order:order,idx:0,placing:"settlement",lastSettlement:null};
+  state.current=order[0]; state.phase="setup"; state.firstRoll=null;
+  pushLog("log_first_start",{name:starter});
+  pushLog("log_setup_prompt",{name:order[0]});
 }
 function assignSeaHarbors(board,tiles){
   var isSea=function(h){return tiles[h].resource==="sea";};
@@ -713,7 +799,15 @@ function stealFrom(victimPi){
   v.res[r]-=1; state.players[state.current].res[r]+=1;
   pushLog("log_stole",{name:state.current,victim:victimPi});
 }
-function checkWin(){ var pi=activePlayer(); if(fullVP(pi)>=10){state.winner=pi;state.phase="gameover";pushLog("log_wins",{name:pi});} }
+function checkWin(){ var pi=activePlayer(); if(fullVP(pi)>=(state.vpTarget||10)){state.winner=pi;state.phase="gameover";pushLog("log_wins",{name:pi});} }
+function awardIsland(pi,v){
+  if(!state.islandOf)return;
+  state.board.vertices[v].hexes.forEach(function(hi){
+    var id=state.islandOf[hi]; if(id==null)return;
+    var key=pi+":"+id;
+    if(!state.islandScored[key]){ state.islandScored[key]=true; state.players[pi].islandVP=(state.players[pi].islandVP||0)+2; pushLog("log_island_vp",{name:pi}); }
+  });
+}
 
 /* ---------- actions (mutating, then render) ---------- */
 function dispatch(a){ apply(a); render(); }
@@ -726,9 +820,28 @@ function apply(a){
     case "LOAD_SLOT": if(!loadFromSlot(a.slot))state.ui.saveMsg="save_err"; return;
     case "IMPORT_TEXT": try{applyLoad(a.json);}catch(e){state.ui.saveMsg="save_err";} return;
     case "SET_SAVE_MSG": state.ui.saveMsg=a.msg; return;
-    case "SET_N": state.ui.startN=a.n; if(a.n>=5&&state.ui.startMode==="sea")state.ui.startN=4; return;
-    case "SET_STARTMODE": state.ui.startMode=a.mode; if(a.mode==="sea"&&state.ui.startN>4)state.ui.startN=4; return;
-    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang, a.mode||state.ui.startMode||"base"); return;
+    case "SET_N": state.ui.startN=a.n; return;
+    case "SET_STARTMODE":{
+      state.ui.startMode=a.mode;
+      if(a.mode==="sea"){ if(!state.ui.startScn||!SCEN[state.ui.startScn])state.ui.startScn="frei"; }
+      clampStartN(); return;
+    }
+    case "SET_STARTSCN": state.ui.startScn=a.scn; clampStartN(); return;
+    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei"); return;
+    case "FIRST_ROLL":{
+      var fr=state.firstRoll; if(!fr)return;
+      var pl=fr.active[fr.idx], d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6);
+      fr.rolls[pl]=[d1,d2]; fr.lastRoller=pl; fr.tie=false;
+      pushLog("log_first_roll",{name:pl,sum:d1+d2,d1:d1,d2:d2});
+      fr.idx+=1;
+      if(fr.idx>=fr.active.length){
+        var best=-1,winners=[];
+        fr.active.forEach(function(p){var sm=fr.rolls[p][0]+fr.rolls[p][1];if(sm>best){best=sm;winners=[p];}else if(sm===best)winners.push(p);});
+        if(winners.length===1){ beginSetup(winners[0]); }
+        else { fr.active=winners; fr.idx=0; fr.rolls={}; fr.tie=true; pushLog("log_first_tie"); }
+      }
+      return;
+    }
 
     case "SETUP_SETTLEMENT":{
       var v=a.vertexId, pi=state.setup.order[state.setup.idx];
@@ -875,6 +988,7 @@ function apply(a){
       if(countType(me1,"settlement")>=PIECE.settlement)return;
       if(!canAfford(ps.res,COSTS.settlement))return; ps.res=pay(ps.res,COSTS.settlement);
       state.buildings[a.vertexId]={owner:me1,type:"settlement"}; state.uiMode=null;
+      awardIsland(me1,a.vertexId);
       pushLog("log_built_settle",{name:me1}); recomputeAwards(); checkWin(); return;
     }
     case "BUILD_CITY":{
@@ -1005,11 +1119,19 @@ function langToggle(light){
 }
 
 function renderMenu(){
-  var n=state.ui.startN, mode=state.ui.startMode||"base";
-  var counts = mode==="sea" ? [2,3,4] : [2,3,4,5,6];
+  var mode=state.ui.startMode||"base", scn=state.ui.startScn||"frei";
+  var counts=menuCounts(), n=state.ui.startN;
   var modeBtns=[["base","menu_base"],["sea","menu_sea"]].map(function(m){
     return '<button data-act="setstartmode" data-mode="'+m[0]+'" class="modebtn '+(mode===m[0]?"on":"")+'">'+esc(tr(m[1]))+'</button>';
   }).join("");
+  var scnRow="";
+  if(mode==="sea"){
+    var scnBtns=Object.keys(SCEN).map(function(id){
+      return '<button data-act="setstartscn" data-scn="'+id+'" class="modebtn '+(scn===id?"on":"")+'">'+esc(tr(SCEN[id].key))+'</button>';
+    }).join("");
+    scnRow='<div class="q">'+esc(tr("menu_scenario"))+'</div><div class="moderow">'+scnBtns+'</div>';
+  }
+  var blurb = mode!=="sea" ? tr("blurb") : (scn==="ufern"?tr("menu_ufern_blurb"):tr("menu_sea_blurb"));
   return '<div class="menu"><div class="inner">'+
     '<div style="display:flex;justify-content:center;margin-bottom:24px">'+langToggle(false)+'</div>'+
     '<div class="anchor">⚓︎</div>'+
@@ -1017,17 +1139,18 @@ function renderMenu(){
     '<div class="sub">'+esc(tr("subtitle"))+'</div>'+
     '<div class="q">'+esc(tr("menu_mode"))+'</div>'+
     '<div class="moderow">'+modeBtns+'</div>'+
+    scnRow+
     '<div class="q">'+esc(tr("choose"))+'</div>'+
     '<div class="ns">'+counts.map(function(k){return '<button data-act="setn" data-n="'+k+'" class="'+(n===k?"on":"")+'">'+k+'</button>';}).join("")+'</div>'+
     '<button class="begin" data-act="begin">'+esc(tr("begin"))+'</button>'+
-    '<div class="blurb">'+esc(mode==="sea"?tr("menu_sea_blurb"):tr("blurb"))+'</div>'+
+    '<div class="blurb">'+esc(blurb)+'</div>'+
   '</div></div>';
 }
 
 function renderGame(){
   var ap=activePlayer();
   var c=PCOL[ap];
-  var phase=state.phase==="setup"?tr("phase_setup"):state.phase==="gameover"?tr("phase_over"):(state.special?tr("special_phase"):tr("phase_play"));
+  var phase=state.phase==="firstroll"?tr("phase_firstroll"):state.phase==="setup"?tr("phase_setup"):state.phase==="gameover"?tr("phase_over"):(state.special?tr("special_phase"):tr("phase_play"));
   var header='<div class="header">'+
     '<div style="display:flex;align-items:center;gap:12px;min-width:0">'+
       '<span class="title">CATAN</span><span class="phase">'+esc(phase)+'</span></div>'+
@@ -1044,10 +1167,17 @@ function renderGame(){
 }
 
 /* ---- board ---- */
+function onMainIsland(v){
+  return state.board.vertices[v].hexes.some(function(hi){ return state.tiles[hi].resource!=="sea" && (!state.islandOf||state.islandOf[hi]==null); });
+}
 function legalVertSet(){
   var out={}, me=activePlayer(), mode=state.uiMode, setup=state.setup, board=state.board;
   if(state.phase==="setup"&&setup&&setup.placing==="settlement"){
-    board.vertices.forEach(function(v){if(settlementLegal(v.id,setup.order[setup.idx],state.buildings,state.roads,board,true))out[v.id]=1;});
+    board.vertices.forEach(function(v){
+      if(!settlementLegal(v.id,setup.order[setup.idx],state.buildings,state.roads,board,true))return;
+      if(state.islandOf&&!onMainIsland(v.id))return; // scenario: found on the big island only
+      out[v.id]=1;
+    });
   }else if(mode==="settlement"&&countType(me,"settlement")<PIECE.settlement){
     board.vertices.forEach(function(v){if(settlementLegal(v.id,me,state.buildings,state.roads,board,false))out[v.id]=1;});
   }else if(mode==="city"&&countType(me,"city")<PIECE.city){
@@ -1169,7 +1299,25 @@ function renderBoard(){
 }
 
 /* ---- sidebar ---- */
+function renderFirstRoll(){
+  var fr=state.firstRoll, roller=fr.active[fr.idx], c=PCOL[roller];
+  var rows=fr.active.map(function(pl){
+    var r=fr.rolls[pl], done=!!r, cc=PCOL[pl];
+    return '<div class="frrow'+(pl===roller?" active":"")+'">'+
+      '<span class="frname"><span class="dot" style="background:'+cc.main+'"></span>'+esc(colorName(pl))+'</span>'+
+      '<span class="frval">'+(done?('🎲 '+(r[0]+r[1])+' <span class="frd">('+r[0]+'+'+r[1]+')</span>'):'—')+'</span></div>';
+  }).join("");
+  var body='<div class="panel"><div class="phead" style="background:'+c.main+';color:'+c.text+'">'+
+      '<span class="who"><span class="miniwhite"></span>'+esc(tr("phase_firstroll"))+'</span></div>'+
+    '<div class="pp">'+
+      (fr.tie?'<div class="hint gold">'+esc(tr("first_tie"))+'</div>':'<div class="hint">'+esc(tr("first_hint"))+'</div>')+
+      '<div class="frlist">'+rows+'</div>'+
+      '<button class="btn-roll" data-act="firstroll">'+esc(tr("first_roll_btn",{name:colorName(roller)}))+'</button>'+
+    '</div></div>';
+  return '<div class="sidebar">'+body+renderLog()+'</div>';
+}
 function renderSidebar(){
+  if(state.phase==="firstroll")return renderFirstRoll();
   var me=activePlayer(), p=state.players[me], c=PCOL[me];
   var isSetup=state.phase==="setup";
   var blocking=!!state.pending&&state.pending.type!=="robber";
@@ -1245,7 +1393,7 @@ function renderSidebar(){
 
   var card='<div class="panel"><div class="phead" style="background:'+c.main+';color:'+c.text+'">'+
       '<span class="who"><span class="miniwhite"></span>'+esc(colorName(me))+'</span>'+
-      '<span style="font-size:14px;font-weight:700">'+fullVP(me)+' / 10 ★</span></div>'+
+      '<span style="font-size:14px;font-weight:700">'+fullVP(me)+' / '+(state.vpTarget||10)+' ★</span></div>'+
     '<div class="pp">'+
       '<div class="res-grid">'+resCells+'</div>'+
       '<div class="supply"><span class="lbl">'+esc(tr("supply"))+'</span><span class="nums">'+
@@ -1277,6 +1425,7 @@ function renderScoreboard(){
         '<span title="'+esc(tr("tip_knights"))+'">⚔ '+p.knights+'</span>'+
         (state.longestRoadOwner===pi?'<span title="'+esc(tr("tip_lroad"))+'">🛤️</span>':'')+
         (state.largestArmyOwner===pi?'<span title="'+esc(tr("tip_larmy"))+'">🏰</span>':'')+
+        (p.islandVP?'<span title="'+esc(tr("tip_island"))+'">🏝️+'+p.islandVP+'</span>':'')+
       '</span></div>';
   }).join("");
   return '<div class="panel pp scoreboard"><div class="seclbl">'+esc(tr("settlers"))+'</div>'+rows+'</div>';
@@ -1482,7 +1631,9 @@ document.addEventListener("click",function(ev){
     case "copyexport": { var ea=document.getElementById("exportArea"); if(ea){ea.select();try{document.execCommand("copy");}catch(e){}} dispatch({type:"SET_SAVE_MSG",msg:"save_copied"}); break; }
     case "setn": dispatch({type:"SET_N",n:Number(t.getAttribute("data-n"))}); break;
     case "setstartmode": dispatch({type:"SET_STARTMODE",mode:t.getAttribute("data-mode")}); break;
+    case "setstartscn": dispatch({type:"SET_STARTSCN",scn:t.getAttribute("data-scn")}); break;
     case "begin": dispatch({type:"NEW_GAME",n:state.ui.startN}); break;
+    case "firstroll": dispatch({type:"FIRST_ROLL"}); break;
     case "startmoveship": dispatch({type:"START_MOVE_SHIP"}); break;
     case "cancelmoveship": dispatch({type:"CANCEL_MOVE_SHIP"}); break;
     case "robberchoice": dispatch({type:"ROBBER_CHOICE",which:t.getAttribute("data-which")}); break;
