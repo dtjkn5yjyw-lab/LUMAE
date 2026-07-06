@@ -55,6 +55,9 @@
   .menu .ns button.on{background:var(--orange);border-color:#f3ecda;color:#fff;transform:scale(1.1)}
   .menu .begin{font-family:Georgia,serif;letter-spacing:.18em;font-size:18px;padding:12px 40px;border-radius:10px;
     background:var(--red);color:#fff;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+  .menu .skiproll{display:block;margin:0 auto 18px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:12px;
+    padding:6px 14px;border-radius:8px;background:transparent;color:#e6c6ac;border:1px solid #b4695240;transition:.15s}
+  .menu .skiproll.on{color:#fff;border-color:#f3ecda80}
   .menu .begin:hover{background:var(--redd)}
   .menu .blurb{font-family:ui-sans-serif,system-ui,sans-serif;font-size:11px;color:#d8a88f;margin-top:30px;line-height:1.6}
 
@@ -280,7 +283,7 @@ var I18N={
     place_a:"Setze die hervorgehobene", s_settlement:"Siedlung", s_road:"Straße", s_road_ship:"Straße oder Schiff", on_board:"auf den Plan.",
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     click_searobber:"Klicke ein Seefeld, um den Seeräuber zu versetzen.",
-    menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer",
+    menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer", menu_skiproll:"Startspieler-Wurf überspringen",
     menu_scenario:"Szenario", menu_scn_frei:"Freies Spiel", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_ozeanien:"Ozeanien",
     menu_wueste_blurb:"Durch die Wüste: eine Heimatinsel, dahinter fruchtbares Land – getrennt durch einen Wüstengürtel. Baue Straßen durch die Wüste oder segle außen herum. Jede Siedlung jenseits der Wüste = +1 Siegpunkt. Ziel: 14 Punkte.",
     log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).",
@@ -324,7 +327,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v1.5 · Speichern aufgeraeumt · offline",
+    foot:"v1.6 · Startspieler-Wurf optional · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -367,7 +370,7 @@ var I18N={
     place_a:"Place a highlighted", s_settlement:"settlement", s_road:"road", s_road_ship:"road or ship", on_board:"on the board.",
     click_robber:"Click a hex to move the robber.",
     click_searobber:"Click a sea hex to move the pirate.",
-    menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers",
+    menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers", menu_skiproll:"Skip first-player roll",
     menu_scenario:"Scenario", menu_scn_frei:"Free play", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_wueste:"Through the Desert", menu_scn_ozeanien:"Oceania",
     menu_wueste_blurb:"Through the Desert: a home island with fertile land beyond, split by a desert belt. Build roads through the desert or sail around. Each settlement beyond the desert = +1 point. Target: 14 points.",
     log_far_vp:"{name} settles beyond the desert (+1 point).",
@@ -411,7 +414,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v1.5 · tidy save dialog · offline",
+    foot:"v1.6 · optional first-player roll · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     phase_firstroll:"Determine first player",
@@ -702,7 +705,7 @@ function recomputeAwards(){
 
 /* ---------- state ---------- */
 var state=menuState();
-function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3,startMode:"base",startScn:"frei"}};}
+function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3,startMode:"base",startScn:"frei",startSkipRoll:false}};}
 function menuCounts(){
   if(state.ui.startMode==="sea"){ return (SCEN[state.ui.startScn]||SCEN.frei).players; }
   return [2,3,4,5,6];
@@ -873,7 +876,7 @@ function buildUfern(n){
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
 }
-function freshGame(n,lang,mode,scnId){
+function freshGame(n,lang,mode,scnId,skip){
   mode=mode||"base";
   var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},R=3;
   if(mode==="sea"){
@@ -889,7 +892,7 @@ function freshGame(n,lang,mode,scnId){
   }
   var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0});
   var active=[]; for(var a=0;a<n;a++)active.push(a);
-  return{
+  var base={
     phase:"firstroll", lang:lang, mode:mode, scenario:scenario, vpTarget:vpTarget,
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
     islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes,
@@ -900,11 +903,16 @@ function freshGame(n,lang,mode,scnId){
     winner:null, log:[{k:"log_first_intro"}],
     ui:freshUi()
   };
+  if(skip){ // skip the first-player roll: go straight to founding, starter = player 0
+    base.phase="setup"; base.firstRoll=null;
+    base.setup={order:setupOrder(0,n),idx:0,placing:"settlement",lastSettlement:null};
+    base.current=0; base.log=[{k:"log_setup_first"}];
+  }
+  return base;
 }
+function setupOrder(starter,n){ var o=[]; for(var i=0;i<n;i++)o.push((starter+i)%n); for(var j=n-1;j>=0;j--)o.push((starter+j)%n); return o; }
 function beginSetup(starter){
-  var n=state.players.length, order=[];
-  for(var i=0;i<n;i++) order.push((starter+i)%n);
-  for(var j=n-1;j>=0;j--) order.push((starter+j)%n);
+  var n=state.players.length, order=setupOrder(starter,n);
   state.setup={order:order,idx:0,placing:"settlement",lastSettlement:null};
   state.current=order[0]; state.phase="setup"; state.firstRoll=null;
   pushLog("log_first_start",{name:starter});
@@ -1005,7 +1013,8 @@ function apply(a){
       clampStartN(); return;
     }
     case "SET_STARTSCN": state.ui.startScn=a.scn; clampStartN(); return;
-    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei"); return;
+    case "SET_SKIPROLL": state.ui.startSkipRoll=!state.ui.startSkipRoll; return;
+    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei", state.ui.startSkipRoll); return;
     case "FIRST_ROLL":{
       var fr=state.firstRoll; if(!fr)return;
       var pl=fr.active[fr.idx], d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6);
@@ -1322,6 +1331,8 @@ function renderMenu(){
     scnRow+
     '<div class="q">'+esc(tr("choose"))+'</div>'+
     '<div class="ns">'+counts.map(function(k){return '<button data-act="setn" data-n="'+k+'" class="'+(n===k?"on":"")+'">'+k+'</button>';}).join("")+'</div>'+
+    '<button class="skiproll'+(state.ui.startSkipRoll?" on":"")+'" data-act="skiproll">'+
+      (state.ui.startSkipRoll?"☑":"☐")+' '+esc(tr("menu_skiproll"))+'</button>'+
     '<button class="begin" data-act="begin">'+esc(tr("begin"))+'</button>'+
     '<div class="blurb">'+esc(blurb)+'</div>'+
   '</div></div>';
@@ -1818,6 +1829,7 @@ document.addEventListener("click",function(ev){
     case "setn": dispatch({type:"SET_N",n:Number(t.getAttribute("data-n"))}); break;
     case "setstartmode": dispatch({type:"SET_STARTMODE",mode:t.getAttribute("data-mode")}); break;
     case "setstartscn": dispatch({type:"SET_STARTSCN",scn:t.getAttribute("data-scn")}); break;
+    case "skiproll": dispatch({type:"SET_SKIPROLL"}); break;
     case "begin": dispatch({type:"NEW_GAME",n:state.ui.startN}); break;
     case "firstroll": dispatch({type:"FIRST_ROLL"}); break;
     case "startmoveship": dispatch({type:"START_MOVE_SHIP"}); break;
