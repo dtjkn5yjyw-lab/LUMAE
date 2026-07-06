@@ -281,7 +281,9 @@ var I18N={
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     click_searobber:"Klicke ein Seefeld, um den Seeräuber zu versetzen.",
     menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer",
-    menu_scenario:"Szenario", menu_scn_frei:"Freies Spiel", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_ozeanien:"Ozeanien",
+    menu_scenario:"Szenario", menu_scn_frei:"Freies Spiel", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_ozeanien:"Ozeanien",
+    menu_wueste_blurb:"Durch die Wüste: eine Heimatinsel, dahinter fruchtbares Land – getrennt durch einen Wüstengürtel. Baue Straßen durch die Wüste oder segle außen herum. Jede Siedlung jenseits der Wüste = +1 Siegpunkt. Ziel: 14 Punkte.",
+    log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).",
     menu_vier_blurb:"Die vier Inseln: vier gleichwertige Inseln. Gründe auf beliebigen Inseln, erobere per Schiff die anderen. Erste Siedlung auf einer fremden Insel = 2 Extra-Siegpunkte. Ziel: 13 Punkte.",
     menu_ozeanien_blurb:"Ozeanien: zwei Heimatinseln, dazwischen ein Nebelmeer. Baue Schiffe ins Ungewisse – Nebelfelder werden beim Erreichen aufgedeckt (Land bringt sofort 1 Rohstoff). Ziel: 12 Punkte.",
     log_fog_sea:"{name} entdeckt offenes Meer im Nebel.",
@@ -322,7 +324,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v1.3 · neue App-Icons · offline",
+    foot:"v1.4 · Szenario: Durch die Wueste · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -366,7 +368,9 @@ var I18N={
     click_robber:"Click a hex to move the robber.",
     click_searobber:"Click a sea hex to move the pirate.",
     menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers",
-    menu_scenario:"Scenario", menu_scn_frei:"Free play", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_ozeanien:"Oceania",
+    menu_scenario:"Scenario", menu_scn_frei:"Free play", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_wueste:"Through the Desert", menu_scn_ozeanien:"Oceania",
+    menu_wueste_blurb:"Through the Desert: a home island with fertile land beyond, split by a desert belt. Build roads through the desert or sail around. Each settlement beyond the desert = +1 point. Target: 14 points.",
+    log_far_vp:"{name} settles beyond the desert (+1 point).",
     menu_vier_blurb:"The Four Islands: four equal islands. Found on any islands, reach the others by ship. First settlement on a foreign island = 2 bonus points. Target: 13 points.",
     menu_ozeanien_blurb:"Oceania: two home islands with a foggy sea between them. Sail into the unknown – fog hexes are revealed when reached (land gives 1 instant resource). Target: 12 points.",
     log_fog_sea:"{name} discovers open sea in the fog.",
@@ -407,7 +411,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v1.3 · new app icons · offline",
+    foot:"v1.4 · scenario: Through the Desert · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     phase_firstroll:"Determine first player",
@@ -754,8 +758,30 @@ var SCEN={
   }},
   ufern:{key:"menu_scn_ufern",players:[3,4],vpTarget:14,founding:"main",build:function(n){return buildUfern(n);}},
   vierinseln:{key:"menu_scn_vier",players:[3,4],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
+  wueste:{key:"menu_scn_wueste",players:[3,4],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
   ozeanien:{key:"menu_scn_ozeanien",players:[3,4],vpTarget:12,build:function(n){return buildOzeanien(n);}}
 };
+// "Durch die Wüste": home island + desert belt + fertile land beyond; +1 VP per settlement beyond the desert
+function buildWueste(n){
+  var R=4, coords=seaCoords(R);
+  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
+  var board=assembleBoard(centers); board.coords=coords;
+  var region=coords.map(function(c){
+    if(c.dist===4) return "sea";     // coastal ring (sail around the desert)
+    if(c.r===0) return "desert";     // the desert belt across the middle
+    if(c.r>=1) return "home";        // near / home lands (founding here)
+    return "far";                    // fertile land beyond the desert
+  });
+  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
+  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home"||rg==="far") landIdx.push(hi); });
+  var bag=shuffle(spreadRes(landIdx.length)), toks=makeTokens(landIdx.length);
+  landIdx.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
+  region.forEach(function(rg,hi){ if(rg==="desert") tiles[hi]={resource:"desert",number:null}; });
+  var farHexes={}; region.forEach(function(rg,hi){ if(rg==="far") farHexes[hi]=true; });
+  var robberHex=region.indexOf("desert"); if(robberHex<0)robberHex=landIdx[0];
+  var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,farHexes:farHexes};
+}
 function computeIslands(board,tiles){
   var adj={};
   board.edges.forEach(function(e){ if(e.hexes.length===2){ var a=e.hexes[0],b=e.hexes[1]; (adj[a]=adj[a]||[]).push(b); (adj[b]=adj[b]||[]).push(a); } });
@@ -849,13 +875,13 @@ function buildUfern(n){
 }
 function freshGame(n,lang,mode,scnId){
   mode=mode||"base";
-  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],R=3;
+  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},R=3;
   if(mode==="sea"){
     scnId=scnId||"frei"; if(!SCEN[scnId])scnId="frei"; scenario=scnId;
     var built=SCEN[scnId].build(n);
     board=built.board; tiles=built.tiles; harbors=built.harbors; robberHex=built.robberHex; seaRobberHex=built.seaRobberHex;
     islandOf=built.islandOf; vpTarget=SCEN[scnId].vpTarget;
-    fog=built.fog||{}; fogTokens=built.fogTokens||[];
+    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{};
   }else{
     board=buildBoard(rowsFor(n)); tiles=assignTiles(n);
     robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
@@ -866,7 +892,7 @@ function freshGame(n,lang,mode,scnId){
   return{
     phase:"firstroll", lang:lang, mode:mode, scenario:scenario, vpTarget:vpTarget,
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
-    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens,
+    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes,
     buildings:{}, roads:{}, ships:{}, current:0, devDeck:buildDevDeck(n), movedShip:false,
     setup:null, firstRoll:{active:active,idx:0,rolls:{},lastRoller:null,tie:false},
     turn:null, uiMode:null, pending:null, special:null,
@@ -940,6 +966,11 @@ function markIslandsScored(pi,v){
     var id=state.islandOf[hi]; if(id==null)return;
     state.islandScored[pi+":"+id]=true; // home island: counts as settled, no bonus later
   });
+}
+function awardFar(pi,v){ // Durch die Wüste: +1 VP for each settlement beyond the desert
+  if(!state.farHexes)return;
+  var beyond=state.board.vertices[v].hexes.some(function(hi){return state.farHexes[hi];});
+  if(beyond){ state.players[pi].islandVP=(state.players[pi].islandVP||0)+1; pushLog("log_far_vp",{name:pi}); }
 }
 // Ozeanien: reveal fog hexes bordering a newly built edge
 function revealAt(hexId,discoverer){
@@ -1137,6 +1168,7 @@ function apply(a){
       if(!canAfford(ps.res,COSTS.settlement))return; ps.res=pay(ps.res,COSTS.settlement);
       state.buildings[a.vertexId]={owner:me1,type:"settlement"}; state.uiMode=null;
       awardIsland(me1,a.vertexId);
+      awardFar(me1,a.vertexId);
       pushLog("log_built_settle",{name:me1}); recomputeAwards(); checkWin(); return;
     }
     case "BUILD_CITY":{
@@ -1279,7 +1311,7 @@ function renderMenu(){
     }).join("");
     scnRow='<div class="q">'+esc(tr("menu_scenario"))+'</div><div class="moderow">'+scnBtns+'</div>';
   }
-  var blurb = mode!=="sea" ? tr("blurb") : (scn==="ufern"?tr("menu_ufern_blurb"):scn==="ozeanien"?tr("menu_ozeanien_blurb"):scn==="vierinseln"?tr("menu_vier_blurb"):tr("menu_sea_blurb"));
+  var blurb = mode!=="sea" ? tr("blurb") : (scn==="ufern"?tr("menu_ufern_blurb"):scn==="ozeanien"?tr("menu_ozeanien_blurb"):scn==="vierinseln"?tr("menu_vier_blurb"):scn==="wueste"?tr("menu_wueste_blurb"):tr("menu_sea_blurb"));
   return '<div class="menu"><div class="inner">'+
     '<div style="display:flex;justify-content:center;margin-bottom:24px">'+langToggle(false)+'</div>'+
     '<div class="applogo '+(mode==="sea"?"applogo-sea":"applogo-base")+'"></div>'+
@@ -1321,6 +1353,12 @@ function touchesLand(v){
 function onMainIsland(v){
   return state.board.vertices[v].hexes.some(function(hi){ return state.tiles[hi].resource!=="sea" && state.tiles[hi].resource!=="fog" && (!state.islandOf||state.islandOf[hi]==null); });
 }
+function onHomeSide(v){ // Durch die Wüste: found only on home lands (not desert, not beyond)
+  return state.board.vertices[v].hexes.some(function(hi){
+    var r=state.tiles[hi].resource;
+    return r!=="sea"&&r!=="fog"&&r!=="desert"&&!(state.farHexes&&state.farHexes[hi]);
+  });
+}
 function legalVertSet(){
   var out={}, me=activePlayer(), mode=state.uiMode, setup=state.setup, board=state.board;
   if(state.phase==="setup"&&setup&&setup.placing==="settlement"){
@@ -1329,6 +1367,7 @@ function legalVertSet(){
       if(state.mode==="sea"){
         if(!touchesLand(v.id))return;                 // no founding in open water/fog
         if(state.scenario&&SCEN[state.scenario]&&SCEN[state.scenario].founding==="main"&&!onMainIsland(v.id))return;
+        if(state.scenario&&SCEN[state.scenario]&&SCEN[state.scenario].founding==="home"&&!onHomeSide(v.id))return;
       }
       out[v.id]=1;
     });
