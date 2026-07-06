@@ -327,7 +327,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v1.6 · Startspieler-Wurf optional · offline",
+    foot:"v1.7 · faire Zahlen (keine roten Nachbarn) · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -414,7 +414,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v1.6 · optional first-player roll · offline",
+    foot:"v1.7 · fair numbers (no adjacent reds) · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     phase_firstroll:"Determine first player",
@@ -752,6 +752,47 @@ function makeTokens(k){
   while(out.length<k)out.push(extra[(out.length-18)%extra.length]);
   return shuffle(out.slice(0,k));
 }
+// Setup rule: no two red numbers (6 or 8) on adjacent land hexes. Post-process any board.
+function fixRedAdjacency(board,tiles){
+  var adj={};
+  board.edges.forEach(function(e){ if(e.hexes.length===2){ var a=e.hexes[0],b=e.hexes[1]; (adj[a]=adj[a]||[]).push(b); (adj[b]=adj[b]||[]).push(a); } });
+  var isRed=function(num){ return num===6||num===8; };
+  var conflicts=function(){
+    var list=[];
+    for(var hs in adj){ var h=+hs; if(!isRed(tiles[h].number))continue;
+      (adj[h]||[]).forEach(function(nb){ if(nb>h && isRed(tiles[nb].number)) list.push(h); });
+    }
+    return list;
+  };
+  var swapPass=function(){
+    var tries=0;
+    while(tries++<400){
+      var c=conflicts(); if(!c.length)return 0;
+      c=shuffle(c); var fixedOne=false;
+      for(var ci=0; ci<c.length && !fixedOne; ci++){
+        var h=c[ci];
+        var cands=shuffle(tiles.map(function(t,i){return i;}).filter(function(i){return tiles[i].number!=null && !isRed(tiles[i].number);}));
+        for(var k=0;k<cands.length;k++){
+          var g=cands[k];
+          var bad=(adj[g]||[]).some(function(nb){ return nb!==h && isRed(tiles[nb].number); });
+          if(!bad){ var tmp=tiles[h].number; tiles[h].number=tiles[g].number; tiles[g].number=tmp; fixedOne=true; break; }
+        }
+      }
+      if(!fixedOne)break;
+    }
+    return conflicts().length;
+  };
+  var idx=tiles.map(function(t,i){return i;}).filter(function(i){return tiles[i].number!=null;});
+  var best=null, bestConf=Infinity;
+  for(var attempt=0; attempt<50; attempt++){
+    if(attempt>0){ var nums=shuffle(idx.map(function(i){return tiles[i].number;})); idx.forEach(function(i,k){tiles[i].number=nums[k];}); }
+    var cc=swapPass();
+    if(cc<bestConf){ bestConf=cc; best=idx.map(function(i){return tiles[i].number;}); }
+    if(cc===0)break;
+  }
+  if(best) idx.forEach(function(i,k){tiles[i].number=best[k];});
+  return tiles;
+}
 var SCEN={
   frei:{key:"menu_scn_frei",players:[2,3,4],vpTarget:10,build:function(n){
     var R=3, board=buildSeaBoard(R), tiles=assignSeaTiles(board,R);
@@ -890,6 +931,7 @@ function freshGame(n,lang,mode,scnId,skip){
     robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
     harbors=assignHarbors(board,n);
   }
+  fixRedAdjacency(board,tiles); // no two red numbers (6/8) adjacent
   var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0});
   var active=[]; for(var a=0;a<n;a++)active.push(a);
   var base={
