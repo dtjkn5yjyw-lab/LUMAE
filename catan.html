@@ -324,7 +324,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v1.4 · Szenario: Durch die Wueste · offline",
+    foot:"v1.5 · Speichern aufgeraeumt · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -411,7 +411,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v1.4 · scenario: Through the Desert · offline",
+    foot:"v1.5 · tidy save dialog · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     phase_firstroll:"Determine first player",
@@ -1768,14 +1768,6 @@ function saveOverlay(){
   body+='<button class="mbtn" style="background:var(--slate2);width:100%;margin-bottom:8px" data-act="savefile">💾 '+esc(tr("save_file_do"))+'</button>';
   body+='<button class="mbtn" style="background:#5b7d3a;width:100%;margin-bottom:6px" data-act="loadfile">📂 '+esc(tr("load_file_do"))+'</button>';
   body+='<input type="file" id="loadFileInput" accept=".json,.ctn.json,application/json" style="display:none" onchange="onLoadFile(event)" />';
-  body+='<details class="savefallback"><summary>'+esc(tr("save_text_fallback"))+'</summary>'+
-    '<div class="seclbl" style="margin:10px 0 4px">'+esc(tr("save_export"))+'</div>'+
-    '<textarea id="exportArea" class="savearea" readonly>'+esc(serialize())+'</textarea>'+
-    '<button class="mbtn" style="background:var(--muted);margin-top:6px" data-act="copyexport">'+esc(tr("save_copy"))+'</button>'+
-    '<div class="seclbl" style="margin:10px 0 4px">'+esc(tr("save_import"))+'</div>'+
-    '<textarea id="importArea" class="savearea" placeholder="{ ... }"></textarea>'+
-    '<button class="mbtn" style="background:#5b7d3a;margin-top:6px" data-act="importsave">'+esc(tr("save_import_do"))+'</button>'+
-  '</details>';
   body+='<button class="mbtn" style="background:var(--muted);width:100%;margin-top:14px" data-act="closesave">'+esc(tr("save_close"))+'</button>';
   return shell("#7c241d",body);
 }
