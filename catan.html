@@ -285,9 +285,9 @@ var I18N={
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     click_searobber:"Klicke ein Seefeld, um den Seeräuber zu versetzen.",
     menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer", menu_skiproll:"Startspieler-Wurf überspringen",
-    menu_scenario:"Szenario", menu_scn_frei:"Freies Spiel", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_ozeanien:"Ozeanien",
+    menu_scenario:"Szenario", menu_scn_frei:"Freies Spiel", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_vergessen:"Der vergessene Stamm", menu_scn_ozeanien:"Ozeanien",
     menu_wueste_blurb:"Durch die Wüste: eine Heimatinsel, dahinter fruchtbares Land – getrennt durch einen Wüstengürtel. Baue Straßen durch die Wüste oder segle außen herum. Jede Siedlung jenseits der Wüste = +1 Siegpunkt. Ziel: 14 Punkte.",
-    log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).",
+    log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).", menu_vergessen_blurb:"Der vergessene Stamm: Heimatinsel + eine Insel mit freundlichen Ureinwohnern (🛖). Erreichst du ein Stammes-Feld per Straße/Schiff, gibt es eine Belohnung: Rohstoff, Entwicklungskarte oder Siegpunkt. Ziel: 13 Punkte.", log_tribe_res:"{name} erreicht den Stamm: Rohstoff geschenkt.", log_tribe_dev:"{name} erreicht den Stamm: Entwicklungskarte geschenkt.", log_tribe_vp:"{name} erreicht den Stamm: +1 Siegpunkt.",
     menu_vier_blurb:"Die vier Inseln: vier gleichwertige Inseln. Gründe auf beliebigen Inseln, erobere per Schiff die anderen. Erste Siedlung auf einer fremden Insel = 2 Extra-Siegpunkte. Ziel: 13 Punkte.",
     menu_ozeanien_blurb:"Ozeanien: zwei Heimatinseln, dazwischen ein Nebelmeer. Baue Schiffe ins Ungewisse – Nebelfelder werden beim Erreichen aufgedeckt (Land bringt sofort 1 Rohstoff). Ziel: 12 Punkte.",
     log_fog_sea:"{name} entdeckt offenes Meer im Nebel.",
@@ -328,7 +328,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v1.9 · Seefahrer 5-6 (Schiff 1/2) · offline",
+    foot:"v2.1 · Szenario: Der vergessene Stamm · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -372,9 +372,9 @@ var I18N={
     click_robber:"Click a hex to move the robber.",
     click_searobber:"Click a sea hex to move the pirate.",
     menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers", menu_skiproll:"Skip first-player roll",
-    menu_scenario:"Scenario", menu_scn_frei:"Free play", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_wueste:"Through the Desert", menu_scn_ozeanien:"Oceania",
+    menu_scenario:"Scenario", menu_scn_frei:"Free play", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_wueste:"Through the Desert", menu_scn_vergessen:"The Forgotten Tribe", menu_scn_ozeanien:"Oceania",
     menu_wueste_blurb:"Through the Desert: a home island with fertile land beyond, split by a desert belt. Build roads through the desert or sail around. Each settlement beyond the desert = +1 point. Target: 14 points.",
-    log_far_vp:"{name} settles beyond the desert (+1 point).",
+    log_far_vp:"{name} settles beyond the desert (+1 point).", menu_vergessen_blurb:"The Forgotten Tribe: home island + an island of friendly natives (🛖). Reach a tribe hex by road/ship for a reward: a resource, a development card or a victory point. Target: 13 points.", log_tribe_res:"{name} reached the tribe: gifted a resource.", log_tribe_dev:"{name} reached the tribe: gifted a development card.", log_tribe_vp:"{name} reached the tribe: +1 point.",
     menu_vier_blurb:"The Four Islands: four equal islands. Found on any islands, reach the others by ship. First settlement on a foreign island = 2 bonus points. Target: 13 points.",
     menu_ozeanien_blurb:"Oceania: two home islands with a foggy sea between them. Sail into the unknown – fog hexes are revealed when reached (land gives 1 instant resource). Target: 12 points.",
     log_fog_sea:"{name} discovers open sea in the fog.",
@@ -415,7 +415,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v1.9 · Seafarers 5-6 (Ship 1/2) · offline",
+    foot:"v2.1 · scenario: The Forgotten Tribe · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     phase_firstroll:"Determine first player",
@@ -507,11 +507,14 @@ function buildSeaBoard(R){
   board.coords=coords; // parallel to hexes
   return board;
 }
-function assignSeaTiles(board,R){
-  var landIdx=[]; board.coords.forEach(function(c,i){ if(c.dist<R) landIdx.push(i); });
-  var pool=shuffle([].concat(Array(4).fill("wood"),Array(4).fill("sheep"),Array(3).fill("wheat"),
-    Array(3).fill("brick"),Array(3).fill("ore"),["gold"],["desert"])); // 19 land tiles incl 1 gold + 1 desert
-  var tokens=shuffle([2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12]); var ti=0;
+function assignSeaTiles(board,R,target){
+  target=target||19;
+  var landIdx=board.coords.map(function(c,i){return{i:i,d:c.dist};})
+    .filter(function(o){return o.d<R;}).sort(function(a,b){return a.d-b.d;})
+    .slice(0,target).map(function(o){return o.i;});
+  var nLand=landIdx.length, golds=(nLand>=28)?2:1, deserts=1, resCount=nLand-golds-deserts;
+  var pool=shuffle([].concat(Array(golds).fill("gold"),Array(deserts).fill("desert"),spreadRes(resCount)));
+  var tokens=makeTokens(nLand-deserts); var ti=0; // gold produces (gold river), desert has no number
   var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
   landIdx.forEach(function(hi,k){
     var res=pool[k]||"sea";
@@ -799,7 +802,7 @@ function fixRedAdjacency(board,tiles){
 }
 var SCEN={
   frei:{key:"menu_scn_frei",players:[2,3,4,5,6],vpTarget:10,build:function(n){
-    var R=(n>=5)?4:3, board=buildSeaBoard(R), tiles=assignSeaTiles(board,R);
+    var R=(n>=5)?4:3, board=buildSeaBoard(R), tiles=assignSeaTiles(board,R,(n>=5)?30:19);
     var robberHex=tiles.findIndex(function(t){return t.resource==="desert";}); if(robberHex<0)robberHex=tiles.findIndex(function(t){return t.resource!=="sea";});
     var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
     return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null};
@@ -807,8 +810,27 @@ var SCEN={
   ufern:{key:"menu_scn_ufern",players:[3,4],vpTarget:14,founding:"main",build:function(n){return buildUfern(n);}},
   vierinseln:{key:"menu_scn_vier",players:[3,4],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
   wueste:{key:"menu_scn_wueste",players:[3,4],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
+  vergessen:{key:"menu_scn_vergessen",players:[3,4],vpTarget:13,founding:"home",build:function(n){return buildVergessen(n);}},
   ozeanien:{key:"menu_scn_ozeanien",players:[3,4],vpTarget:12,build:function(n){return buildOzeanien(n);}}
 };
+// "Der vergessene Stamm": home island + a tribe island across the sea whose hexes carry hidden reward tokens
+function buildVergessen(n){
+  var R=4, coords=seaCoords(R);
+  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
+  var board=assembleBoard(centers); board.coords=coords;
+  var region=coords.map(function(c){ if(c.dist===4)return "sea"; if(c.r===0)return "sea"; return c.r>=1?"home":"far"; });
+  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home"||rg==="far") landIdx.push(hi); });
+  var bag=shuffle(spreadRes(landIdx.length)), toks=makeTokens(landIdx.length);
+  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
+  landIdx.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
+  var homeHexes={}; region.forEach(function(rg,hi){ if(rg==="home") homeHexes[hi]=true; });
+  // tribe tokens on far hexes: reward kinds shuffled
+  var farIds=[]; region.forEach(function(rg,hi){ if(rg==="far") farIds.push(hi); });
+  var kinds=shuffle(farIds.map(function(_,i){ var m=i%10; return m<4?"res":(m<7?"dev":"vp"); }));
+  var tribe={}; farIds.forEach(function(hi,k){ tribe[hi]={kind:kinds[k],res:tiles[hi].resource}; });
+  var robberHex=region.indexOf("home"); var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,tribe:tribe};
+}
 // "Durch die Wüste": home island + desert belt + fertile land beyond; +1 VP per settlement beyond the desert
 function buildWueste(n){
   var R=4, coords=seaCoords(R);
@@ -923,13 +945,13 @@ function buildUfern(n){
 }
 function freshGame(n,lang,mode,scnId,skip){
   mode=mode||"base";
-  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},R=3;
+  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,tribe={},R=3;
   if(mode==="sea"){
     scnId=scnId||"frei"; if(!SCEN[scnId])scnId="frei"; scenario=scnId;
     var built=SCEN[scnId].build(n);
     board=built.board; tiles=built.tiles; harbors=built.harbors; robberHex=built.robberHex; seaRobberHex=built.seaRobberHex;
     islandOf=built.islandOf; vpTarget=SCEN[scnId].vpTarget;
-    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{};
+    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{}; homeHexes=built.homeHexes||null; tribe=built.tribe||{};
   }else{
     board=buildBoard(rowsFor(n)); tiles=assignTiles(n);
     robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
@@ -941,7 +963,7 @@ function freshGame(n,lang,mode,scnId,skip){
   var base={
     phase:"firstroll", lang:lang, mode:mode, scenario:scenario, vpTarget:vpTarget,
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
-    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes,
+    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, tribe:tribe,
     buildings:{}, roads:{}, ships:{}, current:0, devDeck:buildDevDeck(n), movedShip:false,
     setup:null, firstRoll:{active:active,idx:0,rolls:{},lastRoller:null,tie:false},
     turn:null, uiMode:null, pending:null, special:null,
@@ -1039,6 +1061,18 @@ function revealAt(hexId,discoverer){
 function revealFogFor(edgeId,discoverer){
   if(!state.fog)return;
   state.board.edges[edgeId].hexes.forEach(function(hi){ revealAt(hi,discoverer); });
+}
+// Der vergessene Stamm: reaching a tribe hex (road/ship) grants a reward
+function revealTribeAt(hi,pl){
+  var tk=state.tribe&&state.tribe[hi]; if(!tk)return;
+  delete state.tribe[hi];
+  if(tk.kind==="vp"){ state.players[pl].islandVP=(state.players[pl].islandVP||0)+1; pushLog("log_tribe_vp",{name:pl}); }
+  else if(tk.kind==="dev"){ if(state.devDeck.length){ state.players[pl].newDev.push(state.devDeck.pop()); } pushLog("log_tribe_dev",{name:pl}); }
+  else { var r=(tk.res&&tk.res!=="desert"&&tk.res!=="sea"&&tk.res!=="gold")?tk.res:"wood"; state.players[pl].res[r]=(state.players[pl].res[r]||0)+1; pushLog("log_tribe_res",{name:pl}); }
+}
+function revealTribeFor(edgeId,pl){
+  if(!state.tribe)return;
+  state.board.edges[edgeId].hexes.forEach(function(hi){ revealTribeAt(hi,pl); });
 }
 
 /* ---------- actions (mutating, then render) ---------- */
@@ -1184,7 +1218,7 @@ function apply(a){
       var me0=activePlayer(), pr=state.players[me0], free=state.pending&&state.pending.type==="roadbuilding";
       if(countRoads(me0)>=PIECE.road)return;
       if(!free){ if(!canAfford(pr.res,COSTS.road))return; pr.res=pay(pr.res,COSTS.road); }
-      state.roads[a.edgeId]={owner:me0}; pushLog("log_built_road",{name:me0}); revealFogFor(a.edgeId,me0); recomputeAwards();
+      state.roads[a.edgeId]={owner:me0}; pushLog("log_built_road",{name:me0}); revealFogFor(a.edgeId,me0); revealTribeFor(a.edgeId,me0); recomputeAwards();
       if(free){
         state.pending.left-=1;
         var anyLegal=countRoads(me0)<PIECE.road&&state.board.edges.some(function(e){return roadLegal(e.id,me0,state.buildings,state.roads,state.board);});
@@ -1197,7 +1231,7 @@ function apply(a){
       if(countShips(meS)>=PIECE.ship)return;
       if(!shipLegal(a.edgeId,meS))return;
       if(!freeS){ if(!canAfford(psh.res,COSTS.ship))return; psh.res=pay(psh.res,COSTS.ship); }
-      state.ships[a.edgeId]={owner:meS,fresh:true}; pushLog("log_built_ship",{name:meS}); revealFogFor(a.edgeId,meS); recomputeAwards();
+      state.ships[a.edgeId]={owner:meS,fresh:true}; pushLog("log_built_ship",{name:meS}); revealFogFor(a.edgeId,meS); revealTribeFor(a.edgeId,meS); recomputeAwards();
       if(freeS){
         state.pending.left-=1;
         var anyS=countShips(meS)<PIECE.ship&&state.board.edges.some(function(e){return shipLegal(e.id,meS);});
@@ -1378,7 +1412,7 @@ function renderMenu(){
     }).join("");
     scnRow='<div class="q">'+esc(tr("menu_scenario"))+'</div><div class="moderow">'+scnBtns+'</div>';
   }
-  var blurb = mode!=="sea" ? tr("blurb") : (scn==="ufern"?tr("menu_ufern_blurb"):scn==="ozeanien"?tr("menu_ozeanien_blurb"):scn==="vierinseln"?tr("menu_vier_blurb"):scn==="wueste"?tr("menu_wueste_blurb"):tr("menu_sea_blurb"));
+  var blurb = mode!=="sea" ? tr("blurb") : (scn==="ufern"?tr("menu_ufern_blurb"):scn==="ozeanien"?tr("menu_ozeanien_blurb"):scn==="vierinseln"?tr("menu_vier_blurb"):scn==="wueste"?tr("menu_wueste_blurb"):scn==="vergessen"?tr("menu_vergessen_blurb"):tr("menu_sea_blurb"));
   return '<div class="menu"><div class="inner">'+
     '<div style="display:flex;justify-content:center;margin-bottom:24px">'+langToggle(false)+'</div>'+
     '<div class="applogo '+(mode==="sea"?"applogo-sea":"applogo-base")+'"></div>'+
@@ -1422,7 +1456,8 @@ function touchesLand(v){
 function onMainIsland(v){
   return state.board.vertices[v].hexes.some(function(hi){ return state.tiles[hi].resource!=="sea" && state.tiles[hi].resource!=="fog" && (!state.islandOf||state.islandOf[hi]==null); });
 }
-function onHomeSide(v){ // Durch die Wüste: found only on home lands (not desert, not beyond)
+function onHomeSide(v){ // found only on the home island
+  if(state.homeHexes) return state.board.vertices[v].hexes.some(function(hi){ return state.homeHexes[hi]; });
   return state.board.vertices[v].hexes.some(function(hi){
     var r=state.tiles[hi].resource;
     return r!=="sea"&&r!=="fog"&&r!=="desert"&&!(state.farHexes&&state.farHexes[hi]);
@@ -1507,6 +1542,10 @@ function renderBoard(){
       s+='<text x="'+h.x+'" y="'+(h.y+12)+'" text-anchor="middle" font-size="17" font-weight="700" fill="'+(red?"#c0392b":"#3a3024")+'" font-family="Georgia,serif">'+t.number+'</text>';
       s+='<text x="'+h.x+'" y="'+(h.y+24)+'" text-anchor="middle" font-size="7" fill="'+(red?"#c0392b":"#7a6a45")+'" letter-spacing="1">'+pips(t.number)+'</text>';
       }
+    }
+    if(state.tribe && state.tribe[h.id]){
+      s+='<circle cx="'+h.x+'" cy="'+(h.y-SIZE*0.42)+'" r="13" fill="rgba(20,10,8,.55)" stroke="#f3ecda" stroke-width="1.2"/>';
+      s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42+7)+'" text-anchor="middle" font-size="17">🛖</text>';
     }
     s+='</g>';
   });
