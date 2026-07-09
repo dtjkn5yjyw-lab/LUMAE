@@ -241,6 +241,7 @@ var RES_META={
   desert:{tile:"#ddcfa8",icon:"🏜️",token:"#efe6cf"},
   sea:{tile:"#2f7fb0",icon:"",token:"#dceef6"},
   fog:{tile:"#8ea3b0",icon:"🌫️",token:"#dfe6ea"},
+  village:{tile:"#9c6b3f",icon:"🧶",token:"#f0e0c8"},
   gold:{tile:"#c5851a",icon:"💰",token:"#ecd48f"}
 };
 var TEX={wood:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAEiklEQVR42u1c2U4bMRS9djwDEqFV24RBkEqR+g19rvo9fHHfkEgiUkARiKqQzNIHq9ZoFo+X8TITX+UhhFns4+Nzr68X9OPmJwRrNxwgCAAFgAJAAaAAUK+2ut1auxd7Xh/nBcADpY9anRXuxZbrY59N4qA0XoOHQvX6E2SfpnYvtobI6nabppllEpXfRd8uSzR7DKLl45dSloDiWNffK3gvttahiqIoisKmEjHOdpKI0/uMM2i23s3Wu/xtL0h1Wf0SwVoEFwcMWiyTxTKJ4yiOo3yCEUIIIWvBEaNPJ4n4PdeGBq0/nAg2qZr74/+X9Wv+vZTps/WucgGxAFCGUVvhFstE9mn52/7i6Q8APF5/ElSfoigoeXGaAUCeZvg0LjMdAPKH1/Kf9gDazKfQxJc0zQiZiPdW9v3u1yqOo3pN2uxy+0K/PC0+F1neiILLSFok+hAXJnpBvc/WjZAJ/TDtWyyT65d3+hEvv1kGVSqc3D/TL9vLj7Ik0jEqQ6vb7RWHKd+/OQCItiRTQXLIDgQjjNmPZaqzWLaN//QCdBIBwGYeLSQ1O02zNhScMahc1fzhtThkACiOIwVtVgvBAOD3l7P8f3souAUbXozZfoIBYL8/nHbFsvVqNEYrjbVlP1LHhBDS6chWR/OPF+ePF+cc92whBPMxo8j8PTqJqIJ0Oi9B72ZhTKcLkPN0qmCTlKMNvzKKnRzpZIfOOIOpNU6z+jDCuEh3OmZDjok/zqir9d37AQE8zKZf5ctJnNCn8fd65Sn0lVhBdqygG8f1Um1lElmovGY5sQ4FTGcq+jIq1VStLTFIPGzr2elKjhX0y0kE36FW/06VKT9ZYaBkQtp7YBBHdCsgVv60L7H8ZFgPGqQzUTcOw33RZ6wgErXw147EupJ2OQ0qK1wlB8gX3fEzqFPh7IvuADQoiHQwSQ3iKJwr0Q0MCgAFgAJAAaCBmOnBTWDQqAHSWVTuHqBxjOzx0OljujHwcMkfGCTXfw01Bh4u+QODpOXfRGPggZKfrtZoW9zco5mam9eZiuq0xTKhiV0LKU1iovSglI0VT2YzF3kVNMi5EU/KIT7BXVa0zXxqer7AFECjycZif+gj4vKsxYfedTF/XKR3AEkt4dFfrRG82LgAcrhCfEgaJLsvyqaLxB7SR4dEvVOP+EAfENuJenRdjPog2uZFlkvtRNUMxwcp0iI7UU336zG7eUNpTF9Emq6E38yndobE9gDyJGARHKMpHBuC/amSacQdHLDkyeSXINZqBxhh51WqJ95NIK6w5VE3DtLZh9XjNrEK1pU0CCtYmThSI5tB5oNksRbZFtvWPLh3xnpodd0RVyIijoih7JTpoTmn5ShMtLu1VdDsfjHL1oh1G1kESSSxZ7WOi4WZ337pk9w/0w+Uju5iSDU2vAqDKqeHgN+bWSrn8wBAGhNCJhQXdj5VW5qFSDXC4LY6NZ3PA+XzefLdX34bh6S9nhfjz8kMbvoUnZ3KFpscDxcacekEC4vQp+Ktjmr7c/eWTDiOrZfe5YMCQMfhxQbqrQKDAkDe2D+Gdl/u6d2FqgAAAABJRU5ErkJggg==",brick:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAABJ0lEQVR42u3ZsQ0CMQwFUB+6FeiYgPImYTpGYwI6lqCgOyVcdFGa+Lmi4Fw86VuxvDwfW6h6rRHxen/OfXy/XX8/Ju6w7v7UXrt2s3a4CNH/AgQIECBAgABN/ZLueYbWXlzTdFjsYiIGaOgMasxthsW9DNSyASdZ3EXMDAIECBAgQIDUiZd0hsW9WLZ5EQM0dgaF27zbfE8HETODAAECBAgQoMwv6XCbr3ewzYsYoLEzyG3+AMhtXsTMIECAAAECBEj1vKQzLO7Fss2LGKCxMyjc5t3mezqImBkECBAgQIAAZX5Jh9t8vYNtXsQAjZ1BbvMHQG7zImYGAQIECBAgQKrnJZ1hcS+WbV7EAI2dQeE27zbf00HEzCBAgAABAgQo80s63ObrHb6opiIqfaKU9AAAAABJRU5ErkJggg==",sheep:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAC7UlEQVR42u1cu24CMRC8jNxRIFHTohS0afM7+Z18Tr6EipYaiYI+xUmnEw/f2d6nbVc0+DE7s9611/fx+/czFLfT+TL+OB72Q10NJL04wmWypShAE0apwz/PvrCHNegkDQF1E61kYmq3I9YPiGcwnRKgcfhyuT1jkWF5KqYTM6gcnUgPqZ3HDbYSIwycLdunzP81/k5CJ864JKYHVnSut/tuuykhEZPPXg93GJhboeiOh/3pfFns5IFlhGEHo8Ty6GMtyAKfviSXwQcio8R2242w8TkyHvCZVEUa5INiqKXNTUIo8HoAYiKRGkAyealpJ10HiTD01gEqkSEEJiEcNJIktKIMeukRtAKlVD8FdQ6rYxSfJIwYyqwzQrP0mdsvYsXQOHcW59njoB4HdYA6QB0gvwCZTRQ6gzpAtQLUmug6gxZaqCNdiCSDhUvoDGoboHIFBPkhJfXlm0EuNsTgXQLcPcO7BKw7aaaiXzt6RDk6GfN2FItDRecZl2Jau2epxEheIFimHvxO3Q1AVC8QOIRphUFM87bASru5GOEDljoBymYlLaams/mMLZKcdz6OO1IX3FCNYtIWOR0htsWgJHTIVVZPnfTEtUoKyVm5RpgAwb52dENNqAhEIPyjSoBY3s0bSVxJGBpUZuboPhK01Kjv0AM2iW2nBUIU1tCH5L7cLkDX270d7iRLbESntYq8BIC+vz5JPhRQA0Dxz4K0XmG2JhvOxkj9mRgNgyLOWOwOgyoRK4zs8bLTuK/xhU7hhPFOOFXu2aUAqVxvcSS3c+IQF3GSYyR/vfVw9kofSdNiRHuEvn5ETxVm8tGT12sfCxFmqsuDpEltfmHACoPsoJA0k7aeImRoHHa8g03UMJipxJER14O+FteOxrOKxbVDK1SxhtG7tcNgqGLKGWFNqNIIiV6uXSKbdxGmv1s7alIHh39ATRrxnWqQpI7yZwYVphoN1UkTbkYKANl8ktu/Jy3doGsr+xetmo96XbR//X+mX5bl4VgAAAAASUVORK5CYII=",wheat:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAAA+UlEQVR42u3XOwrCQBSG0T8TF6BgYW/j/hfgTuwFA2YBiVgI4/hAsBM8txquVh8mzulO+12SJMNxTLLeLNOMZYn5OAIJJJBAAv3wdPVv3rydxf202t4O0/lgWZfl6Rvt2dI76JtH7DLPSUrftx9bltdnr54tH/7FuBRWXRQFEkgggQSieUPzNE/zNE/zNE/zLopGIIEEEkggmqd5mqd5Q/M0T/M076IokEACGYEEonmap3map3mat6R5mndRFEgggQQSiOYNzdM8zdM8zdM8zbsoGoEEEkgggWie5mne0juI5mme5mneRVEggQQyAglE835BAgkk0N/NFZYBDAB7tZ1JAAAAAElFTkSuQmCC",ore:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAADiElEQVR42u3bzU7jMBAAYHcawRE4tOo77nUfYB83IitKuYEo7MGS13KSiWc8rn8YiwsVduKvE3tsh92v33+MlvUCSqBACqRACqRACqRACqRFgRSoKND93dAxxFrvYoEur+eOjZDeQXz9XuMI7x2Q6vdntNk7oNbvycjv3fPztNg7iNfxm+jAaO27D3oHvPqtG8X3Dtj12zUi9Q5S6rdoRO0dJNbHjfLZ8Vpm9A7SddbuOF9uyWuZ1zsQ0Zkb5csteS27WrsdCyhdx79j15rLDEhGyB/zslZX63g8IEZBHvMfKF5nsYmgvF2Sckvk8eFlra7W19fVGHM4HEhxBFKxY8s0TcjlN42Qx4eXtQY6tpCMQFwHf9R5jw8va13UoRoNOXSc0ff3ck/ePz7xZZEdLOwfxzzXiy0/PD4ZY84vf90n4zieTiffyBjjV5nfGGTSIcUREiDTNJHmnaBlX4eXUg2WOb7gX/7iuO7CYfHbxnXwYMTjKEYHCWqZCErMLWN0GPnL/d0Qr4PHEZTS8ROTyGeWZOTGmkQjKKizZjSfdAoa8Wex+MGLNGwhOsF4tDa6BUbjOPqf+BNZzHhU4FwsRef2cQR16lyvV1kjgL37IYU8tBU7bKPNh3EtgoZGdXizgQ2NtZQndamBZFOJU95i2LulAG8SsCHDvmEykL2kjT3GVan5ekrfgi2BRCNgfP8179In7tVxgNwl/YQiuGolZDnOgWOPnufjaLBZU9wo8qRUEgjRWVxtFjTKdw4MbJ3FzZoiRms68502xu0BSccfhvzNmoJGuc+BgR07yK83M5I9B47Kgxg64lmlYHolnyjaS15ez2uLOvuU7ff7SoxyF9rbHdRFUwcvog3xceuHFWMLvZ8IEhwOO4gjyK3TuhHcQKdpI5DSiTkgbtEIbhA7TRslvQZMfVurRSP+a8A2J+reCFJ0fkIcERLFIGM8Hg/+2eb7x2cHCwt+ohjEl40g/7Cp138lA7ZOlyuvJCBcp1cjYOsEb030agRSsVO/kfCmPVunTiP22dR2hYfHJ2SDcV4qnOxTDqPlV/N1xo7hHkaDrE5tRumH0blW8zUYiRxGQw6dGoykDqOT/ql3c5OslJHgYTTkiJ2yRrKzCmTVub2R+Kwy5NbhZR/sIn4YPZBabyItLLnd8QOLAimQAimQAimQAimQAmlRIAVSIAVSIAVSIAXSokDx5R/qCmjAXnF5xQAAAABJRU5ErkJggg==",desert:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAADIklEQVR42u1dwWrDMAxNhQ+GjfUwaA/9f9jf7At27KGFHTo2yHGHQCmJ4zqKLD859mlLV1t+en6WFCfbfX1+dK3NN2oQGADoejk3gGLtcDzBuoG2QweeGyiHHchLBmKJrV8yCBAPNhDscliJ0fD1NZ0MbiZZvMVpOOo2fZTh60+5PO1wdGU3DRSvl7POtmJVgwyhoyBVZNp6BV+SaesVXEJ938NusQgucV3XjTB6279PUQu2v9/by+s+B0DpNuRuznsfcWPcJ5Hv5uaX2volTcZKLV5NdaMq3S4ooxTvS3AkTbcLjkXxvtgjpSC7Pl1SaLtWk0bRoDoBqqn0lQWglWpnJSiP/E3ToKZB4slqxQLEmFEgWb1noUszxlKpWdYAMpyszk01ki70fS+Vf0MB7dgeGIElNStNoFPSw2p3MSmUXVdpYzB6RKjh17bNz0q48I3D7QaKG0/HaCnxGkAQ8eu2ADLNQSCRxiQaEECLiJYDzWCfVrf5lIM/S0EM9lltJC0lfC1QrBog2weoFOagEEA4NC0YlSmmJ2zynbkJA5RSN1G26bFSMa1a8Cpz7KMTLmXIFJvAz8aybSOpUil+PhFRw8hHG9rmIy6MfETmvK28ddLWyFIJQDiKRrbWTrCrrLEo2aXGvav7DznO9FVVtE98BEoYoOJ1LNsaNELEaPk58lgdSQmB6XhqOov7FQI3vbj/ipVcI+eMoDjo0Ax6WjxQLhu4rut+bt8pQ4IUNJRtcN577yu8+573AFWQLDquE1zyIqUuJ0VjtIkhijT+MWAmg5QnZuvNDvyaNDvSs5XcETgLinONeG5UsPtx0II8ohQTizwf/jhoQR6Fn3oeLuYzy5JIB20dFTFxJFO/lpD6SGZuTvHQZz/0nz6R9khmnm1eljjtTZwxzh+OJ2TNphxzZq98QCphFe15vVV1Z7V4VLUUTdJZXEVigjnJWzRQ2+ZtLjEctW7ngxYCZPclikoAbefOV6IbjG3zgtWFRDdQcf6vicURX3YrbhOjQ02RolKrw8oepweQ0f+WoCrSFg/okZWyQ6kWvjeP8zrnlmqgt39YgbAmGGKkXQAAAABJRU5ErkJggg==",gold:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgCAIAAABt+uBvAAADfklEQVR42u1drZLbMBA+6wzCEtwHCLynCAo9driv0lc5drSotKC0sK9QkrCQ3BRoxuNairxa7a608nqCLrEsff707Y+0uuHnty9Pdj2+nEFgADUG0PF07gmgkQOd4+n858d3WrgRDZbcy8Ug3xVydBDEXL0X2CD9FONAB/4X4C8nptcU6ePp7D9MAgcfZILpq7dzAfTy+rbbH3b7A6FsL1ornM4TOunuOSZ0Ho2qZKr+/ngHIhL+JnoXBOKB3JM+ns4elPl1u15wrzphiRZfhb8ksWKtA7T6rAU6tIaCa4rdrhcm0ybTrISZn2PktYPDqGmNxSaMbtfLhA5rLDKnEi2tBoF0RxQRyDBwKkuizQqieRzpyKnqKo4/IUnwqKKHfFCa6o3LthCD+ESU+0GjgIgggqYwjITfTvsCHDc60UkEec9ipKtg5tF2XdI4AvuzraQ9wglwm0JnSlGxaBA8mAKmY2pxJwsjx0TORiQ2kWYA9ioi0uGiTcuii7Mb8M67aEOdLf6VMHqMemi62MHqQDqcxHaJYJFItym6AtfITdENAaQrRFCW7pAPETYEUN3sou0wM4C6B6iuF6aDQRW9MDVmvpYXZhpkABlApkE1ow2nDh3zpE2DTIOYJMMv1zDtB5VmEK1k+Bb8nj6bYimsTaQ3I9K04WXugroOkaaV0t3+MAmQOYpLoOfybOkOdjIqAKjWGg4SIO7uPqpbeiIt/2W6hr+/vrKSGbfhaiuxWIhORYMtqkGKRKSwqw7h0ZXEWWK1dlQhofNd9B8B87x4kBg6aIzGkucBMQpJrmgnzViIDq5Iu3+RRo9ZUt1LKmLqxGLyiXeI3qU3yI+IyaVrysDL+aJu/ZiFzga3KTpuM5lL+E5EWmPiImoool7If8Hqo4K6sDzGPT9/3u/Cqy7khjJXNBwcHWEDVIjObn94eX2LHjyVJRouMREW6H7e71rC8XknFxCQFdRN6Ph8sEdH++XRYSmoQ5SiVfd6wsyBP2klayzrVc+ErpBkghV+dFUpQKsPy80i6fI2i+rmc8essVTPlU/4WodGKABoC9GZ7e4wgHQFq+qMnaNNaFCh007E58L+9XeqABlAtMdlAynDcfokYYNDxX8bEQ1iyjWItoXmRLqcv4Wnayx0sE8z3/ppwIhhNOuRm6O48tqaE2lj0JZCDaU5MCEGlYcFKkT6H13WUaL/t/vhAAAAAElFTkSuQmCC"};
@@ -268,7 +269,7 @@ var I18N={
     begin:"LOSLEGEN",
     blurb:"Eine originalgetreue Umsetzung des Klassikers · Straßen, Siedlungen, Städte, Räuber, Entwicklungskarten, Längste Handelsstraße & Größte Rittermacht · wer zuerst 10 Punkte erreicht, gewinnt.",
     phase_setup:"Gründungsphase", phase_play:"Spielzug", phase_over:"Spielende",
-    turn:"Am Zug:", new_game:"Neues Spiel",
+    turn:"Am Zug:", new_game:"Neues Spiel", confirm_new_title:"Neues Spiel?", confirm_new_msg:"Der aktuelle Spielstand geht dabei verloren. Möchtest du wirklich ein neues Spiel starten?", confirm_new_yes:"Ja, zum Menü", confirm_new_no:"Abbrechen",
     costs_btn:"💰 Kosten", costs_title:"Baukosten", close:"Schließen",
     special_phase:"Außerordentliche Bauphase", special_hint:"Bauen & Karten kaufen erlaubt – kein Handel, kein Kartenausspielen.", special_done:"Fertig",
     log_special_start:"Außerordentliche Bauphase: {name} darf bauen.", log_special_next:"{name} darf bauen.", log_ship2:"Schiff 2: {name} macht einen eingeschränkten Zug (nur Vorrat-Handel).",
@@ -285,9 +286,9 @@ var I18N={
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     click_searobber:"Klicke ein Seefeld, um den Seeräuber zu versetzen.",
     menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer", menu_skiproll:"Startspieler-Wurf überspringen",
-    menu_scenario:"Szenario", menu_scn_frei:"Neue Welt", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_vergessen:"Der vergessene Stamm", menu_scn_ozeanien:"Ozeanien",
+    menu_scenario:"Szenario", menu_scn_frei:"Neue Welt", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_vergessen:"Der vergessene Stamm", menu_scn_stoffe:"Stoffe für Catan", menu_scn_ozeanien:"Ozeanien",
     menu_wueste_blurb:"Durch die Wüste: eine Heimatinsel, dahinter fruchtbares Land – getrennt durch einen Wüstengürtel. Baue Straßen durch die Wüste oder segle außen herum. Jede Siedlung jenseits der Wüste = +1 Siegpunkt. Ziel: 14 Punkte.",
-    log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).", menu_vergessen_blurb:"Der vergessene Stamm: Heimatinsel + eine Insel mit freundlichen Ureinwohnern (🛖). Erreichst du ein 🛖-Feld (Straße/Schiff), gibt es Rohstoff, Entwicklungskarte oder Siegpunkt. Baust du eine Siedlung neben ein ⚓-Feld, erhältst du einen Hafen. Ziel: 13 Punkte.", log_tribe_res:"{name} erreicht den Stamm: Rohstoff geschenkt.", log_tribe_dev:"{name} erreicht den Stamm: Entwicklungskarte geschenkt.", log_tribe_vp:"{name} erreicht den Stamm: +1 Siegpunkt.", log_tribe_harbor:"{name} erhält von den Ureinwohnern einen Hafen.",
+    log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).", menu_vergessen_blurb:"Der vergessene Stamm: Heimatinsel + eine Insel mit freundlichen Ureinwohnern (🛖). Erreichst du ein 🛖-Feld (Straße/Schiff), gibt es Rohstoff, Entwicklungskarte oder Siegpunkt. Baust du eine Siedlung neben ein ⚓-Feld, erhältst du einen Hafen. Ziel: 13 Punkte.", log_tribe_res:"{name} erreicht den Stamm: Rohstoff geschenkt.", log_tribe_dev:"{name} erreicht den Stamm: Entwicklungskarte geschenkt.", log_tribe_vp:"{name} erreicht den Stamm: +1 Siegpunkt.", log_tribe_harbor:"{name} erhält von den Ureinwohnern einen Hafen.", menu_stoffe_blurb:"Stoffe für Catan: zwei Heimatinseln, dazwischen 4 Dörfer (🧶, je 5 Stoff). Baue eine Schiffslinie zu einem Dorf -> sofort 1 Stoff, danach 1 Stoff bei jedem Wurf der Dorfzahl. 2 Stoff = 1 Siegpunkt. Keine Längste Handelsstraße. Ziel: 14.", log_cloth:"{name} erhält einen Stoffballen.", tip_cloth:"Stoffballen (2 = 1 Siegpunkt)",
     menu_vier_blurb:"Die vier Inseln: vier gleichwertige Inseln. Gründe auf beliebigen Inseln, erobere per Schiff die anderen. Erste Siedlung auf einer fremden Insel = 2 Extra-Siegpunkte. Ziel: 13 Punkte.",
     menu_ozeanien_blurb:"Ozeanien: zwei Heimatinseln, dazwischen ein Nebelmeer. Baue Schiffe ins Ungewisse – Nebelfelder werden beim Erreichen aufgedeckt (Land bringt sofort 1 Rohstoff). Ziel: 12 Punkte.",
     log_fog_sea:"{name} entdeckt offenes Meer im Nebel.",
@@ -328,7 +329,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v2.4 · Vergessener Stamm: Hafen-Plaettchen · offline",
+    foot:"v2.7 · QoL: Neues-Spiel-Abfrage + Szenario-Kopf · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -355,7 +356,7 @@ var I18N={
     subtitle:"Pass & Play · Settle the Island", choose:"Choose your number of settlers", begin:"BEGIN",
     blurb:"A faithful take on the classic island game · roads, settlements, cities, the robber, development cards, Longest Road & Largest Army · first to 10 points wins.",
     phase_setup:"Setup", phase_play:"In play", phase_over:"Game over",
-    turn:"Turn:", new_game:"New game",
+    turn:"Turn:", new_game:"New game", confirm_new_title:"New game?", confirm_new_msg:"The current game will be lost. Do you really want to start a new game?", confirm_new_yes:"Yes, to menu", confirm_new_no:"Cancel",
     costs_btn:"💰 Costs", costs_title:"Build costs", close:"Close",
     special_phase:"Special build phase", special_hint:"Build & buy cards only — no trading, no playing cards.", special_done:"Done",
     log_special_start:"Special build phase: {name} may build.", log_special_next:"{name} may build.", log_ship2:"Ship 2: {name} takes a restricted turn (bank trade only).",
@@ -372,9 +373,9 @@ var I18N={
     click_robber:"Click a hex to move the robber.",
     click_searobber:"Click a sea hex to move the pirate.",
     menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers", menu_skiproll:"Skip first-player roll",
-    menu_scenario:"Scenario", menu_scn_frei:"New World", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_wueste:"Through the Desert", menu_scn_vergessen:"The Forgotten Tribe", menu_scn_ozeanien:"Oceania",
+    menu_scenario:"Scenario", menu_scn_frei:"New World", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_wueste:"Through the Desert", menu_scn_vergessen:"The Forgotten Tribe", menu_scn_stoffe:"Cloth for Catan", menu_scn_ozeanien:"Oceania",
     menu_wueste_blurb:"Through the Desert: a home island with fertile land beyond, split by a desert belt. Build roads through the desert or sail around. Each settlement beyond the desert = +1 point. Target: 14 points.",
-    log_far_vp:"{name} settles beyond the desert (+1 point).", menu_vergessen_blurb:"The Forgotten Tribe: home island + an island of friendly natives (🛖). Reach a tribe hex by road/ship for a reward: a resource, a development card or a victory point. Target: 13 points.", log_tribe_res:"{name} reached the tribe: gifted a resource.", log_tribe_dev:"{name} reached the tribe: gifted a development card.", log_tribe_vp:"{name} reached the tribe: +1 point.", log_tribe_harbor:"{name} gains a harbor from the natives.",
+    log_far_vp:"{name} settles beyond the desert (+1 point).", menu_vergessen_blurb:"The Forgotten Tribe: home island + an island of friendly natives (🛖). Reach a tribe hex by road/ship for a reward: a resource, a development card or a victory point. Target: 13 points.", log_tribe_res:"{name} reached the tribe: gifted a resource.", log_tribe_dev:"{name} reached the tribe: gifted a development card.", log_tribe_vp:"{name} reached the tribe: +1 point.", log_tribe_harbor:"{name} gains a harbor from the natives.", menu_stoffe_blurb:"Cloth for Catan: two home islands with 4 villages between them (🧶, 5 cloth each). Build a ship line to a village -> 1 cloth at once, then 1 cloth whenever its number is rolled. 2 cloth = 1 point. No Longest Road. Target: 14.", log_cloth:"{name} receives a bale of cloth.", tip_cloth:"Cloth bales (2 = 1 point)",
     menu_vier_blurb:"The Four Islands: four equal islands. Found on any islands, reach the others by ship. First settlement on a foreign island = 2 bonus points. Target: 13 points.",
     menu_ozeanien_blurb:"Oceania: two home islands with a foggy sea between them. Sail into the unknown – fog hexes are revealed when reached (land gives 1 instant resource). Target: 12 points.",
     log_fog_sea:"{name} discovers open sea in the fog.",
@@ -415,7 +416,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v2.4 · Forgotten Tribe: harbor tokens · offline",
+    foot:"v2.7 · QoL: new-game confirm + scenario header · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     phase_firstroll:"Determine first player",
@@ -679,13 +680,15 @@ function publicVP(pi){
   if(state.longestRoadOwner===pi)vp+=2;
   if(state.largestArmyOwner===pi)vp+=2;
   vp+=state.players[pi].islandVP||0;   // Seefahrer Sondersiegpunkte
+  vp+=Math.floor((state.players[pi].cloth||0)/2); // Stoffe für Catan: 2 Stoff = 1 SP
   return vp;
 }
 function fullVP(pi){return publicVP(pi)+state.players[pi].vpCards;}
 
 /* ---------- awards (Almanach-faithful) ---------- */
 function recomputeAwards(){
-  var lengths=state.players.map(function(_,pi){return longestRoute(pi);});
+  var noLR=state.scenario&&SCEN[state.scenario]&&SCEN[state.scenario].noLongestRoad;
+  var lengths=state.players.map(function(_,pi){return noLR?0:longestRoute(pi);});
   var max=Math.max.apply(null,lengths.concat([0]));
   var owner=state.longestRoadOwner;
   if(max<5) owner=null;
@@ -778,7 +781,7 @@ function fixRedAdjacency(board,tiles){
       c=shuffle(c); var fixedOne=false;
       for(var ci=0; ci<c.length && !fixedOne; ci++){
         var h=c[ci];
-        var cands=shuffle(tiles.map(function(t,i){return i;}).filter(function(i){return tiles[i].number!=null && !isRed(tiles[i].number);}));
+        var cands=shuffle(tiles.map(function(t,i){return i;}).filter(function(i){return tiles[i].number!=null && tiles[i].resource!=="village" && !isRed(tiles[i].number);}));
         for(var k=0;k<cands.length;k++){
           var g=cands[k];
           var bad=(adj[g]||[]).some(function(nb){ return nb!==h && isRed(tiles[nb].number); });
@@ -789,7 +792,7 @@ function fixRedAdjacency(board,tiles){
     }
     return conflicts().length;
   };
-  var idx=tiles.map(function(t,i){return i;}).filter(function(i){return tiles[i].number!=null;});
+  var idx=tiles.map(function(t,i){return i;}).filter(function(i){return tiles[i].number!=null && tiles[i].resource!=="village";});
   var best=null, bestConf=Infinity;
   for(var attempt=0; attempt<50; attempt++){
     if(attempt>0){ var nums=shuffle(idx.map(function(i){return tiles[i].number;})); idx.forEach(function(i,k){tiles[i].number=nums[k];}); }
@@ -829,8 +832,35 @@ var SCEN={
   vierinseln:{key:"menu_scn_vier",players:[3,4],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
   wueste:{key:"menu_scn_wueste",players:[3,4],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
   vergessen:{key:"menu_scn_vergessen",players:[3,4],vpTarget:13,founding:"home",build:function(n){return buildVergessen(n);}},
+  stoffe:{key:"menu_scn_stoffe",players:[3,4],vpTarget:14,founding:"home",noLongestRoad:true,setupSettlements:3,build:function(n){return buildStoffe(n);}},
   ozeanien:{key:"menu_scn_ozeanien",players:[3,4],vpTarget:12,build:function(n){return buildOzeanien(n);}}
 };
+// "Stoffe für Catan": two home islands + 4 cloth villages (5 cloth each) in the middle
+function buildStoffe(n){
+  var R=4, coords=seaCoords(R);
+  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
+  var board=assembleBoard(centers); board.coords=coords;
+  var idx={}; coords.forEach(function(c,i){ idx[c.q+","+c.r]=i; });
+  var villageQR=[[0,-3],[0,-1],[0,1],[0,3]];
+  var villageSet={}; villageQR.forEach(function(qr){ var i=idx[qr[0]+","+qr[1]]; if(i!=null)villageSet[i]=true; });
+  var region=coords.map(function(c,i){
+    if(villageSet[i])return "village";
+    if(c.dist===4)return "sea";
+    if(c.q<=-2)return "home";
+    if(c.q>=2)return "home";
+    return "sea";
+  });
+  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home") landIdx.push(hi); });
+  var bag=shuffle(spreadRes(landIdx.length)), toks=makeTokens(landIdx.length);
+  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
+  landIdx.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
+  var homeHexes={}; region.forEach(function(rg,hi){ if(rg==="home") homeHexes[hi]=true; });
+  // villages: number chip + 5 cloth each
+  var villages={}, vnums=shuffle([4,5,6,8,9,10,11,3]);
+  var vi=0; region.forEach(function(rg,hi){ if(rg==="village"){ var num=vnums[vi++%vnums.length]; tiles[hi]={resource:"village",number:num}; villages[hi]={number:num,cloth:5}; } });
+  var robberHex=landIdx[0], seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,villages:villages,clothReserve:10};
+}
 // "Der vergessene Stamm": home island + a tribe island across the sea whose hexes carry hidden reward tokens
 function buildVergessen(n){
   var R=4, coords=seaCoords(R);
@@ -969,25 +999,25 @@ function buildUfern(n){
 }
 function freshGame(n,lang,mode,scnId,skip){
   mode=mode||"base";
-  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,tribe={},tribeHarbors={},R=3;
+  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,tribe={},tribeHarbors={},villages={},clothReserve=0,R=3;
   if(mode==="sea"){
     scnId=scnId||"frei"; if(!SCEN[scnId])scnId="frei"; scenario=scnId;
     var built=SCEN[scnId].build(n);
     board=built.board; tiles=built.tiles; harbors=built.harbors; robberHex=built.robberHex; seaRobberHex=built.seaRobberHex;
     islandOf=built.islandOf; vpTarget=SCEN[scnId].vpTarget;
-    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{}; homeHexes=built.homeHexes||null; tribe=built.tribe||{}; tribeHarbors=built.tribeHarbors||{};
+    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{}; homeHexes=built.homeHexes||null; tribe=built.tribe||{}; tribeHarbors=built.tribeHarbors||{}; villages=built.villages||{}; clothReserve=built.clothReserve||0;
   }else{
     board=buildBoard(rowsFor(n)); tiles=assignTiles(n);
     robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
     harbors=assignHarbors(board,n);
   }
   fixRedAdjacency(board,tiles); // no two red numbers (6/8) adjacent
-  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0});
+  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0,cloth:0});
   var active=[]; for(var a=0;a<n;a++)active.push(a);
   var base={
     phase:"firstroll", lang:lang, mode:mode, scenario:scenario, vpTarget:vpTarget,
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
-    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, tribe:tribe, tribeHarbors:tribeHarbors,
+    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, tribe:tribe, tribeHarbors:tribeHarbors, villages:villages, clothReserve:clothReserve, clothConn:{},
     buildings:{}, roads:{}, ships:{}, current:0, devDeck:buildDevDeck(n), movedShip:false,
     setup:null, firstRoll:{active:active,idx:0,rolls:{},lastRoller:null,tie:false},
     turn:null, uiMode:null, pending:null, special:null,
@@ -996,15 +1026,21 @@ function freshGame(n,lang,mode,scnId,skip){
     ui:freshUi()
   };
   if(skip){ // skip the first-player roll: go straight to founding, starter = player 0
+    var rr=(scnId&&SCEN[scnId]&&SCEN[scnId].setupSettlements)||2;
     base.phase="setup"; base.firstRoll=null;
-    base.setup={order:setupOrder(0,n),idx:0,placing:"settlement",lastSettlement:null};
+    base.setup={order:setupOrder(0,n,rr),idx:0,placing:"settlement",lastSettlement:null};
     base.current=0; base.log=[{k:"log_setup_first"}];
   }
   return base;
 }
-function setupOrder(starter,n){ var o=[]; for(var i=0;i<n;i++)o.push((starter+i)%n); for(var j=n-1;j>=0;j--)o.push((starter+j)%n); return o; }
+function setupRounds(){ return (state&&state.scenario&&SCEN[state.scenario]&&SCEN[state.scenario].setupSettlements)||2; }
+function setupOrder(starter,n,rounds){
+  rounds=rounds||2; var o=[];
+  for(var round=0;round<rounds;round++){ var fwd=(round%2===0); for(var i=0;i<n;i++){ var seat=fwd?i:(n-1-i); o.push((starter+seat)%n); } }
+  return o;
+}
 function beginSetup(starter){
-  var n=state.players.length, order=setupOrder(starter,n);
+  var n=state.players.length, order=setupOrder(starter,n,setupRounds());
   state.setup={order:order,idx:0,placing:"settlement",lastSettlement:null};
   state.current=order[0]; state.phase="setup"; state.firstRoll=null;
   pushLog("log_first_start",{name:starter});
@@ -1051,7 +1087,15 @@ function stealFrom(victimPi){
   var thief=activePlayer(); v.res[r]-=1; state.players[thief].res[r]+=1;
   pushLog("log_stole",{name:thief,victim:victimPi});
 }
-function checkWin(){ var pi=activePlayer(); if(fullVP(pi)>=(state.vpTarget||10)){state.winner=pi;state.phase="gameover";pushLog("log_wins",{name:pi});} }
+function checkWin(){
+  var pi=activePlayer();
+  if(fullVP(pi)>=(state.vpTarget||10)){state.winner=pi;state.phase="gameover";pushLog("log_wins",{name:pi});return;}
+  // Stoffe für Catan: game also ends when only 3 villages still have cloth -> most points wins
+  if(state.scenario==="stoffe" && state.villages && Object.keys(state.villages).length>0 && villagesWithCloth()<=3){
+    var best=-1,who=0; state.players.forEach(function(_,q){var v=fullVP(q);if(v>best){best=v;who=q;}});
+    state.winner=who; state.phase="gameover"; pushLog("log_wins",{name:who});
+  }
+}
 function awardIsland(pi,v){
   if(!state.islandOf)return;
   var bonus=(state.scenario&&SCEN[state.scenario]&&SCEN[state.scenario].islandBonus)||2;
@@ -1100,6 +1144,33 @@ function revealTribeFor(edgeId,pl){
   state.board.edges[edgeId].hexes.forEach(function(hi){ revealTribeAt(hi,pl); });
 }
 function isWaterHex(hi){ var r=state.tiles[hi].resource; return r==="sea"||r==="fog"; }
+// Stoffe für Catan: take one cloth from a village (or the reserve) for a player
+function villageTake(vh,pl){
+  var v=state.villages&&state.villages[vh]; if(!v)return;
+  if(v.cloth>0){ v.cloth-=1; state.players[pl].cloth=(state.players[pl].cloth||0)+1; }
+  else if(state.clothReserve>0){ state.clothReserve-=1; state.players[pl].cloth=(state.players[pl].cloth||0)+1; }
+  pushLog("log_cloth",{name:pl});
+}
+// establish trade connections when a ship reaches a village
+function clothConnectFor(edgeId,pl){
+  if(!state.villages)return;
+  state.board.edges[edgeId].hexes.forEach(function(hi){
+    if(!state.villages[hi])return;
+    var key=pl+":"+hi;
+    if(!state.clothConn[key]){ state.clothConn[key]=true; villageTake(hi,pl); }
+  });
+}
+// on a dice roll: each connected player gets cloth from villages whose number matches
+function clothRoll(sum){
+  if(!state.villages)return;
+  for(var vh in state.villages){
+    if(state.villages[vh].number!==sum)continue;
+    for(var key in state.clothConn){
+      var parts=key.split(":"); if(+parts[1]===+vh){ villageTake(+vh,+parts[0]); }
+    }
+  }
+}
+function villagesWithCloth(){ var c=0; for(var vh in state.villages){ if(state.villages[vh].cloth>0)c++; } return c; }
 // Claim a harbor token by building a settlement next to it: attach a real harbor to that vertex
 function claimTribeHarbor(v,tk){
   var vert=state.board.vertices[v], edge=null, seaHex=null;
@@ -1134,6 +1205,9 @@ function apply(a){
     case "SET_STARTSCN": state.ui.startScn=a.scn; clampStartN(); return;
     case "SET_SKIPROLL": state.ui.startSkipRoll=!state.ui.startSkipRoll; return;
     case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei", state.ui.startSkipRoll); return;
+    case "ASK_NEWGAME": state.ui.confirmNew=true; return;
+    case "CLOSE_NEWGAME": state.ui.confirmNew=false; return;
+    case "TO_MENU": state=menuState(); return;
     case "FIRST_ROLL":{
       var fr=state.firstRoll; if(!fr)return;
       var pl=fr.active[fr.idx], d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6);
@@ -1153,7 +1227,7 @@ function apply(a){
       var v=a.vertexId, pi=state.setup.order[state.setup.idx];
       state.buildings[v]={owner:pi,type:"settlement"};
       markIslandsScored(pi,v); // founding settlements make their island "home" (no later bonus)
-      if(state.setup.idx>=state.players.length){
+      if(state.setup.idx>=state.setup.order.length-state.players.length){
         state.board.vertices[v].hexes.forEach(function(hi){var t=state.tiles[hi];if(t.resource!=="desert"&&t.resource!=="sea"&&t.resource!=="gold")state.players[pi].res[t.resource]+=1;});
       }
       state.setup.placing="road"; state.setup.lastSettlement=v;
@@ -1188,12 +1262,14 @@ function apply(a){
             var b=state.buildings[v]; if(!b)return;
             var amt=b.type==="city"?2:1;
             if(t.resource==="gold"){ goldGain[b.owner]=(goldGain[b.owner]||0)+amt; }
-            else if(t.resource!=="sea"&&t.resource!=="desert"){ state.players[b.owner].res[t.resource]+=amt; }
+            else if(t.resource!=="sea"&&t.resource!=="desert"&&t.resource!=="village"){ state.players[b.owner].res[t.resource]+=amt; }
           });
         });
+        clothRoll(sum); // Stoffe für Catan: connected players get cloth from villages matching the roll
         var gq=Object.keys(goldGain).map(function(pi){return{pi:Number(pi),count:goldGain[pi]};});
         if(gq.length>0){ state.pending={type:"gold",queue:gq,qi:0}; state.ui.goldSel=emptyRes(); pushLog("log_gold"); }
       }
+      checkWin();
       return;
     }
 
@@ -1270,7 +1346,7 @@ function apply(a){
       if(countShips(meS)>=PIECE.ship)return;
       if(!shipLegal(a.edgeId,meS))return;
       if(!freeS){ if(!canAfford(psh.res,COSTS.ship))return; psh.res=pay(psh.res,COSTS.ship); }
-      state.ships[a.edgeId]={owner:meS,fresh:true}; pushLog("log_built_ship",{name:meS}); revealFogFor(a.edgeId,meS); revealTribeFor(a.edgeId,meS); recomputeAwards();
+      state.ships[a.edgeId]={owner:meS,fresh:true}; pushLog("log_built_ship",{name:meS}); revealFogFor(a.edgeId,meS); revealTribeFor(a.edgeId,meS); clothConnectFor(a.edgeId,meS); recomputeAwards();
       if(freeS){
         state.pending.left-=1;
         var anyS=countShips(meS)<PIECE.ship&&state.board.edges.some(function(e){return shipLegal(e.id,meS);});
@@ -1452,7 +1528,7 @@ function renderMenu(){
     }).join("");
     scnRow='<div class="q">'+esc(tr("menu_scenario"))+'</div><div class="moderow">'+scnBtns+'</div>';
   }
-  var blurb = mode!=="sea" ? tr("blurb") : (scn==="ufern"?tr("menu_ufern_blurb"):scn==="ozeanien"?tr("menu_ozeanien_blurb"):scn==="vierinseln"?tr("menu_vier_blurb"):scn==="wueste"?tr("menu_wueste_blurb"):scn==="vergessen"?tr("menu_vergessen_blurb"):tr("menu_sea_blurb"));
+  var blurb = mode!=="sea" ? tr("blurb") : (scn==="ufern"?tr("menu_ufern_blurb"):scn==="ozeanien"?tr("menu_ozeanien_blurb"):scn==="vierinseln"?tr("menu_vier_blurb"):scn==="wueste"?tr("menu_wueste_blurb"):scn==="vergessen"?tr("menu_vergessen_blurb"):scn==="stoffe"?tr("menu_stoffe_blurb"):tr("menu_sea_blurb"));
   return '<div class="menu"><div class="inner">'+
     '<div style="display:flex;justify-content:center;margin-bottom:24px">'+langToggle(false)+'</div>'+
     '<div class="applogo '+(mode==="sea"?"applogo-sea":"applogo-base")+'"></div>'+
@@ -1474,9 +1550,11 @@ function renderGame(){
   var ap=activePlayer();
   var c=PCOL[ap];
   var phase=state.phase==="firstroll"?tr("phase_firstroll"):state.phase==="setup"?tr("phase_setup"):state.phase==="gameover"?tr("phase_over"):(state.special?tr("special_phase"):tr("phase_play"));
+  var scnName=state.mode==="sea"?((SCEN[state.scenario]&&tr(SCEN[state.scenario].key))||""):tr("menu_base");
+  var meta=esc(phase)+(scnName?" · "+esc(scnName):"")+" · ★"+(state.vpTarget||10);
   var header='<div class="header">'+
     '<div style="display:flex;align-items:center;gap:12px;min-width:0">'+
-      '<span class="title">CATAN</span><span class="phase">'+esc(phase)+'</span></div>'+
+      '<span class="title">CATAN</span><span class="phase">'+meta+'</span></div>'+
     '<div class="right">'+
       '<div class="turn"><span style="color:#9fc0d4">'+esc(tr("turn"))+'</span>'+
         '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(ap))+'</span></div>'+
@@ -1486,7 +1564,14 @@ function renderGame(){
     '</div></div>';
   var layout='<div class="layout"><div class="board-wrap">'+renderBoard()+'</div>'+renderSidebar()+'</div>';
   var foot='<div class="foot">'+esc(tr("foot"))+'</div>';
-  return '<div class="wrap">'+header+layout+foot+'</div>'+renderModals()+(state.ui.showCosts?costsOverlay():"")+(state.ui.showSave?saveOverlay():"");
+  return '<div class="wrap">'+header+layout+foot+'</div>'+renderModals()+(state.ui.showCosts?costsOverlay():"")+(state.ui.showSave?saveOverlay():"")+(state.ui.confirmNew?confirmNewOverlay():"");
+}
+function confirmNewOverlay(){
+  var body='<h3 style="color:var(--slate2)">'+esc(tr("confirm_new_title"))+'</h3>'+
+    '<p class="savehint">'+esc(tr("confirm_new_msg"))+'</p>'+
+    '<button class="mbtn" style="background:var(--red);width:100%;margin-bottom:8px" data-act="tomenu">'+esc(tr("confirm_new_yes"))+'</button>'+
+    '<button class="mbtn" style="background:var(--muted);width:100%" data-act="closenew">'+esc(tr("confirm_new_no"))+'</button>';
+  return shell("#7c241d",body);
 }
 
 /* ---- board ---- */
@@ -1592,6 +1677,11 @@ function renderBoard(){
       s+='<circle cx="'+h.x+'" cy="'+(h.y-SIZE*0.42)+'" r="13" fill="rgba(20,10,8,.6)" stroke="#dfe8ff" stroke-width="1.2"/>';
       s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42+6)+'" text-anchor="middle" font-size="15">⚓</text>';
       s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42+18)+'" text-anchor="middle" font-size="8" font-weight="700" fill="#fff">'+(thb.ratio===2?("2:1"+RES_META[thb.kind].icon):"3:1")+'</text>';
+    }
+    if(state.villages && state.villages[h.id]){
+      var vc=state.villages[h.id].cloth;
+      s+='<circle cx="'+(h.x+15)+'" cy="'+(h.y-SIZE*0.42)+'" r="11" fill="rgba(20,10,8,.7)" stroke="#f0e0c8" stroke-width="1.1"/>';
+      s+='<text x="'+(h.x+15)+'" y="'+(h.y-SIZE*0.42+4)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#fff">'+vc+'</text>';
     }
     s+='</g>';
   });
@@ -1789,6 +1879,7 @@ function renderScoreboard(){
         (state.longestRoadOwner===pi?'<span title="'+esc(tr("tip_lroad"))+'">🛤️</span>':'')+
         (state.largestArmyOwner===pi?'<span title="'+esc(tr("tip_larmy"))+'">🏰</span>':'')+
         (p.islandVP?'<span title="'+esc(tr("tip_island"))+'">🏝️+'+p.islandVP+'</span>':'')+
+        (p.cloth?'<span title="'+esc(tr("tip_cloth"))+'">🧶'+p.cloth+'</span>':'')+
       '</span></div>';
   }).join("");
   return '<div class="panel pp scoreboard"><div class="seclbl">'+esc(tr("settlers"))+'</div>'+rows+'</div>';
@@ -1987,7 +2078,9 @@ document.addEventListener("click",function(ev){
     case "robberchoice": dispatch({type:"ROBBER_CHOICE",which:t.getAttribute("data-which")}); break;
     case "goldadj": dispatch({type:"GOLD_ADJ",res:t.getAttribute("data-res"),d:Number(t.getAttribute("data-d"))}); break;
     case "goldconfirm": dispatch({type:"GOLD_CONFIRM"}); break;
-    case "newgame": dispatch({type:"NEW_GAME",n:(state.players?state.players.length:state.ui.startN)}); break;
+    case "newgame": if(state.phase==="gameover"){dispatch({type:"TO_MENU"});}else{dispatch({type:"ASK_NEWGAME"});} break;
+    case "closenew": dispatch({type:"CLOSE_NEWGAME"}); break;
+    case "tomenu": dispatch({type:"TO_MENU"}); break;
     case "roll": dispatch({type:"ROLL"}); break;
     case "mode": dispatch({type:"SET_MODE",mode:t.getAttribute("data-mode")}); break;
     case "buydev": dispatch({type:"BUY_DEV"}); break;
