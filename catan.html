@@ -287,7 +287,7 @@ var I18N={
     menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer", menu_skiproll:"Startspieler-Wurf überspringen",
     menu_scenario:"Szenario", menu_scn_frei:"Neue Welt", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_vergessen:"Der vergessene Stamm", menu_scn_ozeanien:"Ozeanien",
     menu_wueste_blurb:"Durch die Wüste: eine Heimatinsel, dahinter fruchtbares Land – getrennt durch einen Wüstengürtel. Baue Straßen durch die Wüste oder segle außen herum. Jede Siedlung jenseits der Wüste = +1 Siegpunkt. Ziel: 14 Punkte.",
-    log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).", menu_vergessen_blurb:"Der vergessene Stamm: Heimatinsel + eine Insel mit freundlichen Ureinwohnern (🛖). Erreichst du ein Stammes-Feld per Straße/Schiff, gibt es eine Belohnung: Rohstoff, Entwicklungskarte oder Siegpunkt. Ziel: 13 Punkte.", log_tribe_res:"{name} erreicht den Stamm: Rohstoff geschenkt.", log_tribe_dev:"{name} erreicht den Stamm: Entwicklungskarte geschenkt.", log_tribe_vp:"{name} erreicht den Stamm: +1 Siegpunkt.",
+    log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).", menu_vergessen_blurb:"Der vergessene Stamm: Heimatinsel + eine Insel mit freundlichen Ureinwohnern (🛖). Erreichst du ein 🛖-Feld (Straße/Schiff), gibt es Rohstoff, Entwicklungskarte oder Siegpunkt. Baust du eine Siedlung neben ein ⚓-Feld, erhältst du einen Hafen. Ziel: 13 Punkte.", log_tribe_res:"{name} erreicht den Stamm: Rohstoff geschenkt.", log_tribe_dev:"{name} erreicht den Stamm: Entwicklungskarte geschenkt.", log_tribe_vp:"{name} erreicht den Stamm: +1 Siegpunkt.", log_tribe_harbor:"{name} erhält von den Ureinwohnern einen Hafen.",
     menu_vier_blurb:"Die vier Inseln: vier gleichwertige Inseln. Gründe auf beliebigen Inseln, erobere per Schiff die anderen. Erste Siedlung auf einer fremden Insel = 2 Extra-Siegpunkte. Ziel: 13 Punkte.",
     menu_ozeanien_blurb:"Ozeanien: zwei Heimatinseln, dazwischen ein Nebelmeer. Baue Schiffe ins Ungewisse – Nebelfelder werden beim Erreichen aufgedeckt (Land bringt sofort 1 Rohstoff). Ziel: 12 Punkte.",
     log_fog_sea:"{name} entdeckt offenes Meer im Nebel.",
@@ -328,7 +328,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v2.2 · Namen wie im Regelheft (Neue Welt) · offline",
+    foot:"v2.4 · Vergessener Stamm: Hafen-Plaettchen · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -374,7 +374,7 @@ var I18N={
     menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers", menu_skiproll:"Skip first-player roll",
     menu_scenario:"Scenario", menu_scn_frei:"New World", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_wueste:"Through the Desert", menu_scn_vergessen:"The Forgotten Tribe", menu_scn_ozeanien:"Oceania",
     menu_wueste_blurb:"Through the Desert: a home island with fertile land beyond, split by a desert belt. Build roads through the desert or sail around. Each settlement beyond the desert = +1 point. Target: 14 points.",
-    log_far_vp:"{name} settles beyond the desert (+1 point).", menu_vergessen_blurb:"The Forgotten Tribe: home island + an island of friendly natives (🛖). Reach a tribe hex by road/ship for a reward: a resource, a development card or a victory point. Target: 13 points.", log_tribe_res:"{name} reached the tribe: gifted a resource.", log_tribe_dev:"{name} reached the tribe: gifted a development card.", log_tribe_vp:"{name} reached the tribe: +1 point.",
+    log_far_vp:"{name} settles beyond the desert (+1 point).", menu_vergessen_blurb:"The Forgotten Tribe: home island + an island of friendly natives (🛖). Reach a tribe hex by road/ship for a reward: a resource, a development card or a victory point. Target: 13 points.", log_tribe_res:"{name} reached the tribe: gifted a resource.", log_tribe_dev:"{name} reached the tribe: gifted a development card.", log_tribe_vp:"{name} reached the tribe: +1 point.", log_tribe_harbor:"{name} gains a harbor from the natives.",
     menu_vier_blurb:"The Four Islands: four equal islands. Found on any islands, reach the others by ship. First settlement on a foreign island = 2 bonus points. Target: 13 points.",
     menu_ozeanien_blurb:"Oceania: two home islands with a foggy sea between them. Sail into the unknown – fog hexes are revealed when reached (land gives 1 instant resource). Target: 12 points.",
     log_fog_sea:"{name} discovers open sea in the fog.",
@@ -415,7 +415,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v2.2 · rulebook names (New World) · offline",
+    foot:"v2.4 · Forgotten Tribe: harbor tokens · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     phase_firstroll:"Determine first player",
@@ -800,13 +800,31 @@ function fixRedAdjacency(board,tiles){
   if(best) idx.forEach(function(i,k){tiles[i].number=best[k];});
   return tiles;
 }
+// "Neue Welt" (freies Spiel): main home island + small foreign islands; +1 VP per first settlement on a foreign island
+function buildNeueWelt(n){
+  var R=4, coords=seaCoords(R);
+  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
+  var board=assembleBoard(centers); board.coords=coords;
+  var ring4=coords.map(function(c,i){return{c:c,i:i};}).filter(function(o){return o.c.dist===4;});
+  ring4.sort(function(a,b){return Math.atan2(centers[a.i].y,centers[a.i].x)-Math.atan2(centers[b.i].y,centers[b.i].x);});
+  var nSmall=(n>=5)?9:5, smallSet={}, cnt=0;
+  for(var k=0;k<ring4.length&&cnt<nSmall;k+=2){ smallSet[ring4[k].i]=true; cnt++; }
+  var region=coords.map(function(c,i){ return c.dist<=2?"main":(smallSet[i]?"small":"sea"); });
+  var M=region.filter(function(r){return r==="main";}).length, S=region.filter(function(r){return r==="small";}).length;
+  var mainBag=shuffle(["desert"].concat(spreadRes(M-1))), smallBag=shuffle(spreadRes(S));
+  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
+  region.forEach(function(rg,hi){ if(rg==="main")tiles[hi]={resource:mainBag.pop(),number:null}; else if(rg==="small")tiles[hi]={resource:smallBag.pop(),number:null}; });
+  var producing=tiles.filter(function(t){return t.resource!=="sea"&&t.resource!=="desert";}).length;
+  var toks=makeTokens(producing);
+  tiles.forEach(function(t){ if(t.resource!=="sea"&&t.resource!=="desert") t.number=toks.pop(); });
+  var islandOf=region.map(function(){return null;}), iid=0;
+  region.forEach(function(rg,hi){ if(rg==="small") islandOf[hi]=iid++; });
+  var robberHex=tiles.findIndex(function(t){return t.resource==="desert";}); if(robberHex<0)robberHex=0;
+  var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
+}
 var SCEN={
-  frei:{key:"menu_scn_frei",players:[2,3,4,5,6],vpTarget:10,build:function(n){
-    var R=(n>=5)?4:3, board=buildSeaBoard(R), tiles=assignSeaTiles(board,R,(n>=5)?30:19);
-    var robberHex=tiles.findIndex(function(t){return t.resource==="desert";}); if(robberHex<0)robberHex=tiles.findIndex(function(t){return t.resource!=="sea";});
-    var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
-    return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null};
-  }},
+  frei:{key:"menu_scn_frei",players:[2,3,4,5,6],vpTarget:12,founding:"main",islandBonus:1,build:function(n){return buildNeueWelt(n);}},
   ufern:{key:"menu_scn_ufern",players:[3,4],vpTarget:14,founding:"main",build:function(n){return buildUfern(n);}},
   vierinseln:{key:"menu_scn_vier",players:[3,4],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
   wueste:{key:"menu_scn_wueste",players:[3,4],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
@@ -824,12 +842,18 @@ function buildVergessen(n){
   var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
   landIdx.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
   var homeHexes={}; region.forEach(function(rg,hi){ if(rg==="home") homeHexes[hi]=true; });
-  // tribe tokens on far hexes: reward kinds shuffled
+  // far hexes: coastal ones (r==-1) carry harbor tokens, the rest carry tribe reward tokens
   var farIds=[]; region.forEach(function(rg,hi){ if(rg==="far") farIds.push(hi); });
-  var kinds=shuffle(farIds.map(function(_,i){ var m=i%10; return m<4?"res":(m<7?"dev":"vp"); }));
-  var tribe={}; farIds.forEach(function(hi,k){ tribe[hi]={kind:kinds[k],res:tiles[hi].resource}; });
+  var coastFar=farIds.filter(function(hi){ return coords[hi].r===-1; });
+  var harborHexes=shuffle(coastFar.slice()).slice(0,4);
+  var harborSet={}; harborHexes.forEach(function(hi){ harborSet[hi]=true; });
+  var hspec=shuffle([{ratio:3,kind:"any"},{ratio:3,kind:"any"},{ratio:2,kind:"brick"},{ratio:2,kind:"ore"},{ratio:2,kind:"wheat"},{ratio:2,kind:"wood"}]);
+  var tribeHarbors={}; harborHexes.forEach(function(hi,k){ var s=hspec[k%hspec.length]; tribeHarbors[hi]={ratio:s.ratio,kind:s.kind}; });
+  var rewardIds=farIds.filter(function(hi){ return !harborSet[hi]; });
+  var kinds=shuffle(rewardIds.map(function(_,i){ var m=i%10; return m<4?"res":(m<7?"dev":"vp"); }));
+  var tribe={}; rewardIds.forEach(function(hi,k){ tribe[hi]={kind:kinds[k],res:tiles[hi].resource}; });
   var robberHex=region.indexOf("home"); var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
-  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,tribe:tribe};
+  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,tribe:tribe,tribeHarbors:tribeHarbors};
 }
 // "Durch die Wüste": home island + desert belt + fertile land beyond; +1 VP per settlement beyond the desert
 function buildWueste(n){
@@ -945,13 +969,13 @@ function buildUfern(n){
 }
 function freshGame(n,lang,mode,scnId,skip){
   mode=mode||"base";
-  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,tribe={},R=3;
+  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,tribe={},tribeHarbors={},R=3;
   if(mode==="sea"){
     scnId=scnId||"frei"; if(!SCEN[scnId])scnId="frei"; scenario=scnId;
     var built=SCEN[scnId].build(n);
     board=built.board; tiles=built.tiles; harbors=built.harbors; robberHex=built.robberHex; seaRobberHex=built.seaRobberHex;
     islandOf=built.islandOf; vpTarget=SCEN[scnId].vpTarget;
-    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{}; homeHexes=built.homeHexes||null; tribe=built.tribe||{};
+    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{}; homeHexes=built.homeHexes||null; tribe=built.tribe||{}; tribeHarbors=built.tribeHarbors||{};
   }else{
     board=buildBoard(rowsFor(n)); tiles=assignTiles(n);
     robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
@@ -963,7 +987,7 @@ function freshGame(n,lang,mode,scnId,skip){
   var base={
     phase:"firstroll", lang:lang, mode:mode, scenario:scenario, vpTarget:vpTarget,
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
-    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, tribe:tribe,
+    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, tribe:tribe, tribeHarbors:tribeHarbors,
     buildings:{}, roads:{}, ships:{}, current:0, devDeck:buildDevDeck(n), movedShip:false,
     setup:null, firstRoll:{active:active,idx:0,rolls:{},lastRoller:null,tie:false},
     turn:null, uiMode:null, pending:null, special:null,
@@ -1030,10 +1054,11 @@ function stealFrom(victimPi){
 function checkWin(){ var pi=activePlayer(); if(fullVP(pi)>=(state.vpTarget||10)){state.winner=pi;state.phase="gameover";pushLog("log_wins",{name:pi});} }
 function awardIsland(pi,v){
   if(!state.islandOf)return;
+  var bonus=(state.scenario&&SCEN[state.scenario]&&SCEN[state.scenario].islandBonus)||2;
   state.board.vertices[v].hexes.forEach(function(hi){
     var id=state.islandOf[hi]; if(id==null)return;
     var key=pi+":"+id;
-    if(!state.islandScored[key]){ state.islandScored[key]=true; state.players[pi].islandVP=(state.players[pi].islandVP||0)+2; pushLog("log_island_vp",{name:pi}); }
+    if(!state.islandScored[key]){ state.islandScored[key]=true; state.players[pi].islandVP=(state.players[pi].islandVP||0)+bonus; pushLog("log_island_vp",{name:pi}); }
   });
 }
 function markIslandsScored(pi,v){
@@ -1073,6 +1098,20 @@ function revealTribeAt(hi,pl){
 function revealTribeFor(edgeId,pl){
   if(!state.tribe)return;
   state.board.edges[edgeId].hexes.forEach(function(hi){ revealTribeAt(hi,pl); });
+}
+function isWaterHex(hi){ var r=state.tiles[hi].resource; return r==="sea"||r==="fog"; }
+// Claim a harbor token by building a settlement next to it: attach a real harbor to that vertex
+function claimTribeHarbor(v,tk){
+  var vert=state.board.vertices[v], edge=null, seaHex=null;
+  vert.edges.forEach(function(eid){
+    var e=state.board.edges[eid];
+    if(e.hexes.length===2){ var aW=isWaterHex(e.hexes[0]), bW=isWaterHex(e.hexes[1]); if(aW!==bW && !edge){ edge=e; seaHex=aW?e.hexes[0]:e.hexes[1]; } }
+    else if(e.hexes.length===1 && !isWaterHex(e.hexes[0]) && !edge){ edge=e; seaHex=null; }
+  });
+  if(!edge){ edge=state.board.edges[vert.edges[0]]; }
+  var sx=(seaHex!=null)?state.board.hexes[seaHex].x:edge.x, sy=(seaHex!=null)?state.board.hexes[seaHex].y:(edge.y-10);
+  var dx=sx-edge.x, dy=sy-edge.y, len=Math.hypot(dx,dy)||1;
+  state.harbors.push({edgeId:edge.id,kind:tk.kind,ratio:tk.ratio,v1:v,v2:(edge.v1===v?edge.v2:edge.v1),x:edge.x,y:edge.y,dx:dx/len,dy:dy/len});
 }
 
 /* ---------- actions (mutating, then render) ---------- */
@@ -1259,6 +1298,7 @@ function apply(a){
       state.buildings[a.vertexId]={owner:me1,type:"settlement"}; state.uiMode=null;
       awardIsland(me1,a.vertexId);
       awardFar(me1,a.vertexId);
+      if(state.tribeHarbors){ state.board.vertices[a.vertexId].hexes.forEach(function(hi){ var tk=state.tribeHarbors[hi]; if(tk){ delete state.tribeHarbors[hi]; claimTribeHarbor(a.vertexId,tk); pushLog("log_tribe_harbor",{name:me1}); } }); }
       pushLog("log_built_settle",{name:me1}); recomputeAwards(); checkWin(); return;
     }
     case "BUILD_CITY":{
@@ -1546,6 +1586,12 @@ function renderBoard(){
     if(state.tribe && state.tribe[h.id]){
       s+='<circle cx="'+h.x+'" cy="'+(h.y-SIZE*0.42)+'" r="13" fill="rgba(20,10,8,.55)" stroke="#f3ecda" stroke-width="1.2"/>';
       s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42+7)+'" text-anchor="middle" font-size="17">🛖</text>';
+    }
+    if(state.tribeHarbors && state.tribeHarbors[h.id]){
+      var thb=state.tribeHarbors[h.id];
+      s+='<circle cx="'+h.x+'" cy="'+(h.y-SIZE*0.42)+'" r="13" fill="rgba(20,10,8,.6)" stroke="#dfe8ff" stroke-width="1.2"/>';
+      s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42+6)+'" text-anchor="middle" font-size="15">⚓</text>';
+      s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42+18)+'" text-anchor="middle" font-size="8" font-weight="700" fill="#fff">'+(thb.ratio===2?("2:1"+RES_META[thb.kind].icon):"3:1")+'</text>';
     }
     s+='</g>';
   });
