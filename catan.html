@@ -61,13 +61,7 @@
   .menu .begin:hover{background:var(--redd)}
   .menu .blurb{font-family:ui-sans-serif,system-ui,sans-serif;font-size:11px;color:#d8a88f;margin-top:30px;line-height:1.6}
 
-  /* ---- lang toggle ---- */
-  .lang{display:inline-flex;gap:4px;padding:3px;border-radius:9px;background:rgba(0,0,0,.25)}
-  .lang.light{background:rgba(122,35,29,.1)}
-  .lang button{font-family:ui-sans-serif,system-ui,sans-serif;font-size:12px;font-weight:600;
-    padding:5px 10px;border-radius:7px;color:#e6c6ac;transition:.15s}
-  .lang.light button{color:var(--slate2)}
-  .lang button.on{background:var(--orange);color:#fff}
+
 
   /* ---- header ---- */
   .header{display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -150,15 +144,7 @@
   .costrow .cicons{flex:1;display:flex;gap:8px;font-size:15px}
   .costrow .cvp{color:#7a5e12;font-weight:700;font-size:13px}
   .modal{max-height:92vh;overflow-y:auto}
-  .slotrow{display:flex;align-items:center;gap:8px;background:var(--panel2);border-radius:8px;padding:6px 8px;margin-bottom:6px;font-size:13px}
-  .slotrow .slotname{font-weight:600;width:52px}
-  .slotrow .slotinfo{flex:1;color:#7a6e52;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .slotbtn{padding:4px 10px;border-radius:6px;background:var(--slate2);color:#f3ecda;font-size:12px;font-weight:600}
-  .slotbtn.load{background:#5b7d3a}
-  .savearea{width:100%;height:58px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;border:1px solid #d8cfb6;border-radius:8px;padding:6px;resize:vertical;background:#fff}
   .savehint{font-size:13px;color:#6a5f48;margin:0 0 14px;line-height:1.5}
-  .savefallback{margin-top:4px}
-  .savefallback summary{font-size:12px;color:#8a7d5e;cursor:pointer;padding:4px 0}
 
   .banktrade{border-radius:10px;background:var(--panel2);padding:8px}
   .banktrade .row{display:flex;align-items:center;gap:6px;font-size:14px}
@@ -264,8 +250,7 @@ var COSTS={
 var PIECE={road:15,ship:15,settlement:5,city:4}; // Almanach + Seefahrer: 15 Straßen, 15 Schiffe, 5 Siedlungen, 4 Städte
 
 /* ============================================================ i18n ============ */
-var I18N={
-  de:{
+var STR={
     subtitle:"Pass & Play · Besiedle die Insel", choose:"Wähle die Anzahl der Siedler",
     begin:"LOSLEGEN",
     blurb:"Eine originalgetreue Umsetzung des Klassikers · Straßen, Siedlungen, Städte, Räuber, Entwicklungskarten, Längste Handelsstraße & Größte Rittermacht · wer zuerst 10 Punkte erreicht, gewinnt.",
@@ -274,15 +259,11 @@ var I18N={
     costs_btn:"💰 Kosten", costs_title:"Baukosten", close:"Schließen",
     special_phase:"Außerordentliche Bauphase", special_hint:"Bauen & Karten kaufen erlaubt – kein Handel, kein Kartenausspielen.", special_done:"Fertig",
     log_special_start:"Außerordentliche Bauphase: {name} darf bauen.", log_special_next:"{name} darf bauen.", log_ship2:"Schiff 2: {name} macht einen eingeschränkten Zug (nur Vorrat-Handel).",
-    save_btn:"💾", save_title:"Speichern & Laden", save_slots:"Speicherplätze", save_slot:"Platz",
+    save_btn:"💾", save_title:"Speichern & Laden",
     save_file_hint:"Speichere den Spielstand als Datei (.ctn.json) und lade ihn später wieder.",
     save_file_do:"Als Datei speichern", load_file_do:"Aus Datei laden", save_file_ok:"Datei wird gespeichert …",
-    save_text_fallback:"Alternativ: als Text kopieren/einfügen",
-    save_do:"Speichern", load_do:"Laden", save_empty:"leer", save_delete:"Löschen",
-    save_ls_missing:"Automatische Speicherplätze sind hier nicht verfügbar – nutze Export/Import.",
-    save_export:"Export – Text kopieren und sichern:", save_copy:"Kopieren",
-    save_import:"Import – gespeicherten Text einfügen:", save_import_do:"Text laden", save_close:"Schließen",
-    save_err:"Ungültige Speicherdaten.", save_ok:"Gespeichert.", save_copied:"Kopiert.",
+    save_close:"Schließen",
+    save_err:"Ungültige Speicherdaten.",
     place_a:"Setze die hervorgehobene", s_settlement:"Siedlung", s_road:"Straße", s_road_ship:"Straße oder Schiff", on_board:"auf den Plan.",
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     click_searobber:"Klicke ein Seefeld, um den Seeräuber zu versetzen.",
@@ -353,7 +334,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v4.0 · Neu: Computergegner (Einfach/Mittel/Schwer) · offline",
+    foot:"v4.1 · aufgeräumt · deutschsprachig · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -375,120 +356,9 @@ var I18N={
     log_bought_dev:"{name} kauft eine Entwicklungskarte.", log_played_dev:"{name} spielt {card}.",
     log_plenty:"{name} nimmt {resList}.", log_monopoly:"{name} monopolisiert {res} (+{count}).",
     log_bank:"{name} tauscht {ratio} {give} → 1 {get}.", log_next:"{name} ist am Zug.", log_wins:"{name} gewinnt!"
-  },
-  en:{
-    subtitle:"Pass & Play · Settle the Island", choose:"Choose your number of settlers", begin:"BEGIN",
-    blurb:"A faithful take on the classic island game · roads, settlements, cities, the robber, development cards, Longest Road & Largest Army · first to 10 points wins.",
-    phase_setup:"Setup", phase_play:"In play", phase_over:"Game over",
-    turn:"Turn:", new_game:"New game", info_btn:"ℹ️", info_target:"Target:", confirm_new_title:"New game?", confirm_new_msg:"The current game will be lost. Do you really want to start a new game?", confirm_new_yes:"Yes, to menu", confirm_new_no:"Cancel",
-    costs_btn:"💰 Costs", costs_title:"Build costs", close:"Close",
-    special_phase:"Special build phase", special_hint:"Build & buy cards only — no trading, no playing cards.", special_done:"Done",
-    log_special_start:"Special build phase: {name} may build.", log_special_next:"{name} may build.", log_ship2:"Ship 2: {name} takes a restricted turn (bank trade only).",
-    save_btn:"💾", save_title:"Save & Load", save_slots:"Save slots", save_slot:"Slot",
-    save_file_hint:"Save your game as a file (.ctn.json) and load it again later.",
-    save_file_do:"Save to file", load_file_do:"Load from file", save_file_ok:"Saving file …",
-    save_text_fallback:"Or: copy/paste as text",
-    save_do:"Save", load_do:"Load", save_empty:"empty", save_delete:"Delete",
-    save_ls_missing:"Automatic save slots aren't available here – use Export/Import.",
-    save_export:"Export – copy and keep this text:", save_copy:"Copy",
-    save_import:"Import – paste saved text:", save_import_do:"Load text", save_close:"Close",
-    save_err:"Invalid save data.", save_ok:"Saved.", save_copied:"Copied.",
-    place_a:"Place a highlighted", s_settlement:"settlement", s_road:"road", s_road_ship:"road or ship", on_board:"on the board.",
-    click_robber:"Click a hex to move the robber.",
-    click_searobber:"Click a sea hex to move the pirate.",
-    menu_mode:"Game variant", menu_base:"Base game", menu_sea:"Seafarers", menu_skiproll:"Skip first-player roll",
-    menu_scenario:"Scenario", menu_scn_frei:"New World", menu_scn_ufern:"New Shores", menu_scn_vier:"The Four Islands", menu_scn_wueste:"Through the Desert", menu_scn_vergessen:"The Forgotten Tribe", menu_scn_stoffe:"Cloth for Catan", menu_scn_ozeanien:"Oceania", menu_scn_piraten:"The Pirate Islands",
-    menu_piraten_blurb:"The Pirate Islands: settle the eastern island and build one fixed ship lane out to your own pirate-held fortress in the west. Instead of the robber, a pirate fleet patrols a set route — if it lands on a hex next to a settlement, the number of warships you own decides the raid. Knight (and, with 4 players, victory point) cards turn a ship into a warship. Liberate your fortress and reach 10 points to win.",
-    attack_fortress:"⚔️ Attack pirate fortress", tip_fortress:"Pirate fortress (chips remaining)",
-    devd_pirat_convert:"Turns the rearmost normal ship on your fortress lane into a warship.",
-    log_pirate_move:"The pirate fleet sails on {sum} hex(es).",
-    log_pirate_overrun:"Pirate raid: {name} loses {count} card(s).",
-    log_pirate_repel:"{name} repels the pirates and picks a resource.",
-    log_pirate_tie:"Draw against the pirate fleet at {name} — nothing happens.",
-    log_pirate_steal_prompt:"Choose who to steal a card from.",
-    log_ship_converted:"{name} turns a ship into a warship.",
-    log_ship_convert_none:"{name} has no ship left to convert.",
-    log_fortress_won:"{name} captures a fortress chip! (⚔{mine} vs 🎲{roll})",
-    log_fortress_lost:"{name} loses the fortress fight and 2 ships. (⚔{mine} vs 🎲{roll})",
-    log_fortress_tie:"Draw in the fortress fight — {name} loses 1 ship. (⚔{mine} vs 🎲{roll})",
-    log_fortress_liberated:"{name} liberates their own pirate fortress!",
-    menu_scn_wunder:"The Catan Wonders",
-    menu_wunder_blurb:"The Catan Wonders: one large home island with a few remote small islands (first settlement there = +1 point), plus marked crossings for the Great Wall 🧱, Great Bridge 🌉, and (with 5–6 players) Lighthouse 💡. Meet a wonder's condition to claim it and build it up in 4 stages. First to complete a wonder wins instantly — or be the one with 10 points and the highest wonder stage.",
-    wonder_wall:"Great Wall", wonder_bridge:"Great Bridge", wonder_theater:"Great Theater", wonder_monument:"Monument", wonder_castle:"Castle", wonder_lighthouse:"Lighthouse", wonder_library:"Great Library",
-    wonder_stage:"Stage {stage}/4", wonder_build:"Build stage", wonder_choose:"You meet the condition for:",
-    log_wonder_claimed:"{name} claims the \"{wonder}\" wonder.",
-    log_wonder_stage:"{name} builds stage {stage} of \"{wonder}\".",
-    log_wonder_win:"{name} completes a Catan Wonder and wins!",
-    menu_seats:"Player seats (tap to change)", bot_human:"Human", bot_easy:"AI Easy", bot_medium:"AI Medium", bot_hard:"AI Hard",
-    bot_thinking:"🤖 {name} is thinking …", bot_tag:"🤖",
-    menu_wueste_blurb:"Through the Desert: a home island with fertile land beyond, split by a desert belt. Build roads through the desert or sail around. Each settlement beyond the desert = +1 point. Target: 14 points.",
-    log_far_vp:"{name} settles beyond the desert (+1 point).", menu_vergessen_blurb:"The Forgotten Tribe: home island + an island of friendly natives (🛖). Reach a tribe hex by road/ship for a reward: a resource, a development card or a victory point. Target: 13 points.", log_tribe_res:"{name} reached the tribe: gifted a resource.", log_tribe_dev:"{name} reached the tribe: gifted a development card.", log_tribe_vp:"{name} reached the tribe: +1 point.", log_tribe_harbor:"{name} gains a harbor from the natives.", menu_stoffe_blurb:"Cloth for Catan: two home islands with 4 villages between them (🧶, 5 cloth each). Build a ship line to a village -> 1 cloth at once, then 1 cloth whenever its number is rolled. 2 cloth = 1 point. No Longest Road. Target: 14.", log_cloth:"{name} receives a bale of cloth.", tip_cloth:"Cloth bales (2 = 1 point)",
-    menu_vier_blurb:"The Four Islands: four equal islands. Found on any islands, reach the others by ship. First settlement on a foreign island = 2 bonus points. Target: 13 points.",
-    menu_ozeanien_blurb:"Oceania: two home islands with a foggy sea between them. Sail into the unknown – fog hexes are revealed when reached (land gives 1 instant resource). Target: 12 points.",
-    log_fog_sea:"{name} discovers open sea in the fog.",
-    log_fog_land:"{name} discovers new land (+1 resource).",
-    menu_sea_blurb:"New World (free play): explore the sea, build ships and settle new islands. Random sea board.",
-    menu_ufern_blurb:"New Shores: large home island + small gold islands. First settlement on a small island = 2 bonus points. Target: 14 points.",
-    tip_island:"Island victory points",
-    log_island_vp:"{name} reached a new island (+2 points).",
-    b_ship:"Ship",
-    moveship_btn:"Move ship", cancel:"Cancel",
-    moveship_from:"Pick a movable ship (orange).",
-    moveship_to:"Pick the destination for the ship.",
-    log_moved_ship:"{name} moved a ship.",
-    rc_title:"Robber or pirate?", rc_desc:"You rolled a 7 or played a knight – choose which figure to move.",
-    rc_robber:"Robber", rc_searobber:"Pirate",
-    gold_title:"Gold river – {name} chooses", gold_desc:"Take {count} resource(s) of your choice.", gold_btn:"Take {sel}/{count}",
-    roll:"🎲 Roll dice", end_turn:"End turn →", dev_cards:"Development cards",
-    new_suffix:"·new", vp_card:"★ Victory ×", settlers:"Settlers", game_log:"Game log",
-    bank_trade:"Maritime trade", trade:"Trade", supply:"Supply", cards:"cards",
-    tip_hand:"cards in hand", tip_knights:"knights played", tip_lroad:"Longest Road (+2)",
-    tip_larmy:"Largest Army (+2)", tip_newdev:"Bought this turn — playable next turn",
-    b_road:"Road", b_settlement:"Settlement", b_city:"City", b_dev:"Dev card",
-    discard_title:"{name} must discard", discard_desc:"Too many cards. Choose {count} to return to the bank.",
-    discard_have:"have", discard_btn:"Discard {sel}/{count}",
-    steal_title:"Steal from whom?", plenty_title:"Year of Plenty", plenty_desc:"Take any two resources from the bank.",
-    plenty_picked:"Picked:", plenty_reset:"reset", plenty_btn:"Take resources",
-    mono_title:"Monopoly", mono_desc:"Name a resource — every other player hands you all of theirs.",
-    trade_btn:"Trade", trade_title:"Player trade", trade_partner:"Trading partner", ship1_hint:"Ship 1 – full turn (roll, trade with all).", ship2_hint:"Ship 2 – bank trade only, no roll.", end_ship1:"End turn → Ship 2",
-    trade_give:"You give", trade_want:"You receive", trade_send:"Send offer", trade_cancel:"Cancel",
-    trade_offer:"{name} offers you", trade_arrow:"for", trade_accept:"Accept", trade_decline:"Decline",
-    trade_cant:"You don't have enough.",
-    log_trade:"{name} trades with {victim}: {g} → {w}.", log_trade_decline:"{victim} declined {name}'s offer.",
-    win_title:"{name} wins!", win_sub:"Reached 10 victory points and settled the island.", win_again:"PLAY AGAIN",
-    rb_hint:"Place 2 roads for free.",
-    dev_knight:"Knight", dev_road:"Road Building", dev_plenty:"Year of Plenty", dev_monopoly:"Monopoly", dev_vp:"Victory Point",
-    devd_knight:"Move the robber and steal a card.", devd_road:"Place 2 roads for free.",
-    devd_plenty:"Take any 2 resources from the bank.", devd_monopoly:"Name a resource; take everyone's of it.",
-    devd_vp:"Worth 1 point. Kept hidden.",
-    res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
-    c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v4.0 · New: Computer opponents (Easy/Medium/Hard) · offline",
-    log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
-    log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
-    phase_firstroll:"Determine first player",
-    first_hint:"Roll in turn – highest total goes first.",
-    first_tie:"Tie! The tied players roll again.",
-    first_roll_btn:"🎲 {name} rolls",
-    log_first_intro:"Determine the first player: roll in turn.",
-    log_first_roll:"{name} rolled {sum} ({d1}+{d2}).",
-    log_first_tie:"Tie – rolling again.",
-    log_first_start:"{name} goes first.",
-    log_setup_done:"Setup complete. {name} to roll.",
-    log_roll:"{name} rolled {sum} ({d1}+{d2}).",
-    log_robber_discard:"Robber! Players with 8+ cards discard half.", log_move_robber:"Move the robber.",
-    log_robber_choice:"Choose: move the robber or the pirate.", log_move_searobber:"Move the pirate.",
-    log_gold:"Gold river! Affected players choose resources.", log_gold_take:"{name} takes {count} gold resource(s).",
-    log_discarded:"{name} discarded {count} cards.", log_robber_nosteal:"Robber moved. No one to steal from.",
-    log_stole:"{name} stole from {victim}.", log_nothing_steal:"Nothing to steal.",
-    log_built_road:"{name} built a road.", log_built_ship:"{name} built a ship.", log_built_settle:"{name} built a settlement.", log_built_city:"{name} upgraded to a city.",
-    log_bought_dev:"{name} bought a development card.", log_played_dev:"{name} played {card}.",
-    log_plenty:"{name} took {resList}.", log_monopoly:"{name} monopolized {res} (+{count}).",
-    log_bank:"{name} traded {ratio} {give} → 1 {get}.", log_next:"{name}'s turn.", log_wins:"{name} wins!"
-  }
 };
 function fmt(s,p){ if(!p) return s; return s.replace(/\{(\w+)\}/g,function(_,k){return p[k]!==undefined?p[k]:"{"+k+"}";}); }
-function tr(key,p){ var L=state.lang; var s=(I18N[L]&&I18N[L][key])||I18N.en[key]||key; return fmt(s,p); }
+function tr(key,p){ var s=STR[key]||key; return fmt(s,p); }
 function resLabel(r){ return tr("res_"+r); }
 function devLabel(c){ return tr("dev_"+c); }
 function devDesc(c){ if(state.scenario==="piraten"&&(c==="knight"||c==="vp"))return tr("devd_pirat_convert"); return tr("devd_"+c); }
@@ -547,28 +417,6 @@ function seaCoords(R){
     out.push({q:q,r:r,dist:(Math.abs(q)+Math.abs(r)+Math.abs(q+r))/2});
   }
   return out;
-}
-function buildSeaBoard(R){
-  var coords=seaCoords(R);
-  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
-  var board=assembleBoard(centers);
-  board.coords=coords; // parallel to hexes
-  return board;
-}
-function assignSeaTiles(board,R,target){
-  target=target||19;
-  var landIdx=board.coords.map(function(c,i){return{i:i,d:c.dist};})
-    .filter(function(o){return o.d<R;}).sort(function(a,b){return a.d-b.d;})
-    .slice(0,target).map(function(o){return o.i;});
-  var nLand=landIdx.length, golds=(nLand>=28)?2:1, deserts=1, resCount=nLand-golds-deserts;
-  var pool=shuffle([].concat(Array(golds).fill("gold"),Array(deserts).fill("desert"),spreadRes(resCount)));
-  var tokens=makeTokens(nLand-deserts); var ti=0; // gold produces (gold river), desert has no number
-  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
-  landIdx.forEach(function(hi,k){
-    var res=pool[k]||"sea";
-    tiles[hi]={resource:res,number:(res==="desert"||res==="sea")?null:tokens[ti++]};
-  });
-  return tiles;
 }
 function edgeKind(eid){
   var hs=state.board.edges[eid].hexes, land=false, sea=false;
@@ -786,7 +634,7 @@ function recomputeAwards(){
 
 /* ---------- state ---------- */
 var state=menuState();
-function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3,startMode:"base",startScn:"frei",startSkipRoll:false,seatBots:[null,null,null]}};}
+function menuState(){return{phase:"menu",ui:{startN:3,startMode:"base",startScn:"frei",startSkipRoll:false,seatBots:[null,null,null]}};}
 function menuCounts(){
   if(state.ui.startMode==="sea"){ return (SCEN[state.ui.startScn]||SCEN.frei).players; }
   return [2,3,4,5,6];
@@ -830,10 +678,6 @@ function onLoadFile(ev){
   r.onerror=function(){ state.ui.saveMsg="save_err"; render(); };
   r.readAsText(f);
 }
-function lsAvailable(){try{localStorage.setItem("__catan_t","1");localStorage.removeItem("__catan_t");return true;}catch(e){return false;}}
-function saveToSlot(slot){try{localStorage.setItem("catan_save_"+slot,serialize());localStorage.setItem("catan_meta_"+slot,JSON.stringify({at:Date.now(),players:state.players?state.players.length:0,phase:state.phase}));return true;}catch(e){return false;}}
-function loadFromSlot(slot){try{var j=localStorage.getItem("catan_save_"+slot);if(!j)return false;applyLoad(j);return true;}catch(e){return false;}}
-function slotMeta(slot){try{var m=localStorage.getItem("catan_meta_"+slot);return m?JSON.parse(m):null;}catch(e){return null;}}
 function spreadRes(k){var kinds=["brick","wood","sheep","wheat","ore"],out=[];for(var i=0;i<k;i++)out.push(kinds[i%5]);return out;}
 function makeTokens(k){
   var base=[2,3,3,4,4,5,5,6,6,8,8,9,9,10,10,11,11,12], extra=[3,4,5,9,10,11,4,8,5,10], out=base.slice();
@@ -1314,7 +1158,7 @@ function buildUfern(n){
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
 }
-function freshGame(n,lang,mode,scnId,skip,seatBots){
+function freshGame(n,mode,scnId,skip,seatBots){
   mode=mode||"base";
   var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,tribe={},tribeHarbors={},villages={},clothReserve=0,R=3;
   var preBuildings={}, fortresses=null, pathEdges=null, pathSet=null, pirateRoute=null, wonders=null, wonderTaboo=null;
@@ -1335,7 +1179,7 @@ function freshGame(n,lang,mode,scnId,skip,seatBots){
   var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0,cloth:0,bot:(seatBots&&seatBots[i])||null});
   var active=[]; for(var a=0;a<n;a++)active.push(a);
   var base={
-    phase:"firstroll", lang:lang, mode:mode, scenario:scenario, vpTarget:vpTarget,
+    phase:"firstroll", mode:mode, scenario:scenario, vpTarget:vpTarget,
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
     islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, tribe:tribe, tribeHarbors:tribeHarbors, villages:villages, clothReserve:clothReserve, clothConn:{},
     fortresses:fortresses, pathEdges:pathEdges, pathSet:pathSet, pirateRoute:pirateRoute, pirateIdx:0, attackedFortress:false, pendingPirateSum:null,
@@ -1526,12 +1370,8 @@ function claimTribeHarbor(v,tk){
 function dispatch(a){ apply(a); render(); }
 function apply(a){
   switch(a.type){
-    case "SET_LANG": state.lang=a.lang; return;
     case "TOGGLE_COSTS": state.ui.showCosts=!state.ui.showCosts; return;
     case "TOGGLE_SAVE": state.ui.showSave=!state.ui.showSave; state.ui.saveMsg=""; return;
-    case "SAVE_SLOT": state.ui.saveMsg=saveToSlot(a.slot)?"save_ok":"save_err"; return;
-    case "LOAD_SLOT": if(!loadFromSlot(a.slot))state.ui.saveMsg="save_err"; return;
-    case "IMPORT_TEXT": try{applyLoad(a.json);}catch(e){state.ui.saveMsg="save_err";} return;
     case "SET_SAVE_MSG": state.ui.saveMsg=a.msg; return;
     case "SET_N": state.ui.startN=a.n; clampSeatBots(); return;
     case "SET_STARTMODE":{
@@ -1547,7 +1387,7 @@ function apply(a){
       return;
     }
     case "SET_SKIPROLL": state.ui.startSkipRoll=!state.ui.startSkipRoll; return;
-    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei", state.ui.startSkipRoll, (state.ui.seatBots||[]).slice(0,a.n||state.ui.startN||3)); return;
+    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei", state.ui.startSkipRoll, (state.ui.seatBots||[]).slice(0,a.n||state.ui.startN||3)); return;
     case "ASK_NEWGAME": state.ui.confirmNew=true; return;
     case "TOGGLE_INFO": state.ui.showInfo=!state.ui.showInfo; return;
     case "CLOSE_INFO": state.ui.showInfo=false; return;
@@ -1866,7 +1706,6 @@ function advanceTurn(){
   for(var k in state.ships) state.ships[k].fresh=false;
   pushLog("log_next",{name:state.current});
 }
-function trailingReducerEnd(){}
 
 /* ============================================================ BOT AI ============ */
 var PIP_WEIGHT={2:1,3:2,4:3,5:4,6:5,8:5,9:4,10:3,11:2,12:1};
@@ -2143,16 +1982,9 @@ function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").repl
 function pips(n){var m={2:"•",12:"•",3:"••",11:"••",4:"•••",10:"•••",5:"••••",9:"••••",6:"•••••",8:"•••••"};return m[n]||"";}
 
 function render(){
-  document.documentElement.lang=state.lang;
   var app=document.getElementById("app");
   app.innerHTML = state.phase==="menu" ? renderMenu() : renderGame();
   scheduleBot();
-}
-
-function langToggle(light){
-  return '<div class="lang'+(light?" light":"")+'">'+
-    ["de","en"].map(function(l){return '<button data-act="lang" data-lang="'+l+'" class="'+(state.lang===l?"on":"")+'">'+l.toUpperCase()+'</button>';}).join("")+
-  '</div>';
 }
 
 function botLevelLabel(lvl){ return tr(lvl==="easy"?"bot_easy":lvl==="medium"?"bot_medium":lvl==="hard"?"bot_hard":"bot_human"); }
@@ -2178,7 +2010,6 @@ function renderMenu(){
         esc(colorName(i))+': '+esc(botLevelLabel(lvl))+'</button>';
     }).join("")+'</div>';
   return '<div class="menu"><div class="inner">'+
-    '<div style="display:flex;justify-content:center;margin-bottom:24px">'+langToggle(false)+'</div>'+
     '<div class="applogo '+(mode==="sea"?"applogo-sea":"applogo-base")+'"></div>'+
     '<h1>CATAN</h1>'+
     '<div class="sub">'+esc(tr("subtitle"))+'</div>'+
@@ -2727,7 +2558,6 @@ function costsOverlay(){
   body+='</div><button class="mbtn" style="background:#33526a;margin-top:10px" data-act="costs">'+esc(tr("close"))+'</button>';
   return shell("#33526a",body);
 }
-function shortPhase(p){return p==="setup"?tr("phase_setup"):p==="gameover"?tr("phase_over"):tr("phase_play");}
 function saveOverlay(){
   var body='<h3 style="color:var(--slate2)">'+esc(tr("save_title"))+'</h3>';
   if(state.ui.saveMsg)body+='<p style="color:#5b7d3a;margin:0 0 10px;font-weight:600">'+esc(tr(state.ui.saveMsg))+'</p>';
@@ -2772,16 +2602,11 @@ document.addEventListener("click",function(ev){
   if(t.hasAttribute("data-hex")){dispatch({type:(state.uiMode==="moveSeaRobber"?"MOVE_SEA_ROBBER":"MOVE_ROBBER"),hexId:Number(t.getAttribute("data-hex"))});return;}
   var act=t.getAttribute("data-act");
   switch(act){
-    case "lang": dispatch({type:"SET_LANG",lang:t.getAttribute("data-lang")}); break;
     case "costs": dispatch({type:"TOGGLE_COSTS"}); break;
     case "togglesave": dispatch({type:"TOGGLE_SAVE"}); break;
     case "savefile": if(downloadSave())dispatch({type:"SET_SAVE_MSG",msg:"save_file_ok"}); else dispatch({type:"SET_SAVE_MSG",msg:"save_err"}); break;
     case "loadfile": { var fi=document.getElementById("loadFileInput"); if(fi)fi.click(); break; }
     case "closesave": dispatch({type:"TOGGLE_SAVE"}); break;
-    case "saveslot": dispatch({type:"SAVE_SLOT",slot:Number(t.getAttribute("data-slot"))}); break;
-    case "loadslot": dispatch({type:"LOAD_SLOT",slot:Number(t.getAttribute("data-slot"))}); break;
-    case "importsave": { var ia=document.getElementById("importArea"); dispatch({type:"IMPORT_TEXT",json:ia?ia.value:""}); break; }
-    case "copyexport": { var ea=document.getElementById("exportArea"); if(ea){ea.select();try{document.execCommand("copy");}catch(e){}} dispatch({type:"SET_SAVE_MSG",msg:"save_copied"}); break; }
     case "setn": dispatch({type:"SET_N",n:Number(t.getAttribute("data-n"))}); break;
     case "cycleseatbot": dispatch({type:"CYCLE_SEAT_BOT",seat:Number(t.getAttribute("data-seat"))}); break;
     case "setstartmode": dispatch({type:"SET_STARTMODE",mode:t.getAttribute("data-mode")}); break;
