@@ -309,6 +309,8 @@ var I18N={
     log_wonder_claimed:"{name} beansprucht das Wunder „{wonder}“.",
     log_wonder_stage:"{name} baut Stufe {stage} von „{wonder}“.",
     log_wonder_win:"{name} vollendet ein Catanisches Wunder und gewinnt!",
+    menu_seats:"Spieler-Plätze (tippen zum Ändern)", bot_human:"Mensch", bot_easy:"KI Einfach", bot_medium:"KI Mittel", bot_hard:"KI Schwer",
+    bot_thinking:"🤖 {name} überlegt …", bot_tag:"🤖",
     menu_wueste_blurb:"Durch die Wüste: eine Heimatinsel, dahinter fruchtbares Land – getrennt durch einen Wüstengürtel. Baue Straßen durch die Wüste oder segle außen herum. Jede Siedlung jenseits der Wüste = +1 Siegpunkt. Ziel: 14 Punkte.",
     log_far_vp:"{name} siedelt jenseits der Wüste (+1 Siegpunkt).", menu_vergessen_blurb:"Der vergessene Stamm: Heimatinsel + eine Insel mit freundlichen Ureinwohnern (🛖). Erreichst du ein 🛖-Feld (Straße/Schiff), gibt es Rohstoff, Entwicklungskarte oder Siegpunkt. Baust du eine Siedlung neben ein ⚓-Feld, erhältst du einen Hafen. Ziel: 13 Punkte.", log_tribe_res:"{name} erreicht den Stamm: Rohstoff geschenkt.", log_tribe_dev:"{name} erreicht den Stamm: Entwicklungskarte geschenkt.", log_tribe_vp:"{name} erreicht den Stamm: +1 Siegpunkt.", log_tribe_harbor:"{name} erhält von den Ureinwohnern einen Hafen.", menu_stoffe_blurb:"Stoffe für Catan: zwei Heimatinseln, dazwischen 4 Dörfer (🧶, je 5 Stoff). Baue eine Schiffslinie zu einem Dorf -> sofort 1 Stoff, danach 1 Stoff bei jedem Wurf der Dorfzahl. 2 Stoff = 1 Siegpunkt. Keine Längste Handelsstraße. Ziel: 14.", log_cloth:"{name} erhält einen Stoffballen.", tip_cloth:"Stoffballen (2 = 1 Siegpunkt)",
     menu_vier_blurb:"Die vier Inseln: vier gleichwertige Inseln. Gründe auf beliebigen Inseln, erobere per Schiff die anderen. Erste Siedlung auf einer fremden Insel = 2 Extra-Siegpunkte. Ziel: 13 Punkte.",
@@ -351,7 +353,7 @@ var I18N={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v3.0 · Neu: Die Catanischen Wunder (3–6 Spieler) · offline",
+    foot:"v4.0 · Neu: Computergegner (Einfach/Mittel/Schwer) · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -417,6 +419,8 @@ var I18N={
     log_wonder_claimed:"{name} claims the \"{wonder}\" wonder.",
     log_wonder_stage:"{name} builds stage {stage} of \"{wonder}\".",
     log_wonder_win:"{name} completes a Catan Wonder and wins!",
+    menu_seats:"Player seats (tap to change)", bot_human:"Human", bot_easy:"AI Easy", bot_medium:"AI Medium", bot_hard:"AI Hard",
+    bot_thinking:"🤖 {name} is thinking …", bot_tag:"🤖",
     menu_wueste_blurb:"Through the Desert: a home island with fertile land beyond, split by a desert belt. Build roads through the desert or sail around. Each settlement beyond the desert = +1 point. Target: 14 points.",
     log_far_vp:"{name} settles beyond the desert (+1 point).", menu_vergessen_blurb:"The Forgotten Tribe: home island + an island of friendly natives (🛖). Reach a tribe hex by road/ship for a reward: a resource, a development card or a victory point. Target: 13 points.", log_tribe_res:"{name} reached the tribe: gifted a resource.", log_tribe_dev:"{name} reached the tribe: gifted a development card.", log_tribe_vp:"{name} reached the tribe: +1 point.", log_tribe_harbor:"{name} gains a harbor from the natives.", menu_stoffe_blurb:"Cloth for Catan: two home islands with 4 villages between them (🧶, 5 cloth each). Build a ship line to a village -> 1 cloth at once, then 1 cloth whenever its number is rolled. 2 cloth = 1 point. No Longest Road. Target: 14.", log_cloth:"{name} receives a bale of cloth.", tip_cloth:"Cloth bales (2 = 1 point)",
     menu_vier_blurb:"The Four Islands: four equal islands. Found on any islands, reach the others by ship. First settlement on a foreign island = 2 bonus points. Target: 13 points.",
@@ -459,7 +463,7 @@ var I18N={
     devd_vp:"Worth 1 point. Kept hidden.",
     res_wood:"Wood", res_brick:"Brick", res_sheep:"Sheep", res_wheat:"Wheat", res_ore:"Ore",
     c0:"Red", c1:"Blue", c2:"Orange", c3:"White", c4:"Green", c5:"Brown",
-    foot:"v3.0 · New: The Catan Wonders (3–6 players) · offline",
+    foot:"v4.0 · New: Computer opponents (Easy/Medium/Hard) · offline",
     log_setup_settle:"{name} placed a settlement.", log_setup_road:"{name} placed a road.", log_setup_ship:"{name} placed a ship.",
     log_setup_prompt:"{name}, place a settlement.", log_setup_first:"Place your first settlements.",
     phase_firstroll:"Determine first player",
@@ -721,6 +725,22 @@ function activePlayer(){
   if(state.part2)return schiff2Seat();
   return state.current;
 }
+function isBot(pi){ return pi!=null && state.players && state.players[pi] && !!state.players[pi].bot; }
+function pendingDeciderPi(){
+  if(!state.pending)return null;
+  if(state.pending.type==="discard"||state.pending.type==="gold")return state.pending.queue[state.pending.qi].pi;
+  if(state.pending.type==="trade_offer")return state.pending.partner;
+  return activePlayer();
+}
+function nextActorPi(){
+  if(!state||state.phase==="menu"||state.phase==="gameover")return null;
+  if(state.pending)return pendingDeciderPi();
+  if(state.uiMode==="moveRobber"||state.uiMode==="moveSeaRobber")return activePlayer();
+  if(state.phase==="firstroll")return state.firstRoll.active[state.firstRoll.idx];
+  if(state.phase==="setup")return state.setup.order[state.setup.idx];
+  if(state.special)return state.special.queue[state.special.idx];
+  return activePlayer();
+}
 function resIcons(map){var o=[];RES.forEach(function(r){if(map[r]>0)o.push(map[r]+RES_META[r].icon);});return o.join(" ")||"–";}
 
 /* ---------- victory points ---------- */
@@ -766,12 +786,19 @@ function recomputeAwards(){
 
 /* ---------- state ---------- */
 var state=menuState();
-function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3,startMode:"base",startScn:"frei",startSkipRoll:false}};}
+function menuState(){return{phase:"menu",lang:(state&&state.lang)||"de",ui:{startN:3,startMode:"base",startScn:"frei",startSkipRoll:false,seatBots:[null,null,null]}};}
 function menuCounts(){
   if(state.ui.startMode==="sea"){ return (SCEN[state.ui.startScn]||SCEN.frei).players; }
   return [2,3,4,5,6];
 }
-function clampStartN(){ var c=menuCounts(); if(c.indexOf(state.ui.startN)<0) state.ui.startN=c[0]; }
+function clampStartN(){ var c=menuCounts(); if(c.indexOf(state.ui.startN)<0) state.ui.startN=c[0]; clampSeatBots(); }
+function clampSeatBots(){
+  var n=state.ui.startN, arr=state.ui.seatBots||[];
+  while(arr.length<n)arr.push(null);
+  arr.length=n;
+  state.ui.seatBots=arr;
+}
+function cycleBotLevel(lvl){ return lvl===null?"easy":lvl==="easy"?"medium":lvl==="medium"?"hard":null; }
 function freshUi(){return{bankGive:"wood",bankGet:"ore",discardSel:emptyRes(),plentyPicks:[],goldSel:emptyRes(),trade:{give:emptyRes(),want:emptyRes(),partner:null},showCosts:false,showSave:false,saveMsg:""};}
 function serialize(){var snap={};for(var k in state){if(k==="ui")continue;snap[k]=state[k];}return JSON.stringify(snap);}
 function applyLoad(json){var parsed=JSON.parse(json);parsed.ui=freshUi();state=parsed;}
@@ -1287,7 +1314,7 @@ function buildUfern(n){
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
 }
-function freshGame(n,lang,mode,scnId,skip){
+function freshGame(n,lang,mode,scnId,skip,seatBots){
   mode=mode||"base";
   var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,tribe={},tribeHarbors={},villages={},clothReserve=0,R=3;
   var preBuildings={}, fortresses=null, pathEdges=null, pathSet=null, pirateRoute=null, wonders=null, wonderTaboo=null;
@@ -1305,7 +1332,7 @@ function freshGame(n,lang,mode,scnId,skip){
     harbors=assignHarbors(board,n);
   }
   fixRedAdjacency(board,tiles); // no two red numbers (6/8) adjacent
-  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0,cloth:0});
+  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0,cloth:0,bot:(seatBots&&seatBots[i])||null});
   var active=[]; for(var a=0;a<n;a++)active.push(a);
   var base={
     phase:"firstroll", lang:lang, mode:mode, scenario:scenario, vpTarget:vpTarget,
@@ -1506,15 +1533,21 @@ function apply(a){
     case "LOAD_SLOT": if(!loadFromSlot(a.slot))state.ui.saveMsg="save_err"; return;
     case "IMPORT_TEXT": try{applyLoad(a.json);}catch(e){state.ui.saveMsg="save_err";} return;
     case "SET_SAVE_MSG": state.ui.saveMsg=a.msg; return;
-    case "SET_N": state.ui.startN=a.n; return;
+    case "SET_N": state.ui.startN=a.n; clampSeatBots(); return;
     case "SET_STARTMODE":{
       state.ui.startMode=a.mode;
       if(a.mode==="sea"){ if(!state.ui.startScn||!SCEN[state.ui.startScn])state.ui.startScn="frei"; }
       clampStartN(); return;
     }
-    case "SET_STARTSCN": state.ui.startScn=a.scn; clampStartN(); return;
+    case "SET_STARTSCN": state.ui.startScn=a.scn; clampSeatBots(); clampStartN(); return;
+    case "CYCLE_SEAT_BOT":{
+      var seat=a.seat, arr=(state.ui.seatBots=state.ui.seatBots||[]);
+      while(arr.length<=seat)arr.push(null);
+      arr[seat]=cycleBotLevel(arr[seat]);
+      return;
+    }
     case "SET_SKIPROLL": state.ui.startSkipRoll=!state.ui.startSkipRoll; return;
-    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei", state.ui.startSkipRoll); return;
+    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, state.lang, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei", state.ui.startSkipRoll, (state.ui.seatBots||[]).slice(0,a.n||state.ui.startN||3)); return;
     case "ASK_NEWGAME": state.ui.confirmNew=true; return;
     case "TOGGLE_INFO": state.ui.showInfo=!state.ui.showInfo; return;
     case "CLOSE_INFO": state.ui.showInfo=false; return;
@@ -1793,7 +1826,8 @@ function apply(a){
       var path=state.pathEdges[pia]; if(!path||!path.every(function(e){return !!state.ships[e];}))return;
       state.attackedFortress=true;
       attackFortress(pia);
-      apply({type:"END_TURN"});
+      checkWin();
+      if(state.phase!=="gameover")apply({type:"END_TURN"});
       return;
     }
     case "CLAIM_WONDER":{
@@ -1834,6 +1868,276 @@ function advanceTurn(){
 }
 function trailingReducerEnd(){}
 
+/* ============================================================ BOT AI ============ */
+var PIP_WEIGHT={2:1,3:2,4:3,5:4,6:5,8:5,9:4,10:3,11:2,12:1};
+var SKILL={
+  easy:  {noise:0.75, trade:false,  devTiming:"immediate", buyDevChance:0.30},
+  medium:{noise:0.32, trade:"bank", devTiming:"smart",     buyDevChance:0.55},
+  hard:  {noise:0.10, trade:"bank", devTiming:"smart",     buyDevChance:0.75}
+};
+function botSkill(pi){ return SKILL[state.players[pi]&&state.players[pi].bot]||SKILL.medium; }
+function withUiMode(mode,fn){ var saved=state.uiMode; state.uiMode=mode; var r=fn(); state.uiMode=saved; return r; }
+function legalSettlementVerts(){ return withUiMode("settlement",legalVertSet); }
+function legalCityVerts(){ return withUiMode("city",legalVertSet); }
+function legalRoadEdges(){ return withUiMode("road",legalEdgeSet); }
+function legalShipEdges(){ return withUiMode("ship",legalEdgeSet); }
+function vertexScore(v){
+  var score=0, resSeen={};
+  state.board.vertices[v].hexes.forEach(function(hi){
+    var t=state.tiles[hi];
+    if(!t||t.resource==="sea"||t.resource==="fog"||t.resource==="desert"||t.resource==="fortress"||t.resource==="village")return;
+    var w=PIP_WEIGHT[t.number]||0;
+    if(t.resource==="gold")w*=1.3;
+    score+=w; resSeen[t.resource]=(resSeen[t.resource]||0)+1;
+  });
+  score+=Object.keys(resSeen).length*0.6;
+  state.harbors.forEach(function(hb){ if(hb.v1===Number(v)||hb.v2===Number(v))score+=(hb.kind==="any"?0.8:1.4); });
+  return score;
+}
+function edgeScore(eid){
+  var e=state.board.edges[eid];
+  var sc=(vertexScore(e.v1)+vertexScore(e.v2))/2;
+  if(state.pathSet&&state.pathSet[eid]&&state.pathSet[eid].owner===activePlayer())sc+=50;
+  return sc;
+}
+function pickBest(map,scoreFn,sk){
+  var keys=Object.keys(map); if(!keys.length)return null;
+  var best=null,bestScore=-Infinity;
+  keys.forEach(function(k){
+    var raw=scoreFn(k); var jitter=1+(Math.random()*2-1)*(sk?sk.noise:0.3);
+    var sc=raw*jitter;
+    if(sc>bestScore){bestScore=sc;best=k;}
+  });
+  return best;
+}
+function leaderPi(excludePi){
+  var best=-1,bi=null;
+  state.players.forEach(function(pl,qi){ if(qi===excludePi)return; var v=fullVP(qi); if(v>best){best=v;bi=qi;} });
+  return bi;
+}
+function missingFor(res,cost){ var m=[]; for(var k in cost){ if(res[k]<cost[k])m.push(k); } return m; }
+function planBankTrade(pi){
+  var p=state.players[pi], targets=[COSTS.settlement,COSTS.city,COSTS.dev];
+  for(var i=0;i<targets.length;i++){
+    var need=missingFor(p.res,targets[i]);
+    if(need.length===1){
+      var want=need[0];
+      var give=RES.filter(function(r){return r!==want;}).sort(function(a,b){
+        return (p.res[b]-bestRatio(pi,b))-(p.res[a]-bestRatio(pi,a));
+      })[0];
+      var ratio=bestRatio(pi,give);
+      if(p.res[give]>=ratio)return{give:give,get:want};
+    }
+  }
+  return null;
+}
+function pickNeededResource(pi){
+  var p=state.players[pi];
+  return ["ore","wheat","sheep","wood","brick"].sort(function(a,b){return p.res[a]-p.res[b];})[0];
+}
+function shouldPlayKnight(pi){
+  if(state.robberHex==null)return false;
+  var onMine=state.board.hexes[state.robberHex].vertices.some(function(v){var b=state.buildings[v];return b&&b.owner===pi;});
+  return onMine||Math.random()<0.3;
+}
+function hasConvertibleShip(pi){
+  var path=state.pathEdges&&state.pathEdges[pi]; if(!path)return false;
+  return path.some(function(e){var sh=state.ships[e]; return sh&&sh.owner===pi&&!sh.war;});
+}
+function pickDevCardToPlay(pi,sk){
+  var p=state.players[pi];
+  if(sk.devTiming==="immediate")return p.dev[0]||null;
+  if(state.scenario==="piraten"){
+    if(p.dev.indexOf("knight")>=0&&hasConvertibleShip(pi))return "knight";
+    if(p.dev.indexOf("vp")>=0&&hasConvertibleShip(pi))return "vp";
+    if(p.dev.indexOf("road")>=0&&(countRoads(pi)<PIECE.road||countShips(pi)<PIECE.ship))return "road";
+    if(p.dev.indexOf("monopoly")>=0&&Math.random()<0.5)return "monopoly";
+    if(p.dev.indexOf("plenty")>=0&&Math.random()<0.6)return "plenty";
+    return null;
+  }
+  if(p.dev.indexOf("knight")>=0&&shouldPlayKnight(pi))return "knight";
+  if(p.dev.indexOf("road")>=0&&(countRoads(pi)<PIECE.road||countShips(pi)<PIECE.ship))return "road";
+  if(p.dev.indexOf("monopoly")>=0&&Math.random()<0.5)return "monopoly";
+  if(p.dev.indexOf("plenty")>=0&&Math.random()<0.6)return "plenty";
+  return null;
+}
+function botMoveRobberHex(pi,seaMode){
+  var target=leaderPi(pi);
+  var cands=state.tiles.map(function(t,hi){return hi;}).filter(function(hi){
+    var t=state.tiles[hi]; if(!t)return false;
+    var isWater=t.resource==="sea"||t.resource==="fog";
+    if(seaMode&&(!isWater||hi===state.seaRobberHex))return false;
+    if(!seaMode&&(isWater||hi===state.robberHex))return false;
+    if(seaMode){
+      return hexEdges(hi).some(function(e){var s=state.ships[e];return s&&s.owner!==pi;});
+    }
+    var hasSelf=state.board.hexes[hi].vertices.some(function(v){var b=state.buildings[v];return b&&b.owner===pi;});
+    return !hasSelf;
+  });
+  function scoreHex(hi){
+    var s=PIP_WEIGHT[state.tiles[hi].number]||0;
+    var hitsTarget=seaMode
+      ? hexEdges(hi).some(function(e){var sh=state.ships[e];return sh&&sh.owner===target;})
+      : state.board.hexes[hi].vertices.some(function(v){var b=state.buildings[v];return b&&b.owner===target;});
+    if(hitsTarget)s+=5;
+    return s;
+  }
+  cands.sort(function(a,b){return scoreHex(b)-scoreHex(a);});
+  return cands.length?cands[0]:0;
+}
+function botDiscard(){
+  var item=state.pending.queue[state.pending.qi], p=state.players[item.pi], need=item.count;
+  var sel=emptyRes(), guard=0;
+  while(need>0&&guard<2000){
+    guard++;
+    var order=RES.slice().sort(function(a,b){return (p.res[b]-sel[b])-(p.res[a]-sel[a]);});
+    var r=order[0];
+    if(sel[r]>=p.res[r])break;
+    sel[r]++; need--;
+  }
+  state.ui.discardSel=sel;
+  apply({type:"DISCARD_CONFIRM"});
+}
+function botGold(){
+  var gi=state.pending.queue[state.pending.qi], sel=emptyRes(), pick=pickNeededResource(gi.pi);
+  sel[pick]=gi.count; state.ui.goldSel=sel;
+  apply({type:"GOLD_CONFIRM"});
+}
+function botSteal(){
+  var cands=state.pending.candidates.slice().sort(function(a,b){
+    return (totalCards(state.players[b].res)+fullVP(b))-(totalCards(state.players[a].res)+fullVP(a));
+  });
+  apply({type:"STEAL",from:cands[0]});
+}
+function botTradeOfferDecision(){
+  var o=state.pending, me=o.partner, p=state.players[me];
+  if(!RES.every(function(r){return p.res[r]>=o.want[r];})){ apply({type:"TRADE_DECLINE"}); return; }
+  var giveThem=totalCards(o.want), getFromThem=totalCards(o.give);
+  if(getFromThem>=giveThem||Math.random()<0.15)apply({type:"TRADE_ACCEPT"});
+  else apply({type:"TRADE_DECLINE"});
+}
+function botRoadBuildingPending(pi,sk){
+  var le=legalEdgeSet(), keys=Object.keys(le);
+  if(!keys.length){ state.pending=null; state.uiMode=null; return; }
+  var best=pickBest(le,function(k){return edgeScore(Number(k));},sk);
+  apply({type:(le[best]==="ship"?"BUILD_SHIP":"BUILD_ROAD"),edgeId:Number(best)});
+}
+function botPlentyPending(pi){
+  var p=state.players[pi];
+  var order=RES.slice().sort(function(a,b){return p.res[a]-p.res[b];});
+  apply({type:"PLENTY_TOGGLE",res:order[0]});
+  apply({type:"PLENTY_TOGGLE",res:order[1]});
+  apply({type:"PLENTY_CONFIRM"});
+}
+function botMonopolyPending(pi){
+  var best=null,bestCount=-1;
+  RES.forEach(function(r){
+    var total=0; state.players.forEach(function(pl,qi){ if(qi!==pi)total+=pl.res[r]; });
+    if(total>bestCount){bestCount=total;best=r;}
+  });
+  apply({type:"MONOPOLY",res:best});
+}
+function botSetupSettlement(pi){
+  var sk=botSkill(pi), lv=legalVertSet();
+  var best=pickBest(lv,vertexScore,sk);
+  if(best!=null)apply({type:"SETUP_SETTLEMENT",vertexId:Number(best)});
+}
+function botSetupRoad(pi){
+  var sk=botSkill(pi), le=legalEdgeSet();
+  var best=pickBest(le,function(k){return edgeScore(Number(k));},sk);
+  if(best!=null)apply({type:(le[best]==="ship"?"SETUP_SHIP":"SETUP_ROAD"),edgeId:Number(best)});
+}
+function botSpecialAction(pi){
+  var p=state.players[pi], sk=botSkill(pi);
+  var cityV=pickBest(legalCityVerts(),vertexScore,sk);
+  if(cityV!=null&&canAfford(p.res,COSTS.city)){apply({type:"BUILD_CITY",vertexId:Number(cityV)});return;}
+  var setV=pickBest(legalSettlementVerts(),vertexScore,sk);
+  if(setV!=null&&canAfford(p.res,COSTS.settlement)){apply({type:"BUILD_SETTLEMENT",vertexId:Number(setV)});return;}
+  var roadE=pickBest(legalRoadEdges(),edgeScore,sk);
+  if(roadE!=null&&canAfford(p.res,COSTS.road)){apply({type:"BUILD_ROAD",edgeId:Number(roadE)});return;}
+  if(state.mode==="sea"){
+    var shipE=pickBest(legalShipEdges(),edgeScore,sk);
+    if(shipE!=null&&canAfford(p.res,COSTS.ship)){apply({type:"BUILD_SHIP",edgeId:Number(shipE)});return;}
+  }
+  if(canAfford(p.res,COSTS.dev)&&state.devDeck.length>0&&Math.random()<sk.buyDevChance){apply({type:"BUY_DEV"});return;}
+  apply({type:"SPECIAL_DONE"});
+}
+function botTurnAction(pi){
+  var p=state.players[pi], sk=botSkill(pi);
+  if(!state.turn||!state.turn.rolled){ apply({type:"ROLL"}); return; }
+  if(state.scenario==="piraten"&&canAttackFortress(pi)){
+    var mineWS=countWarShips(pi);
+    if(mineWS>=2&&Math.random()<0.9){ apply({type:"ATTACK_FORTRESS"}); return; }
+    if(mineWS<2&&state.devDeck.length===0){ apply({type:"ATTACK_FORTRESS"}); return; }
+  }
+  if(state.scenario==="wunder"){
+    if(!state.wonderClaims[pi]){
+      var elig=eligibleWonders(pi);
+      if(elig.length){ apply({type:"CLAIM_WONDER",wonder:elig[Math.floor(Math.random()*elig.length)]}); return; }
+    }else if((state.wonderStage[pi]||0)<4&&canAfford(p.res,WONDERS[state.wonderClaims[pi]].cost)){
+      apply({type:"BUILD_WONDER_STAGE"}); return;
+    }
+  }
+  var cityV=pickBest(legalCityVerts(),vertexScore,sk);
+  if(cityV!=null&&canAfford(p.res,COSTS.city)&&countType(pi,"city")<PIECE.city){ apply({type:"BUILD_CITY",vertexId:Number(cityV)}); return; }
+  var setV=pickBest(legalSettlementVerts(),vertexScore,sk);
+  if(setV!=null&&canAfford(p.res,COSTS.settlement)&&countType(pi,"settlement")<PIECE.settlement){ apply({type:"BUILD_SETTLEMENT",vertexId:Number(setV)}); return; }
+  if(!p.playedDevThisTurn&&p.dev.length){
+    var card=pickDevCardToPlay(pi,sk);
+    if(card){ apply({type:"PLAY_DEV",card:card}); return; }
+  }
+  var eagerForWarships=state.scenario==="piraten"&&countWarShips(pi)<2;
+  if(eagerForWarships&&canAfford(p.res,COSTS.dev)&&state.devDeck.length>0){ apply({type:"BUY_DEV"}); return; }
+    var roadE=pickBest(legalRoadEdges(),edgeScore,sk);
+    var shipE=(state.mode==="sea")?pickBest(legalShipEdges(),edgeScore,sk):null;
+    var shipIsPath=shipE!=null&&state.pathSet&&state.pathSet[shipE]&&state.pathSet[shipE].owner===pi;
+    var shipCapOK=shipIsPath||state.scenario!=="piraten"||countShips(pi)<8;
+    if(shipE!=null&&canAfford(p.res,COSTS.ship)&&countShips(pi)<PIECE.ship&&shipCapOK&&(roadE==null||edgeScore(Number(shipE))>=edgeScore(Number(roadE)))){
+      apply({type:"BUILD_SHIP",edgeId:Number(shipE)}); return;
+    }
+    if(roadE!=null&&canAfford(p.res,COSTS.road)&&countRoads(pi)<PIECE.road){ apply({type:"BUILD_ROAD",edgeId:Number(roadE)}); return; }
+  if(canAfford(p.res,COSTS.dev)&&state.devDeck.length>0&&Math.random()<sk.buyDevChance){ apply({type:"BUY_DEV"}); return; }
+  if(sk.trade){
+    var t=planBankTrade(pi);
+    if(t){ state.ui.bankGive=t.give; state.ui.bankGet=t.get; apply({type:"BANK_TRADE"}); return; }
+  }
+  apply({type:"END_TURN"});
+}
+function botStep(){
+  var pi=nextActorPi();
+  if(pi==null||!isBot(pi))return;
+  if(state.phase==="firstroll"){ apply({type:"FIRST_ROLL"}); return; }
+  if(state.phase==="setup"){
+    if(state.setup.placing==="settlement")botSetupSettlement(pi); else botSetupRoad(pi);
+    return;
+  }
+  if(state.pending){
+    switch(state.pending.type){
+      case "discard": botDiscard(); return;
+      case "gold": botGold(); return;
+      case "steal": case "pirateSteal": botSteal(); return;
+      case "robberChoice": apply({type:"ROBBER_CHOICE",which:"land"}); return;
+      case "trade_offer": botTradeOfferDecision(); return;
+      case "roadbuilding": botRoadBuildingPending(pi,botSkill(pi)); return;
+      case "plenty": botPlentyPending(pi); return;
+      case "monopoly": botMonopolyPending(pi); return;
+      case "robber": case "searobber": break; // fall through to the uiMode robber-move handling below
+      default: return;
+    }
+  }
+  if(state.uiMode==="moveRobber"){ apply({type:"MOVE_ROBBER",hexId:botMoveRobberHex(pi,false)}); return; }
+  if(state.uiMode==="moveSeaRobber"){ apply({type:"MOVE_SEA_ROBBER",hexId:botMoveRobberHex(pi,true)}); return; }
+  if(state.special){ botSpecialAction(pi); return; }
+  botTurnAction(pi);
+}
+var BOT_DELAY=550, botTimer=null;
+function scheduleBot(){
+  if(botTimer)return;
+  var pi=nextActorPi();
+  if(pi==null||!isBot(pi))return;
+  botTimer=setTimeout(function(){ botTimer=null; botStep(); render(); },BOT_DELAY);
+}
+
 /* ============================================================ VIEW ============ */
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function pips(n){var m={2:"•",12:"•",3:"••",11:"••",4:"•••",10:"•••",5:"••••",9:"••••",6:"•••••",8:"•••••"};return m[n]||"";}
@@ -1842,6 +2146,7 @@ function render(){
   document.documentElement.lang=state.lang;
   var app=document.getElementById("app");
   app.innerHTML = state.phase==="menu" ? renderMenu() : renderGame();
+  scheduleBot();
 }
 
 function langToggle(light){
@@ -1850,6 +2155,7 @@ function langToggle(light){
   '</div>';
 }
 
+function botLevelLabel(lvl){ return tr(lvl==="easy"?"bot_easy":lvl==="medium"?"bot_medium":lvl==="hard"?"bot_hard":"bot_human"); }
 function renderMenu(){
   var mode=state.ui.startMode||"base", scn=state.ui.startScn||"frei";
   var counts=menuCounts(), n=state.ui.startN;
@@ -1864,6 +2170,13 @@ function renderMenu(){
     scnRow='<div class="q">'+esc(tr("menu_scenario"))+'</div><div class="moderow">'+scnBtns+'</div>';
   }
   var blurb = mode!=="sea" ? tr("blurb") : (scn==="ufern"?tr("menu_ufern_blurb"):scn==="ozeanien"?tr("menu_ozeanien_blurb"):scn==="vierinseln"?tr("menu_vier_blurb"):scn==="wueste"?tr("menu_wueste_blurb"):scn==="vergessen"?tr("menu_vergessen_blurb"):scn==="stoffe"?tr("menu_stoffe_blurb"):scn==="piraten"?tr("menu_piraten_blurb"):scn==="wunder"?tr("menu_wunder_blurb"):tr("menu_sea_blurb"));
+  clampSeatBots();
+  var seatRow='<div class="q">'+esc(tr("menu_seats"))+'</div><div class="ns" style="flex-wrap:wrap">'+
+    state.ui.seatBots.map(function(lvl,i){
+      var c=PCOL[i];
+      return '<button data-act="cycleseatbot" data-seat="'+i+'" style="border-color:'+c.main+';color:'+(lvl?"#fff":c.main)+';background:'+(lvl?c.main:"transparent")+'">'+
+        esc(colorName(i))+': '+esc(botLevelLabel(lvl))+'</button>';
+    }).join("")+'</div>';
   return '<div class="menu"><div class="inner">'+
     '<div style="display:flex;justify-content:center;margin-bottom:24px">'+langToggle(false)+'</div>'+
     '<div class="applogo '+(mode==="sea"?"applogo-sea":"applogo-base")+'"></div>'+
@@ -1874,6 +2187,7 @@ function renderMenu(){
     scnRow+
     '<div class="q">'+esc(tr("choose"))+'</div>'+
     '<div class="ns">'+counts.map(function(k){return '<button data-act="setn" data-n="'+k+'" class="'+(n===k?"on":"")+'">'+k+'</button>';}).join("")+'</div>'+
+    seatRow+
     '<button class="skiproll'+(state.ui.startSkipRoll?" on":"")+'" data-act="skiproll">'+
       (state.ui.startSkipRoll?"☑":"☐")+' '+esc(tr("menu_skiproll"))+'</button>'+
     '<button class="begin" data-act="begin">'+esc(tr("begin"))+'</button>'+
@@ -1892,7 +2206,7 @@ function renderGame(){
       '<span class="title">CATAN</span><span class="phase">'+meta+'</span></div>'+
     '<div class="right">'+
       '<div class="turn"><span style="color:#9fc0d4">'+esc(tr("turn"))+'</span>'+
-        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(ap))+'</span></div>'+
+        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(ap))+(isBot(ap)?' '+tr("bot_tag"):'')+'</span></div>'+
       '<button class="btn-new" data-act="toginfo">'+esc(tr("info_btn"))+'</button>'+
       '<button class="btn-new" data-act="costs">'+esc(tr("costs_btn"))+'</button>'+
       '<button class="btn-new" data-act="togglesave">'+esc(tr("save_btn"))+'</button>'+
@@ -1985,9 +2299,10 @@ function legalEdgeSet(){
 function renderBoard(){
   var board=state.board, tiles=state.tiles, pad=46;
   var vb=(board.bounds.minX-pad)+" "+(board.bounds.minY-pad)+" "+(board.bounds.maxX-board.bounds.minX+pad*2)+" "+(board.bounds.maxY-board.bounds.minY+pad*2);
-  var moveRobber=state.uiMode==="moveRobber";
-  var moveSea=state.uiMode==="moveSeaRobber";
-  var lv=legalVertSet(), le=legalEdgeSet();
+  var botTurn=isBot(activePlayer());
+  var moveRobber=state.uiMode==="moveRobber"&&!botTurn;
+  var moveSea=state.uiMode==="moveSeaRobber"&&!botTurn;
+  var lv=botTurn?{}:legalVertSet(), le=botTurn?{}:legalEdgeSet();
   var s='<svg viewBox="'+vb+'" xmlns="http://www.w3.org/2000/svg">';
 
   board.hexes.forEach(function(h){
@@ -2177,6 +2492,9 @@ function renderSidebar(){
     var placeWhat=state.setup.placing==="settlement"?tr("s_settlement"):(sea?tr("s_road_ship"):tr("s_road"));
     actions='<div class="hint">'+esc(tr("place_a"))+' <b>'+esc(placeWhat)+'</b> '+esc(tr("on_board"))+'</div>';
   }else if(state.special){
+    if(isBot(me)){
+      actions='<div class="actions"><div class="hint gold">'+esc(tr("bot_thinking",{name:colorName(me)}))+'</div></div>';
+    } else {
     var sgrid='<div class="grid2">'+
       bb(tr("b_road"),COSTS.road,"road",canAfford(p.res,COSTS.road)&&roadsLeft>0)+
       (sea?bb(tr("b_ship"),COSTS.ship,"ship",canAfford(p.res,COSTS.ship)&&shipsLeft>0):"")+
@@ -2186,12 +2504,15 @@ function renderSidebar(){
     '</div>';
     actions='<div class="actions"><div class="hint gold">'+esc(tr("special_hint"))+'</div>'+sgrid+
       '<button class="btn-end" data-act="specialdone">'+esc(tr("special_done"))+'</button></div>';
+    }
   }else if(mustRobber){
-    actions='<div class="hint">'+esc(state.uiMode==="moveSeaRobber"?tr("click_searobber"):tr("click_robber"))+'</div>';
+    actions='<div class="hint'+(isBot(me)?' gold':'')+'">'+(isBot(me)?esc(tr("bot_thinking",{name:colorName(me)})):esc(state.uiMode==="moveSeaRobber"?tr("click_searobber"):tr("click_robber")))+'</div>';
   }else if(state.uiMode==="moveShipFrom"){
     actions='<div class="actions"><div class="hint">'+esc(tr("moveship_from"))+'</div><button class="btn-end" data-act="cancelmoveship">'+esc(tr("cancel"))+'</button></div>';
   }else if(state.uiMode==="moveShipTo"){
     actions='<div class="actions"><div class="hint gold">'+esc(tr("moveship_to"))+'</div><button class="btn-end" data-act="cancelmoveship">'+esc(tr("cancel"))+'</button></div>';
+  }else if(isBot(me)){
+    actions='<div class="actions"><div class="hint gold">'+esc(tr("bot_thinking",{name:colorName(me)}))+'</div></div>';
   }else{
     var rb=(state.pending&&state.pending.type==="roadbuilding")?'<div class="hint gold">'+esc(tr("rb_hint"))+' ('+state.pending.left+')</div>':'';
     var rollRow= !rolled
@@ -2235,7 +2556,7 @@ function renderSidebar(){
   }
 
   var card='<div class="panel"><div class="phead" style="background:'+c.main+';color:'+c.text+'">'+
-      '<span class="who"><span class="miniwhite"></span>'+esc(colorName(me))+'</span>'+
+      '<span class="who"><span class="miniwhite"></span>'+esc(colorName(me))+(isBot(me)?' '+tr("bot_tag"):'')+'</span>'+
       '<span style="font-size:14px;font-weight:700">'+fullVP(me)+' / '+(state.vpTarget||10)+' ★</span></div>'+
     '<div class="pp">'+
       '<div class="res-grid">'+resCells+'</div>'+
@@ -2262,7 +2583,7 @@ function renderScoreboard(){
     var c=PCOL[pi];
     return '<div class="score-row'+(pi===activePlayer()?" cur":"")+'">'+
       '<span class="dot" style="background:'+c.main+'"></span>'+
-      '<span class="nm">'+esc(colorName(pi))+'</span>'+
+      '<span class="nm">'+esc(colorName(pi))+(p.bot?' '+tr("bot_tag"):'')+'</span>'+
       '<span class="vp">'+publicVP(pi)+' ★</span>'+
       '<span class="meta"><span title="'+esc(tr("tip_hand"))+'">🂠 '+totalCards(p.res)+'</span>'+
         '<span title="'+esc(tr("tip_knights"))+'">⚔ '+p.knights+'</span>'+
@@ -2286,6 +2607,7 @@ function renderLog(){
 function renderModals(){
   if(!state.pending&&state.phase!=="gameover")return "";
   if(state.phase==="gameover")return modalWin();
+  if(isBot(pendingDeciderPi()))return "";
   switch(state.pending.type){
     case "discard": return modalDiscard();
     case "steal": return modalSteal();
@@ -2461,6 +2783,7 @@ document.addEventListener("click",function(ev){
     case "importsave": { var ia=document.getElementById("importArea"); dispatch({type:"IMPORT_TEXT",json:ia?ia.value:""}); break; }
     case "copyexport": { var ea=document.getElementById("exportArea"); if(ea){ea.select();try{document.execCommand("copy");}catch(e){}} dispatch({type:"SET_SAVE_MSG",msg:"save_copied"}); break; }
     case "setn": dispatch({type:"SET_N",n:Number(t.getAttribute("data-n"))}); break;
+    case "cycleseatbot": dispatch({type:"CYCLE_SEAT_BOT",seat:Number(t.getAttribute("data-seat"))}); break;
     case "setstartmode": dispatch({type:"SET_STARTMODE",mode:t.getAttribute("data-mode")}); break;
     case "setstartscn": dispatch({type:"SET_STARTSCN",scn:t.getAttribute("data-scn")}); break;
     case "skiproll": dispatch({type:"SET_SKIPROLL"}); break;
