@@ -280,7 +280,7 @@ var STR={
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     click_searobber:"Klicke ein Seefeld, um den Seeräuber zu versetzen.",
     menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer", menu_skiproll:"Startspieler-Wurf überspringen",
-    menu_scenario:"Szenario", menu_scn_frei:"Neue Welt", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_vergessen:"Der vergessene Stamm", menu_scn_stoffe:"Stoffe für Catan", menu_scn_ozeanien:"Ozeanien", menu_scn_piraten:"Die Pirateninseln",
+    menu_scenario:"Szenario", menu_scn_frei:"Neue Welt", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_sechs:"Die sechs Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_vergessen:"Der vergessene Stamm", menu_scn_stoffe:"Stoffe für Catan", menu_scn_ozeanien:"Ozeanien", menu_scn_piraten:"Die Pirateninseln",
     menu_piraten_blurb:"Die Pirateninseln: Siedle auf der Ostinsel und baue je 1 feste Schiffslinie zu deiner eigenen, von Piraten besetzten Festung im Westen. Statt des Räubers patrouilliert eine Piratenflotte – trifft sie eine Siedlung, entscheidet die Zahl der Kriegsschiffe über Sieg oder Verlust. Ritter- (und zu viert Siegpunkt-)Karten verwandeln ein Schiff in ein Kriegsschiff. Erobere deine Festung und erreiche 10 Siegpunkte, um zu gewinnen.",
     attack_fortress:"⚔️ Piratenfestung angreifen", tip_fortress:"Piratenfestung (verbleibende Chips)",
     devd_pirat_convert:"Verwandelt dein hinterstes normales Schiff auf der Festungslinie in ein Kriegsschiff.",
@@ -371,6 +371,10 @@ var STR={
 };
 function fmt(s,p){ if(!p) return s; return s.replace(/\{(\w+)\}/g,function(_,k){return p[k]!==undefined?p[k]:"{"+k+"}";}); }
 function tr(key,p){ var s=STR[key]||key; return fmt(s,p); }
+function scnLabel(id,n){
+  if(id==="vierinseln"&&n>=5) return tr("menu_scn_sechs");
+  return tr((SCEN[id]&&SCEN[id].key)||id);
+}
 function resLabel(r){ return tr("res_"+r); }
 function devLabel(c){ return tr("dev_"+c); }
 function devDesc(c){ if(state.scenario==="piraten"&&(c==="knight"||c==="vp"))return tr("devd_pirat_convert"); return tr("devd_"+c); }
@@ -394,6 +398,80 @@ function canAfford(r,c){for(var k in c){if(r[k]<c[k])return false;}return true;}
 function pay(r,c){var n={};for(var k in r)n[k]=r[k];for(var k2 in c)n[k2]-=c[k2];return n;}
 
 /* ---------- board geometry ---------- */
+/* ---- island generator: contiguous islands that never touch each other ---- */
+function hexDist(a,b){ var dq=a.q-b.q, dr=a.r-b.r; return (Math.abs(dq)+Math.abs(dr)+Math.abs(dq+dr))/2; }
+function hexAdjacency(coords){
+  var idx={}; coords.forEach(function(c,i){ idx[c.q+","+c.r]=i; });
+  var DIRS=[[1,0],[1,-1],[0,-1],[-1,0],[-1,1],[0,1]];
+  return coords.map(function(c){
+    var out=[];
+    DIRS.forEach(function(d){ var j=idx[(c.q+d[0])+","+(c.r+d[1])]; if(j!=null) out.push(j); });
+    return out;
+  });
+}
+// returns owner[] (island index per hex, -1 = sea) or null if it could not be laid out
+function makeIslandRegions(coords,sizes,maxDist){
+  var adj=hexAdjacency(coords), nIsl=sizes.length;
+  var cand=[]; coords.forEach(function(c,i){ if(c.dist<=maxDist) cand.push(i); });
+  for(var attempt=0;attempt<300;attempt++){
+    var owner=coords.map(function(){return -1;});
+    var seeds=[], pool=shuffle(cand.slice()), ok=true;
+    for(var s=0;s<nIsl;s++){
+      var found=-1;
+      for(var p=0;p<pool.length;p++){
+        var i=pool[p]; if(owner[i]!==-1) continue;
+        var good=true;
+        for(var t=0;t<seeds.length;t++){ if(hexDist(coords[i],coords[seeds[t]])<4){ good=false; break; } }
+        if(good){ found=i; break; }
+      }
+      if(found<0){ ok=false; break; }
+      seeds.push(found); owner[found]=s;
+    }
+    if(!ok) continue;
+    var counts=seeds.map(function(){return 1;}), stuck=false;
+    for(var g=0;g<2000;g++){
+      var done=true;
+      for(var s2=0;s2<nIsl;s2++){
+        if(counts[s2]>=sizes[s2]) continue;
+        done=false;
+        var opts=[];
+        for(var hi=0;hi<owner.length;hi++){
+          if(owner[hi]!==s2) continue;
+          adj[hi].forEach(function(j){
+            if(owner[j]!==-1||coords[j].dist>maxDist) return;
+            var bad=false;
+            adj[j].forEach(function(k){ if(owner[k]!==-1&&owner[k]!==s2) bad=true; });
+            if(!bad) opts.push(j);
+          });
+        }
+        if(!opts.length){ stuck=true; break; }
+        var pick=opts[Math.floor(Math.random()*opts.length)];
+        owner[pick]=s2; counts[s2]++;
+      }
+      if(stuck||done) break;
+    }
+    if(stuck) continue;
+    var complete=true;
+    for(var c2=0;c2<nIsl;c2++) if(counts[c2]<sizes[c2]) complete=false;
+    if(complete) return owner;
+  }
+  return null;
+}
+// Aufbauhinweis: Wald und Weideland sollen keine zu schlechten Zahlen (2/12) erhalten
+function avoidWeakWoodSheep(tiles){
+  var weak=[2,12];
+  tiles.forEach(function(t,i){
+    if((t.resource!=="wood"&&t.resource!=="sheep")||t.number===null) return;
+    if(weak.indexOf(t.number)<0) return;
+    for(var j=0;j<tiles.length;j++){
+      var o=tiles[j];
+      if(o.number===null||j===i) continue;
+      if(o.resource==="wood"||o.resource==="sheep") continue;
+      if(weak.indexOf(o.number)>=0) continue;
+      var tmp=t.number; t.number=o.number; o.number=tmp; return;
+    }
+  });
+}
 function assembleBoard(centers){
   function corner(cx,cy,i){var a=Math.PI/180*(60*i-30);return{x:cx+SIZE*Math.cos(a),y:cy+SIZE*Math.sin(a)};}
   var vmap={}, vertices=[];
@@ -762,8 +840,8 @@ function buildNeueWelt(n){
 }
 var SCEN={
   frei:{key:"menu_scn_frei",players:[2,3,4,5,6],vpTarget:12,founding:"main",islandBonus:1,build:function(n){return buildNeueWelt(n);}},
-  ufern:{key:"menu_scn_ufern",players:[3,4],vpTarget:14,founding:"main",build:function(n){return buildUfern(n);}},
-  vierinseln:{key:"menu_scn_vier",players:[3,4],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
+  ufern:{key:"menu_scn_ufern",players:[3,4,5,6],vpTarget:14,founding:"main",build:function(n){return buildUfern(n);}},
+  vierinseln:{key:"menu_scn_vier",players:[3,4,5,6],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
   wueste:{key:"menu_scn_wueste",players:[3,4],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
   vergessen:{key:"menu_scn_vergessen",players:[3,4],vpTarget:13,founding:"home",build:function(n){return buildVergessen(n);}},
   stoffe:{key:"menu_scn_stoffe",players:[3,4],vpTarget:14,founding:"home",noLongestRoad:true,setupSettlements:3,build:function(n){return buildStoffe(n);}},
@@ -1093,27 +1171,38 @@ function computeIslands(board,tiles){
   return islandOf;
 }
 // "Die vier Inseln": four equal islands to hop between; +2 VP for first settlement on each foreign island
+/* Szenario 2: Die vier Inseln (3-4) / Die sechs Inseln (5-6) */
+var VIERINSELN={
+  3:{land:{brick:4,wood:4,sheep:4,wheat:4,ore:4},
+     chips:{2:1,3:2,4:2,5:3,6:2,8:2,9:3,10:2,11:2,12:1},
+     sizes:[5,5,5,5], nAny:4, extraSpecial:[], R:5, maxDist:4},
+  4:{land:{brick:4,wood:5,sheep:5,wheat:5,ore:4},
+     chips:{2:1,3:2,4:3,5:3,6:2,8:2,9:3,10:3,11:3,12:1},
+     sizes:[6,6,6,5], nAny:4, extraSpecial:[], R:5, maxDist:4},
+  5:{land:{brick:6,wood:7,sheep:7,wheat:6,ore:6},
+     chips:{2:2,3:3,4:4,5:4,6:4,8:3,9:4,10:4,11:2,12:2},
+     sizes:[6,6,5,5,5,5], nAny:5, extraSpecial:["sheep"], R:6, maxDist:5}
+};
 function buildVierInseln(n){
-  var R=3, coords=seaCoords(R);
+  var S=VIERINSELN[n>=5?5:n], coords=seaCoords(S.R);
   var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
   var board=assembleBoard(centers); board.coords=coords;
-  var islands=[
-    [[-2,-1],[-1,-2],[-2,0],[-1,-1]],
-    [[1,-2],[2,-2],[2,-3],[1,-3]],
-    [[-2,2],[-2,3],[-1,2],[-1,3]],
-    [[1,1],[2,0],[1,2],[2,1]]
-  ];
-  var idx={}; coords.forEach(function(c,i){ idx[c.q+","+c.r]=i; });
-  var region=coords.map(function(){return "sea";});
-  islands.forEach(function(isl){ isl.forEach(function(qr){ var i=idx[qr[0]+","+qr[1]]; if(i!=null) region[i]="land"; }); });
-  var landCount=region.filter(function(r){return r==="land";}).length;
-  var bag=shuffle(spreadRes(landCount)), toks=makeTokens(landCount);
+
+  var owner=makeIslandRegions(coords,S.sizes,S.maxDist);
+  if(!owner){ owner=makeIslandRegions(coords,S.sizes,S.maxDist+1); }
+
+  var bag=shuffle(resBag(S.land)), toks=chipBag(S.chips);
   var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
-  region.forEach(function(rg,hi){ if(rg==="land"){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; } });
-  var islandOf=computeIslands(board,tiles);
-  var robberHex=tiles.findIndex(function(t){return t.number===12;}); if(robberHex<0)robberHex=region.indexOf("land");
+  owner.forEach(function(o,hi){ if(o>=0) tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
+  avoidWeakWoodSheep(tiles);
+
+  var islandOf=owner.map(function(o){ return o>=0?o:null; });
+  var robberHex=tiles.findIndex(function(t){return t.number===12;});
+  if(robberHex<0) robberHex=owner.findIndex(function(o){return o>=0;});
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
-  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
+
+  var harbors=assignSeaHarborsList(board,tiles,harborList(5,S.nAny,S.extraSpecial));
+  return {board:board,tiles:tiles,harbors:harbors,robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
 }
 // "Ozeanien" – two home islands + a fog sea (face-down hexes) to explore
 function buildOzeanien(n){
@@ -1148,27 +1237,66 @@ function buildOzeanien(n){
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,fog:fog,fogTokens:fogTokens};
 }
 // "Zu neuen Ufern" – official variable setup: big home island (dist<=2) + small gold islands (isolated) + sea + harbors
+/* Szenario 1: Zu neuen Ufern — Materialtabellen laut Spielanleitung (3-4 Pers.) und 5-6-Personen-Erweiterung */
+var UFERN={
+  3:{land:{gold:2,brick:4,wood:3,sheep:5,wheat:4,ore:4,desert:0},
+     chips:{2:1,3:2,4:3,5:3,6:2,8:3,9:2,10:3,11:2,12:1},
+     nAny:3, extraSpecial:[], R:4, mainN:19},
+  4:{land:{gold:2,brick:5,wood:5,sheep:5,wheat:5,ore:5,desert:1},
+     chips:{2:2,3:3,4:3,5:3,6:3,8:3,9:3,10:3,11:3,12:1},
+     nAny:4, extraSpecial:[], R:4, mainN:19},
+  5:{land:{gold:3,brick:7,wood:7,sheep:7,wheat:7,ore:7,desert:2},
+     chips:{2:3,3:4,4:4,5:4,6:4,8:4,9:4,10:4,11:4,12:3},
+     nAny:5, extraSpecial:["sheep"], R:5, mainN:30}
+};
 function buildUfern(n){
-  var R=4, coords=seaCoords(R);
+  var S=UFERN[n>=5?5:n], R=S.R, coords=seaCoords(R);
   var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
   var board=assembleBoard(centers); board.coords=coords;
-  var ring4=coords.map(function(c,i){return{c:c,i:i};}).filter(function(o){return o.c.dist===4;});
-  ring4.sort(function(a,b){return Math.atan2(centers[a.i].y,centers[a.i].x)-Math.atan2(centers[b.i].y,centers[b.i].x);});
-  var smallSet={}; ring4.forEach(function(o,k){ if(k%4===0) smallSet[o.i]=true; }); // 6 isolated island hexes
-  var region=coords.map(function(c,i){ return c.dist<=2?"main":(smallSet[i]?"small":"sea"); });
-  var M=region.filter(function(r){return r==="main";}).length, S=region.filter(function(r){return r==="small";}).length;
-  var mainBag=shuffle(["desert"].concat(spreadRes(M-1)));
-  var smallBag=shuffle(["gold","gold"].concat(spreadRes(S-2)));
+  var mainSet=mainIslandSet(n,coords);
+
+  // small islands: isolated single hexes on the outer ring, separated by sea
+  var land=S.land, landTotal=0; for(var k in land) landTotal+=land[k];
+  var nSmall=landTotal-S.mainN;
+  var outerR=(n<=4)?4:5;
+  var ring=coords.map(function(c,i){return{c:c,i:i};}).filter(function(o){return o.c.dist===outerR;});
+  ring.sort(function(a,b){return Math.atan2(centers[a.i].y,centers[a.i].x)-Math.atan2(centers[b.i].y,centers[b.i].x);});
+  var step=Math.max(2,Math.floor(ring.length/nSmall)), smallSet={}, cnt=0;
+  for(var k2=0;k2<ring.length&&cnt<nSmall;k2+=step){ smallSet[ring[k2].i]=true; cnt++; }
+  for(var k3=1;k3<ring.length&&cnt<nSmall;k3+=2){ if(!smallSet[ring[k3].i]){ smallSet[ring[k3].i]=true; cnt++; } }
+
+  var region=coords.map(function(c,i){ return mainSet[i]?"main":(smallSet[i]?"small":"sea"); });
+
+  // gold only on the small islands, desert only on the main island (per scenario art)
+  var golds=[], deserts=[], rest=[];
+  for(var g=0;g<land.gold;g++) golds.push("gold");
+  for(var d=0;d<land.desert;d++) deserts.push("desert");
+  ["brick","wood","sheep","wheat","ore"].forEach(function(kk){ for(var i=0;i<land[kk];i++) rest.push(kk); });
+  rest=shuffle(rest);
+  var smallBag=shuffle(golds.concat(rest.splice(0,nSmall-golds.length)));
+  var mainBag=shuffle(deserts.concat(rest));
+
   var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
-  region.forEach(function(rg,hi){ if(rg==="main")tiles[hi]={resource:mainBag.pop(),number:null}; else if(rg==="small")tiles[hi]={resource:smallBag.pop(),number:null}; });
-  var producing=tiles.filter(function(t){return t.resource!=="sea"&&t.resource!=="desert";}).length;
-  var toks=makeTokens(producing);
+  region.forEach(function(rg,hi){
+    if(rg==="main")tiles[hi]={resource:mainBag.pop(),number:null};
+    else if(rg==="small")tiles[hi]={resource:smallBag.pop(),number:null};
+  });
+
+  var toks=chipBag(S.chips);
   tiles.forEach(function(t){ if(t.resource!=="sea"&&t.resource!=="desert") t.number=toks.pop(); });
+
   var islandOf=region.map(function(){return null;}), iid=0;
   region.forEach(function(rg,hi){ if(rg==="small") islandOf[hi]=iid++; });
-  var robberHex=tiles.findIndex(function(t){return t.resource==="desert";}); if(robberHex<0)robberHex=0;
+
+  // Räuber: zu dritt auf dem Feld mit der "12" (keine Wüste im Spiel), sonst auf einer Wüste
+  var robberHex;
+  if(land.desert>0) robberHex=tiles.findIndex(function(t){return t.resource==="desert";});
+  else robberHex=tiles.findIndex(function(t){return t.number===12;});
+  if(robberHex<0) robberHex=region.indexOf("main");
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
-  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
+
+  var harbors=assignSeaHarborsList(board,tiles,harborList(5,S.nAny,S.extraSpecial));
+  return {board:board,tiles:tiles,harbors:harbors,robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
 }
 function freshGame(n,mode,scnId,skip,seatBots){
   mode=mode||"base";
@@ -1224,6 +1352,45 @@ function beginSetup(starter){
   state.current=order[0]; state.phase="setup"; state.firstRoll=null;
   pushLog("log_first_start",{name:starter});
   pushLog("log_setup_prompt",{name:order[0]});
+}
+function bagFrom(spec){ var out=[]; for(var k in spec){ for(var i=0;i<spec[k];i++) out.push(k==="num"?k:k); } return out; }
+function resBag(spec){ var out=[]; ["gold","brick","wood","sheep","wheat","ore","desert"].forEach(function(k){ for(var i=0;i<(spec[k]||0);i++) out.push(k); }); return out; }
+function chipBag(spec){ var out=[]; [2,3,4,5,6,8,9,10,11,12].forEach(function(v){ for(var i=0;i<(spec[v]||0);i++) out.push(v); }); return shuffle(out); }
+function harborList(nSpecial,nAny,extra){
+  var types=[];
+  ["wood","brick","sheep","wheat","ore"].forEach(function(k){ types.push({kind:k,ratio:2}); });
+  (extra||[]).forEach(function(k){ types.push({kind:k,ratio:2}); });
+  for(var i=0;i<nAny;i++) types.push({kind:"any",ratio:3});
+  return shuffle(types);
+}
+function assignSeaHarborsList(board,tiles,types){
+  var isSea=function(h){var r=tiles[h].resource;return r==="sea"||r==="fog";};
+  var coast=board.edges.filter(function(e){ return e.hexes.length===2 && (isSea(e.hexes[0])!==isSea(e.hexes[1])); });
+  var c={x:(board.bounds.minX+board.bounds.maxX)/2,y:(board.bounds.minY+board.bounds.maxY)/2};
+  coast.sort(function(a,b){return Math.atan2(a.y-c.y,a.x-c.x)-Math.atan2(b.y-c.y,b.x-c.x);});
+  var harbors=[], used={};
+  for(var i=0;i<types.length&&coast.length>0;i++){
+    var idx=Math.round(i*coast.length/types.length)%coast.length, guard=0;
+    while(used[idx]&&guard<coast.length){ idx=(idx+1)%coast.length; guard++; }
+    used[idx]=true;
+    var e=coast[idx], t=types[i];
+    var seaHex=isSea(e.hexes[0])?e.hexes[0]:e.hexes[1];
+    var sh=board.hexes[seaHex], dx=sh.x-e.x, dy=sh.y-e.y, len=Math.hypot(dx,dy)||1;
+    harbors.push({edgeId:e.id,kind:t.kind,ratio:t.ratio,v1:e.v1,v2:e.v2,x:e.x,y:e.y,dx:dx/len,dy:dy/len});
+  }
+  return harbors;
+}
+/* main island shapes: 19 hexes (3-4 players) / 30 hexes (5-6 players, rows 3-4-5-6-5-4-3) */
+function mainIslandSet(n,coords){
+  var set={};
+  if(n<=4){ coords.forEach(function(c,i){ if(c.dist<=2) set[i]=true; }); return set; }
+  var lens=[3,4,5,6,5,4,3], key={};
+  for(var r=-3;r<=3;r++){
+    var L=lens[r+3], qmin=Math.round(-(L-1)/2 - r/2);
+    for(var q=qmin;q<qmin+L;q++) key[q+","+r]=true;
+  }
+  coords.forEach(function(c,i){ if(key[c.q+","+c.r]) set[i]=true; });
+  return set;
 }
 function assignSeaHarbors(board,tiles){
   var isSea=function(h){var r=tiles[h].resource;return r==="sea"||r==="fog";};
@@ -2015,7 +2182,7 @@ function renderMenu(){
   var scnRow="";
   if(mode==="sea"){
     var scnBtns=Object.keys(SCEN).map(function(id){
-      return '<button data-act="setstartscn" data-scn="'+id+'" class="modebtn '+(scn===id?"on":"")+'">'+esc(tr(SCEN[id].key))+'</button>';
+      return '<button data-act="setstartscn" data-scn="'+id+'" class="modebtn '+(scn===id?"on":"")+'">'+esc(scnLabel(id,n))+'</button>';
     }).join("");
     scnRow='<div class="q">'+esc(tr("menu_scenario"))+'</div><div class="moderow">'+scnBtns+'</div>';
   }
@@ -2058,7 +2225,7 @@ function renderGame(){
   var ap=activePlayer();
   var c=PCOL[ap];
   var phase=state.phase==="firstroll"?tr("phase_firstroll"):state.phase==="setup"?tr("phase_setup"):state.phase==="gameover"?tr("phase_over"):(state.special?tr("special_phase"):tr("phase_play"));
-  var scnName=state.mode==="sea"?((SCEN[state.scenario]&&tr(SCEN[state.scenario].key))||""):tr("menu_base");
+  var scnName=state.mode==="sea"?(state.scenario?scnLabel(state.scenario,state.players.length):""):tr("menu_base");
   var meta=esc(phase)+(scnName?" · "+esc(scnName):"")+" · ★"+(state.vpTarget||10);
   var header='<div class="header">'+
     '<div style="display:flex;align-items:center;gap:12px;min-width:0">'+
@@ -2190,10 +2357,10 @@ function renderBoard(){
       if(!hasRobber && !slotTaken && RES_META[t.resource] && RES_META[t.resource].icon)
         s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42+8)+'" text-anchor="middle" font-size="24" pointer-events="none" style="paint-order:stroke;stroke:rgba(255,255,255,.55);stroke-width:3px">'+RES_META[t.resource].icon+'</text>';
       if(t.number!==null){
-      var red=(t.number===6||t.number===8);
-      s+='<circle cx="'+h.x+'" cy="'+(h.y+6)+'" r="16" fill="'+RES_META[t.resource].token+'" stroke="#7a6a45" stroke-width="1.2"/>';
-      s+='<text x="'+h.x+'" y="'+(h.y+12)+'" text-anchor="middle" font-size="17" font-weight="700" fill="'+(red?"#c0392b":"#3a3024")+'" font-family="Georgia,serif">'+t.number+'</text>';
-      s+='<text x="'+h.x+'" y="'+(h.y+24)+'" text-anchor="middle" font-size="7" fill="'+(red?"#c0392b":"#7a6a45")+'" letter-spacing="1">'+pips(t.number)+'</text>';
+      var red=(t.number===6||t.number===8), cy=h.y+SIZE*0.36;
+      s+='<circle cx="'+h.x+'" cy="'+cy+'" r="16" fill="'+RES_META[t.resource].token+'" stroke="#7a6a45" stroke-width="1.2"/>';
+      s+='<text x="'+h.x+'" y="'+(cy+6)+'" text-anchor="middle" font-size="17" font-weight="700" fill="'+(red?"#c0392b":"#3a3024")+'" font-family="Georgia,serif">'+t.number+'</text>';
+      s+='<text x="'+h.x+'" y="'+(cy+18)+'" text-anchor="middle" font-size="7" fill="'+(red?"#c0392b":"#7a6a45")+'" letter-spacing="1">'+pips(t.number)+'</text>';
       }
     }
     if(state.tribe && state.tribe[h.id]){
