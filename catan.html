@@ -229,7 +229,7 @@
    ============================================================ */
 
 /* ---------- constants ---------- */
-var VERSION="0.1.1";
+var VERSION="0.1.2";
 var SIZE=52, SQRT3=Math.sqrt(3), ROWS=[3,4,5,4,3];
 var RES=["wood","brick","sheep","wheat","ore"];
 var RES_META={
@@ -1266,8 +1266,11 @@ function buildOzeanien(n){
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
   var homeHexes={}; homeHex.forEach(function(hi){ homeHexes[hi]=true; });
   var harbors=assignSeaHarborsList(board,tiles,harborList(5,S.nAny,S.extraSpecial));
+  // Ozeanien: Insel-Zugehörigkeit merken, damit spätere Regel greifen kann
+  // ("1. Siedlung auf Insel A, 2. Siedlung auf Insel B").
+  var homeIsland={}; owner.forEach(function(o,hi){ if(o>=0) homeIsland[hi]=o; });
   return {board:board,tiles:tiles,harbors:harbors,robberHex:robberHex,seaRobberHex:seaRobberHex,
-          islandOf:null,homeHexes:homeHexes,fog:fog,fogTokens:fogTokens};
+          islandOf:null,homeHexes:homeHexes,homeIsland:homeIsland,fog:fog,fogTokens:fogTokens};
 }
 // "Zu neuen Ufern" – official variable setup: big home island (dist<=2) + small gold islands (isolated) + sea + harbors
 /* Szenario 1: Zu neuen Ufern — Materialtabellen laut Spielanleitung (3-4 Pers.) und 5-6-Personen-Erweiterung */
@@ -1333,14 +1336,14 @@ function buildUfern(n){
 }
 function freshGame(n,mode,scnId,skip,seatBots){
   mode=mode||"base";
-  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,tribe={},tribeHarbors={},villages={},clothReserve=0,R=3;
+  var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,homeIsland=null,tribe={},tribeHarbors={},villages={},clothReserve=0,R=3;
   var preBuildings={}, fortresses=null, pathEdges=null, pathSet=null, pirateRoute=null, wonders=null, wonderTaboo=null;
   if(mode==="sea"){
     scnId=scnId||"frei"; if(!SCEN[scnId])scnId="frei"; scenario=scnId;
     var built=SCEN[scnId].build(n);
     board=built.board; tiles=built.tiles; harbors=built.harbors; robberHex=built.robberHex; seaRobberHex=built.seaRobberHex;
     islandOf=built.islandOf; vpTarget=SCEN[scnId].vpTarget;
-    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{}; homeHexes=built.homeHexes||null; tribe=built.tribe||{}; tribeHarbors=built.tribeHarbors||{}; villages=built.villages||{}; clothReserve=built.clothReserve||0;
+    fog=built.fog||{}; fogTokens=built.fogTokens||[]; farHexes=built.farHexes||{}; homeHexes=built.homeHexes||null; homeIsland=built.homeIsland||null; tribe=built.tribe||{}; tribeHarbors=built.tribeHarbors||{}; villages=built.villages||{}; clothReserve=built.clothReserve||0;
     preBuildings=built.buildings||{}; fortresses=built.fortresses||null; pathEdges=built.pathEdges||null; pathSet=built.pathSet||null; pirateRoute=built.pirateRoute||null;
     wonders=built.wonders||null; wonderTaboo=built.wonderTaboo||null;
   }else{
@@ -1354,7 +1357,7 @@ function freshGame(n,mode,scnId,skip,seatBots){
   var base={
     phase:"firstroll", mode:mode, scenario:scenario, vpTarget:vpTarget,
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
-    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, tribe:tribe, tribeHarbors:tribeHarbors, villages:villages, clothReserve:clothReserve, clothConn:{},
+    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, homeIsland:homeIsland, tribe:tribe, tribeHarbors:tribeHarbors, villages:villages, clothReserve:clothReserve, clothConn:{},
     fortresses:fortresses, pathEdges:pathEdges, pathSet:pathSet, pirateRoute:pirateRoute, pirateIdx:0, attackedFortress:false, pendingPirateSum:null,
     wonders:wonders, wonderTaboo:wonderTaboo, wonderClaims:{}, wonderStage:{}, wonderChoices:wonderList(n),
     buildings:JSON.parse(JSON.stringify(preBuildings)), roads:{}, ships:{}, current:0,
@@ -1768,6 +1771,10 @@ function apply(a){
       if(!shipLegal(a.edgeId,mv)){ state.ships[from]=saved; return; }
       state.ships[a.edgeId]={owner:mv,fresh:false};
       state.movedShip=true; state.ui.moveShipFrom=null; state.uiMode=null;
+      // Regelkonform: das versetzte Schiff kann angrenzende Nebelfelder aufdecken
+      // (Ozeanien), Stämme entdecken (Der vergessene Stamm) und Dörfer anschließen
+      // (Stoffe für Catan) – wie beim Neubau eines Schiffs.
+      revealFogFor(a.edgeId,mv); revealTribeFor(a.edgeId,mv); clothConnectFor(a.edgeId,mv);
       pushLog("log_moved_ship",{name:mv}); recomputeAwards(); checkWin(); return;
     }
     case "BUILD_SETTLEMENT":{
