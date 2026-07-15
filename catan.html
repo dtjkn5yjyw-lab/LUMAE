@@ -236,7 +236,7 @@
    ============================================================ */
 
 /* ---------- constants ---------- */
-var VERSION="26.07.15.1";
+var VERSION="26.07.15.2";
 var SIZE=52, SQRT3=Math.sqrt(3), ROWS=[3,4,5,4,3];
 var RES=["wood","brick","sheep","wheat","ore"];
 var RES_META={
@@ -853,7 +853,7 @@ var SCEN={
   vierinseln:{key:"menu_scn_vier",players:[3,4,5,6],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
   wueste:{key:"menu_scn_wueste",players:[3,4,5,6],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
   vergessen:{key:"menu_scn_vergessen",players:[3,4,5,6],vpTarget:13,founding:"home",build:function(n){return buildVergessen(n);}},
-  stoffe:{key:"menu_scn_stoffe",players:[3,4],vpTarget:14,founding:"home",noLongestRoad:true,setupSettlements:3,build:function(n){return buildStoffe(n);}},
+  stoffe:{key:"menu_scn_stoffe",players:[3,4,5,6],vpTarget:14,founding:"home",noLongestRoad:true,setupSettlements:3,build:function(n){return buildStoffe(n);}},
   ozeanien:{key:"menu_scn_ozeanien",players:[3,4,5,6],vpTarget:12,founding:"home",build:function(n){return buildOzeanien(n);}},
   piraten:{key:"menu_scn_piraten",players:[3,4,5,6],vpTarget:10,founding:"home",noLongestRoad:true,noLargestArmy:true,noRobber:true,build:function(n){return buildPiraten(n);}},
   wunder:{key:"menu_scn_wunder",players:[3,4,5,6],vpTarget:10,founding:"main",islandBonus:1,build:function(n){return buildWunder(n);}}
@@ -1097,6 +1097,7 @@ function buildPirateDevDeck(n){
 }
 // "Stoffe für Catan": two home islands + 4 cloth villages (5 cloth each) in the middle
 function buildStoffe(n){
+  if(n>=5) return buildStoffeBig(n);
   var R=4, coords=seaCoords(R);
   var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
   var board=assembleBoard(centers); board.coords=coords;
@@ -1119,6 +1120,57 @@ function buildStoffe(n){
   var villages={}, vnums=shuffle([4,5,6,8,9,10,11,3]);
   var vi=0; region.forEach(function(rg,hi){ if(rg==="village"){ var num=vnums[vi++%vnums.length]; tiles[hi]={resource:"village",number:num}; villages[hi]={number:num,cloth:5}; } });
   var robberHex=landIdx[0], seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,villages:villages,clothReserve:10};
+}
+/* Szenario 6 "Stoffe für Catan" für 5-6 Spieler.
+   Layout ggü. 3-4: R=5-Board (91 Hex), zwei größere Home-Inseln (q≤-2 und q≥2,
+   je ca. 21 Hex), dazwischen ein Meer-Streifen (q∈{-1,0,1}) mit 12 Dörfern
+   (statt 4). Jedes Dorf hat eine Zahl (aus dem Pool 3..11 ohne 7, doppelt
+   verteilt) und startet mit 5 Stoffballen — insgesamt 60 + 10 Reserve = 70
+   Stoffballen (regelkonform zum PDF). setupSettlements:3 greift automatisch:
+   3 Startsiedlungen pro Spieler (=15/18 bei 5/6 Spielern) über die Snake-Order.
+   4 Wüsten + 2 Goldflüsse aus dem PDF sind hier noch NICHT im Layout — kommen
+   im Regelkonformitäts-Durchgang. */
+function buildStoffeBig(n){
+  var R=5, coords=seaCoords(R);
+  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
+  var board=assembleBoard(centers); board.coords=coords;
+  var idx={}; coords.forEach(function(c,i){ idx[c.q+","+c.r]=i; });
+
+  // 12 Dorf-Positionen im Meer-Streifen (q in {-1,0,1}), verteilt zickzack
+  var villageQR=[
+    [0,-4],[0,-2],[0,0],[0,2],[0,4],       // 5 auf q=0
+    [-1,-3],[-1,-1],[-1,1],[-1,3],          // 4 auf q=-1
+    [1,-3],[1,-1],[1,1]                     // 3 auf q=1
+  ];
+  var villageSet={}; villageQR.forEach(function(qr){ var i=idx[qr[0]+","+qr[1]]; if(i!=null) villageSet[i]=true; });
+
+  var region=coords.map(function(c,i){
+    if(villageSet[i]) return "village";
+    if(c.dist===R)    return "sea";
+    if(c.q<=-2)       return "home";
+    if(c.q>=2)        return "home";
+    return "sea";                  // Meer-Streifen zwischen den Inseln
+  });
+
+  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home") landIdx.push(hi); });
+  var bag=shuffle(spreadRes(landIdx.length)), toks=makeTokens(landIdx.length);
+  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
+  landIdx.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
+  var homeHexes={}; region.forEach(function(rg,hi){ if(rg==="home") homeHexes[hi]=true; });
+
+  // 12 Dörfer: Nummern aus [3..11] ohne 7, jede Zahl 1-2× (12 Nummern insgesamt)
+  var villages={}, vnums=shuffle([3,4,5,6,8,9,10,11, 3,5,9,11]);
+  var vi=0; region.forEach(function(rg,hi){
+    if(rg==="village"){
+      var num=vnums[vi++%vnums.length];
+      tiles[hi]={resource:"village",number:num};
+      villages[hi]={number:num,cloth:5};
+    }
+  });
+
+  var robberHex=landIdx[0];
+  var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,villages:villages,clothReserve:10};
 }
 // "Der vergessene Stamm": home island + a tribe island across the sea whose hexes carry hidden reward tokens
