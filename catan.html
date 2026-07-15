@@ -236,7 +236,7 @@
    ============================================================ */
 
 /* ---------- constants ---------- */
-var VERSION="0.3.0";
+var VERSION="26.07.15.1";
 var SIZE=52, SQRT3=Math.sqrt(3), ROWS=[3,4,5,4,3];
 var RES=["wood","brick","sheep","wheat","ore"];
 var RES_META={
@@ -355,7 +355,7 @@ var STR={
     devd_vp:"1 Siegpunkt. Bleibt verdeckt.",
     res_wood:"Holz", res_brick:"Lehm", res_sheep:"Wolle", res_wheat:"Getreide", res_ore:"Erz",
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Braun",
-    foot:"v4.1 · aufgeräumt · deutschsprachig · offline",
+    foot:"aufgeräumt · deutschsprachig · offline",
     log_setup_settle:"{name} setzt eine Siedlung.", log_setup_road:"{name} setzt eine Straße.", log_setup_ship:"{name} setzt ein Schiff.",
     log_setup_prompt:"{name}, setze eine Siedlung.", log_setup_first:"Setzt eure ersten Siedlungen.",
     phase_firstroll:"Startspieler ermitteln",
@@ -852,7 +852,7 @@ var SCEN={
   ufern:{key:"menu_scn_ufern",players:[3,4,5,6],vpTarget:14,founding:"main",build:function(n){return buildUfern(n);}},
   vierinseln:{key:"menu_scn_vier",players:[3,4,5,6],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
   wueste:{key:"menu_scn_wueste",players:[3,4,5,6],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
-  vergessen:{key:"menu_scn_vergessen",players:[3,4],vpTarget:13,founding:"home",build:function(n){return buildVergessen(n);}},
+  vergessen:{key:"menu_scn_vergessen",players:[3,4,5,6],vpTarget:13,founding:"home",build:function(n){return buildVergessen(n);}},
   stoffe:{key:"menu_scn_stoffe",players:[3,4],vpTarget:14,founding:"home",noLongestRoad:true,setupSettlements:3,build:function(n){return buildStoffe(n);}},
   ozeanien:{key:"menu_scn_ozeanien",players:[3,4,5,6],vpTarget:12,founding:"home",build:function(n){return buildOzeanien(n);}},
   piraten:{key:"menu_scn_piraten",players:[3,4,5,6],vpTarget:10,founding:"home",noLongestRoad:true,noLargestArmy:true,noRobber:true,build:function(n){return buildPiraten(n);}},
@@ -1123,6 +1123,7 @@ function buildStoffe(n){
 }
 // "Der vergessene Stamm": home island + a tribe island across the sea whose hexes carry hidden reward tokens
 function buildVergessen(n){
+  if(n>=5) return buildVergessenBig(n);
   var R=4, coords=seaCoords(R);
   var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
   var board=assembleBoard(centers); board.coords=coords;
@@ -1143,6 +1144,45 @@ function buildVergessen(n){
   var kinds=shuffle(rewardIds.map(function(_,i){ var m=i%10; return m<4?"res":(m<7?"dev":"vp"); }));
   var tribe={}; rewardIds.forEach(function(hi,k){ tribe[hi]={kind:kinds[k],res:tiles[hi].resource}; });
   var robberHex=region.indexOf("home"); var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+  return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,tribe:tribe,tribeHarbors:tribeHarbors};
+}
+/* Szenario 5 "Der vergessene Stamm" für 5-6 Spieler.
+   Layout-Kompromiss ggü. dem 2025er-PDF: R=5-Board (91 Hex), Wasser-Streifen r=0
+   trennt Home (r≥1, 26 Hex) und Far (r≤-1, 26 Hex); äußerer Ring dist=5 als
+   Küste (30 Hex). Analog zum 3-4-Szenario: Küsten-Far-Hexes tragen Hafen-Tokens,
+   innere Far-Hexes tragen Belohnungs-Tokens (Rohstoff / Entwicklungskarte / SP).
+   4 Wüsten + 3 Goldflüsse aus dem PDF sind hier noch NICHT eingebaut — kommen im
+   späteren Regelkonformitäts-Durchgang zusammen mit dem exakten Chip-Layout. */
+function buildVergessenBig(n){
+  var R=5, coords=seaCoords(R);
+  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
+  var board=assembleBoard(centers); board.coords=coords;
+  var region=coords.map(function(c){
+    if(c.dist===R) return "sea";     // Küstenring
+    if(c.r===0)   return "sea";      // Wasser-Streifen trennt Home und Far
+    return c.r>=1 ? "home" : "far";
+  });
+  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home"||rg==="far") landIdx.push(hi); });
+  var bag=shuffle(spreadRes(landIdx.length)), toks=makeTokens(landIdx.length);
+  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
+  landIdx.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
+  var homeHexes={}; region.forEach(function(rg,hi){ if(rg==="home") homeHexes[hi]=true; });
+  // Far side: Hafen-Tokens auf Küsten-Feldern (r===-1), Belohnungs-Tokens auf inneren Far-Feldern
+  var farIds=[]; region.forEach(function(rg,hi){ if(rg==="far") farIds.push(hi); });
+  var coastFar=farIds.filter(function(hi){ return coords[hi].r===-1; });
+  // 6 Hafen-Tokens statt 4 (proportional zum größeren Board)
+  var harborHexes=shuffle(coastFar.slice()).slice(0,Math.min(6,coastFar.length));
+  var harborSet={}; harborHexes.forEach(function(hi){ harborSet[hi]=true; });
+  var hspec=shuffle([
+    {ratio:3,kind:"any"},{ratio:3,kind:"any"},{ratio:3,kind:"any"},
+    {ratio:2,kind:"brick"},{ratio:2,kind:"ore"},{ratio:2,kind:"wheat"},{ratio:2,kind:"wood"},{ratio:2,kind:"sheep"}
+  ]);
+  var tribeHarbors={}; harborHexes.forEach(function(hi,k){ var s=hspec[k%hspec.length]; tribeHarbors[hi]={ratio:s.ratio,kind:s.kind}; });
+  var rewardIds=farIds.filter(function(hi){ return !harborSet[hi]; });
+  var kinds=shuffle(rewardIds.map(function(_,i){ var m=i%10; return m<4?"res":(m<7?"dev":"vp"); }));
+  var tribe={}; rewardIds.forEach(function(hi,k){ tribe[hi]={kind:kinds[k],res:tiles[hi].resource}; });
+  var robberHex=region.indexOf("home");
+  var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,tribe:tribe,tribeHarbors:tribeHarbors};
 }
 // "Durch die Wüste": home island + desert belt + fertile land beyond; +1 VP per settlement beyond the desert
