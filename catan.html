@@ -186,9 +186,13 @@
   .log .ln{opacity:.6}
   .log .ln.first{opacity:1;color:#f3ecda}
 
+  .ship-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:11px;letter-spacing:.04em;background:rgba(243,236,218,.14);border:1px solid rgba(243,236,218,.25);color:rgba(243,236,218,.92)}
+  .ship-badge.ship2{background:rgba(240,196,120,.16);border-color:rgba(240,196,120,.45);color:#f0c478}
   .foot{margin-top:14px;font-family:ui-sans-serif,system-ui,sans-serif;font-size:11px;color:rgba(243,236,218,.6);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 6px}
   .foot .foot-left{text-align:left}
-  .foot .foot-mid{text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;color:rgba(243,236,218,.8)}
+  .foot .foot-mid{text-align:center;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;color:rgba(243,236,218,.8);white-space:nowrap}
+  .foot .foot-label{font-family:ui-sans-serif,system-ui,sans-serif;letter-spacing:.02em;color:rgba(243,236,218,.55);margin-right:2px}
+  .foot .foot-sep{opacity:.4;margin:0 2px}
   .foot .foot-right{text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;color:rgba(243,236,218,.72)}
 
   /* ---- modals ---- */
@@ -232,7 +236,7 @@
    ============================================================ */
 
 /* ---------- constants ---------- */
-var VERSION="0.2.0";
+var VERSION="0.3.0";
 var SIZE=52, SQRT3=Math.sqrt(3), ROWS=[3,4,5,4,3];
 var RES=["wood","brick","sheep","wheat","ore"];
 var RES_META={
@@ -847,7 +851,7 @@ var SCEN={
   frei:{key:"menu_scn_frei",players:[2,3,4,5,6],vpTarget:12,founding:"main",islandBonus:1,build:function(n){return buildNeueWelt(n);}},
   ufern:{key:"menu_scn_ufern",players:[3,4,5,6],vpTarget:14,founding:"main",build:function(n){return buildUfern(n);}},
   vierinseln:{key:"menu_scn_vier",players:[3,4,5,6],vpTarget:13,founding:"any",build:function(n){return buildVierInseln(n);}},
-  wueste:{key:"menu_scn_wueste",players:[3,4],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
+  wueste:{key:"menu_scn_wueste",players:[3,4,5,6],vpTarget:14,founding:"home",build:function(n){return buildWueste(n);}},
   vergessen:{key:"menu_scn_vergessen",players:[3,4],vpTarget:13,founding:"home",build:function(n){return buildVergessen(n);}},
   stoffe:{key:"menu_scn_stoffe",players:[3,4],vpTarget:14,founding:"home",noLongestRoad:true,setupSettlements:3,build:function(n){return buildStoffe(n);}},
   ozeanien:{key:"menu_scn_ozeanien",players:[3,4,5,6],vpTarget:12,founding:"home",build:function(n){return buildOzeanien(n);}},
@@ -1143,6 +1147,7 @@ function buildVergessen(n){
 }
 // "Durch die Wüste": home island + desert belt + fertile land beyond; +1 VP per settlement beyond the desert
 function buildWueste(n){
+  if(n>=5) return buildWuesteBig(n);
   var R=4, coords=seaCoords(R);
   var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
   var board=assembleBoard(centers); board.coords=coords;
@@ -1161,6 +1166,64 @@ function buildWueste(n){
   var robberHex=region.indexOf("desert"); if(robberHex<0)robberHex=landIdx[0];
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,farHexes:farHexes};
+}
+
+/* Szenario 4 "Durch die Wüste" für 5-6 Spieler.
+   Layout-Kompromiss ggü. dem 2025er-PDF: R=5-Board (91 Hex) mit äußerem Sea-Ring
+   (30 Hex); Wüstengürtel r=0 mit 5 Wüsten + 3 Goldflüssen + 1 wildcard-Land;
+   symmetrische Home-/Far-Zonen (26+26 Hex). Ressourcen-Anteile proportional
+   skaliert; Feintuning gegen die PDF-Vorgabe (5 Wüste, 3 Gold, 7×5 Land, 20 Meer,
+   38 Chips) erfolgt später im dedizierten Regelkonformitäts-Durchgang. */
+function buildWuesteBig(n){
+  var R=5, coords=seaCoords(R);
+  var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
+  var board=assembleBoard(centers); board.coords=coords;
+
+  // Regionen zuweisen
+  var region=coords.map(function(c){
+    if(c.dist===R) return "sea";     // Küstenring
+    if(c.r===0)   return "belt";     // Wüsten-/Goldgürtel in der Mitte
+    if(c.r>=1)    return "home";     // Startseite (Foundation hier)
+    return "far";                    // fruchtbares Land jenseits des Gürtels
+  });
+
+  var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
+
+  // Gürtel-Positionen aufteilen: 5 Wüsten + 3 Goldflüsse + Rest Standard-Land
+  var beltIdx=[]; region.forEach(function(rg,hi){ if(rg==="belt") beltIdx.push(hi); });
+  var beltShuf=shuffle(beltIdx.slice());
+  var beltDesert=beltShuf.slice(0,5);
+  var beltGold  =beltShuf.slice(5,8);
+  var beltLand  =beltShuf.slice(8); // 1 Rest-Feld → normales Land
+
+  // Landverteilung: home + far + beltLand bekommen Standard-Ressourcen
+  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home"||rg==="far") landIdx.push(hi); });
+  landIdx=landIdx.concat(beltLand);
+
+  var landBag=shuffle(spreadRes(landIdx.length));
+
+  // Chip-Pool: passend zur Anzahl Land + Gold (Wüsten kriegen keine).
+  // Verteilung erweitert das PDF-Muster (2:3,3:4,...,12:3) proportional aufs
+  // größere Board.
+  var chipCount=landIdx.length+beltGold.length;
+  var chipCfg={2:4,3:6,4:6,5:6,6:6,8:6,9:6,10:6,11:6,12:4}; // 56 Chips (für Ø 56 Felder)
+  var toks=chipBag(chipCfg);
+  // Falls exakter Match nötig: auffüllen/kürzen um Rundungen abzufedern
+  while(toks.length<chipCount) toks.push(6);
+  toks=toks.slice(0,chipCount);
+
+  landIdx.forEach(function(hi){ tiles[hi]={resource:landBag.pop(), number:toks.pop()}; });
+  beltGold.forEach(function(hi){ tiles[hi]={resource:"gold", number:toks.pop()}; });
+  beltDesert.forEach(function(hi){ tiles[hi]={resource:"desert", number:null}; });
+
+  var farHexes={}; region.forEach(function(rg,hi){ if(rg==="far") farHexes[hi]=true; });
+  var robberHex=beltDesert[0];
+  var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
+
+  // 6 Spezialhäfen (davon 2× Wolle) + 5 3:1-Häfen — analog zu Ufern 5-6
+  var harbors=assignSeaHarborsList(board,tiles,harborList(5,5,["sheep"]));
+
+  return {board:board,tiles:tiles,harbors:harbors,robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,farHexes:farHexes};
 }
 function computeIslands(board,tiles){
   var adj={};
@@ -1360,7 +1423,7 @@ function freshGame(n,mode,scnId,skip,seatBots){
   var base={
     phase:"firstroll", mode:mode, scenario:scenario, vpTarget:vpTarget,
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
-    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, homeIsland:homeIsland, tribe:tribe, tribeHarbors:tribeHarbors, villages:villages, clothReserve:clothReserve, clothConn:{}, startTime:Date.now(),
+    islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, homeIsland:homeIsland, tribe:tribe, tribeHarbors:tribeHarbors, villages:villages, clothReserve:clothReserve, clothConn:{}, startTime:Date.now(), turnCount:0,
     fortresses:fortresses, pathEdges:pathEdges, pathSet:pathSet, pirateRoute:pirateRoute, pirateIdx:0, attackedFortress:false, pendingPirateSum:null,
     wonders:wonders, wonderTaboo:wonderTaboo, wonderClaims:{}, wonderStage:{}, wonderChoices:wonderList(n),
     buildings:JSON.parse(JSON.stringify(preBuildings)), roads:{}, ships:{}, current:0,
@@ -1955,6 +2018,7 @@ function apply(a){
 }
 function advanceTurn(){
   state.current=(state.current+1)%state.players.length;
+  state.turnCount=(state.turnCount||0)+1;
   state.turn={rolled:false,dice:null}; state.uiMode=null; state.pending=null; state.special=null; state.part2=false;
   state.movedShip=false; state.attackedFortress=false;
   for(var k in state.ships) state.ships[k].fresh=false;
@@ -2302,14 +2366,15 @@ function renderGame(){
       '<span class="title">CATAN</span><span class="phase">'+meta+'</span></div>'+
     '<div class="right">'+
       '<div class="turn"><span style="color:#9fc0d4">'+esc(tr("turn"))+'</span>'+
-        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(ap))+(isBot(ap)?' '+tr("bot_tag"):'')+'</span></div>'+
+        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(ap))+(isBot(ap)?' '+tr("bot_tag"):'')+(seaBig()&&state.phase==="play"?('<span class="ship-badge '+(state.part2?"ship2":"ship1")+'">'+(state.part2?"Schiff 2":"Schiff 1")+'</span>'):'')+'</span></div>'+
       '<button class="btn-new" data-act="toginfo">'+esc(tr("info_btn"))+'</button>'+
       '<button class="btn-new" data-act="costs">'+esc(tr("costs_btn"))+'</button>'+
       '<button class="btn-new" data-act="togglesave">'+esc(tr("save_btn"))+'</button>'+
       '<button class="btn-new" data-act="newgame">'+esc(tr("new_game"))+'</button>'+
     '</div></div>';
   var layout='<div class="layout"><div class="board-wrap">'+renderBoard()+'</div>'+renderSidebar()+'</div>';
-  var foot='<div class="foot">'+'<span class="foot-left">'+esc(tr("foot"))+'</span>'+'<span class="foot-mid">⏱ <span id="game-clock">00:00</span></span>'+'<span class="foot-right">v'+VERSION+'</span>'+'</div>';
+  var _n=state.players.length||1, _rd=1+Math.floor((state.turnCount||0)/_n);
+  var foot='<div class="foot">'+'<span class="foot-left">'+esc(tr("foot"))+'</span>'+'<span class="foot-mid">'+'<span class="foot-label">Spielzeit</span> ⏱ <span id="game-clock">00:00</span>'+' <span class="foot-sep">·</span> '+'<span class="foot-label">Runde</span> '+_rd+'</span>'+'<span class="foot-right">v'+VERSION+'</span>'+'</div>';
   return '<div class="wrap">'+header+layout+foot+'</div>'+renderModals()+(state.ui.showCosts?costsOverlay():"")+(state.ui.showSave?saveOverlay():"")+(state.ui.confirmNew?confirmNewOverlay():"")+(state.ui.showInfo?infoOverlay():"");
 }
 function infoOverlay(){
