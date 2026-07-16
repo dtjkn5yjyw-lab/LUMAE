@@ -238,7 +238,7 @@
    ============================================================ */
 
 /* ---------- constants ---------- */
-var VERSION="26.07.15.4";
+var VERSION="26.07.16.3";
 var SIZE=52, SQRT3=Math.sqrt(3), ROWS=[3,4,5,4,3];
 var RES=["wood","brick","sheep","wheat","ore"];
 var RES_META={
@@ -1155,11 +1155,31 @@ function buildStoffeBig(n){
     return "sea";                  // Meer-Streifen zwischen den Inseln
   });
 
-  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home") landIdx.push(hi); });
-  var bag=shuffle(spreadRes(landIdx.length)), toks=makeTokens(landIdx.length);
+  // Home-Inseln: pro Insel 2 Wüsten + 1 Goldfluss + Rest Standard-Land (= 4 Wüsten + 2 Gold gesamt, regelkonform PDF)
+  var homeLeftIds=[], homeRightIds=[];
+  region.forEach(function(rg,hi){
+    if(rg!=="home") return;
+    if(coords[hi].q<=-2) homeLeftIds.push(hi); else homeRightIds.push(hi);
+  });
+  function placeHome(hids){
+    var sh=shuffle(hids.slice());
+    var d=sh.slice(0,2);              // 2 Wüsten
+    var g=sh.slice(2,3);               // 1 Goldfluss
+    var l=sh.slice(3);                 // Rest Standard-Land
+    return {desert:d, gold:g, land:l};
+  }
+  var lz=placeHome(homeLeftIds), rz=placeHome(homeRightIds);
+  var allLand=lz.land.concat(rz.land);
+  var allGold=lz.gold.concat(rz.gold);
+  var chipCount=allLand.length+allGold.length;
+  var bag=shuffle(spreadRes(allLand.length));
+  var toks=makeTokens(chipCount);
   var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
-  landIdx.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
+  allLand.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
+  allGold.forEach(function(hi){ tiles[hi]={resource:"gold",  number:toks.pop()}; });
+  lz.desert.concat(rz.desert).forEach(function(hi){ tiles[hi]={resource:"desert",number:null}; });
   var homeHexes={}; region.forEach(function(rg,hi){ if(rg==="home") homeHexes[hi]=true; });
+  var landIdx=allLand; // for downstream code compatibility
 
   // 12 Dörfer: Nummern aus [3..11] ohne 7, jede Zahl 1-2× (12 Nummern insgesamt)
   var villages={}, vnums=shuffle([3,4,5,6,8,9,10,11, 3,5,9,11]);
@@ -1201,41 +1221,111 @@ function buildVergessen(n){
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,tribe:tribe,tribeHarbors:tribeHarbors};
 }
 /* Szenario 5 "Der vergessene Stamm" für 5-6 Spieler.
-   Layout-Kompromiss ggü. dem 2025er-PDF: R=5-Board (91 Hex), Wasser-Streifen r=0
-   trennt Home (r≥1, 26 Hex) und Far (r≤-1, 26 Hex); äußerer Ring dist=5 als
-   Küste (30 Hex). Analog zum 3-4-Szenario: Küsten-Far-Hexes tragen Hafen-Tokens,
-   innere Far-Hexes tragen Belohnungs-Tokens (Rohstoff / Entwicklungskarte / SP).
-   4 Wüsten + 3 Goldflüsse aus dem PDF sind hier noch NICHT eingebaut — kommen im
-   späteren Regelkonformitäts-Durchgang zusammen mit dem exakten Chip-Layout. */
+   PDF-konformes Layout (2025er Ausgabe): exakt 63 Hex = 22 Meer + 4 Wüsten +
+   3 Goldflüsse + 34 Standard-Land (7 pro Hügel/Wald/Weide/Acker + 6 Gebirge).
+   Häfen: 5 Spezial + 3× 3:1 = 8 Häfen. Extra: 10 Siegpunkt-Chips + 6 Entw.-Karten.
+
+   Board-Konstruktion: R=4-Basis (61 Hex) + 2 kleine Inseln bei (-4,-2) und
+   (4,2) im dist=5-Ring → 63 Hex gesamt. Wasserstreifen r=0 (9 Hex) trennt
+   Home (r≥1) und Far (r≤-1). Küstenring dist=4 non-r0 (22 Hex) verteilt in
+   13 Sea + 9 Küsten-Land. Inner Home und Inner Far je 15 Standard-Land.
+   Wüsten/Gold-Verteilung: Home = 2 Wüsten + 1 Gold + 17 Standard,
+   Far = 2 Wüsten + 2 Gold + 17 Standard (thematisch: das vergessene Land ist
+   ressourcen-reicher).
+
+   Chip-Anmerkung: Das PDF listet 29 Chips (physisch im Karton), aber 37 Chip-
+   Positionen (34 Standard-Land + 3 Gold). Für Regelfluss verwenden wir 37 Chips
+   nach proportional erweiterter PDF-Verteilung (2:1, 3:5, 4:5, 5:5, 6:4, 8:4,
+   9:4, 10:4, 11:4, 12:1). */
 function buildVergessenBig(n){
-  var R=5, coords=seaCoords(R);
+  // 63 Hex: R=4-Basis + 2 kleine Inseln in der Far-Zone (dist=5)
+  var coords=seaCoords(4).concat([
+    {q:-4,r:-1,s: 5,dist:5},  // (q=-4, r=-1) → dist=(4+1+5)/2=5 ✓; Far-Seite (r<0)
+    {q: 4,r: 1,s:-5,dist:5}   // (q=4, r=1)   → dist=(4+1+5)/2=5 ✓; thematisch Far
+  ]);
   var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
   var board=assembleBoard(centers); board.coords=coords;
+
+  // Regionen zuweisen
   var region=coords.map(function(c){
-    if(c.dist===R) return "sea";     // Küstenring
-    if(c.r===0)   return "sea";      // Wasser-Streifen trennt Home und Far
-    return c.r>=1 ? "home" : "far";
+    if(c.dist===5) return "island";                     // 2 kleine Inseln → Far
+    if(c.r===0) return "sea";                           // Wasserstreifen 9 Hex
+    if(c.dist===4) return c.r>=1 ? "homeCoast" : "farCoast"; // Küstenring 22 Hex → teils sea, teils Land
+    if(c.r>=1) return "home";                           // Inner Home: 15 Hex
+    return "far";                                       // Inner Far: 15 Hex
   });
-  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home"||rg==="far") landIdx.push(hi); });
-  var bag=shuffle(spreadRes(landIdx.length)), toks=makeTokens(landIdx.length);
+
   var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
-  landIdx.forEach(function(hi){ tiles[hi]={resource:bag.pop(),number:toks.pop()}; });
-  var homeHexes={}; region.forEach(function(rg,hi){ if(rg==="home") homeHexes[hi]=true; });
-  // Far side: Hafen-Tokens auf Küsten-Feldern (r===-1), Belohnungs-Tokens auf inneren Far-Feldern
-  var farIds=[]; region.forEach(function(rg,hi){ if(rg==="far") farIds.push(hi); });
-  var coastFar=farIds.filter(function(hi){ return coords[hi].r===-1; });
-  // 6 Hafen-Tokens statt 4 (proportional zum größeren Board)
-  var harborHexes=shuffle(coastFar.slice()).slice(0,Math.min(6,coastFar.length));
+
+  // Küstenring aufteilen: Home-Küste 11 Positionen → 6 sea + 5 Land; Far-Küste 11 → 7 sea + 4 Land
+  // (asymmetrisch, damit Far mit den 2 Inseln in Summe ausgewogen bleibt)
+  var homeCoastIdx=[], farCoastIdx=[];
+  region.forEach(function(rg,hi){
+    if(rg==="homeCoast") homeCoastIdx.push(hi);
+    else if(rg==="farCoast") farCoastIdx.push(hi);
+  });
+  var hcShuf=shuffle(homeCoastIdx.slice()), fcShuf=shuffle(farCoastIdx.slice());
+  var homeCoastLand=hcShuf.slice(0,5);   // 5 Küsten-Land Home
+  var farCoastLand =fcShuf.slice(0,4);   // 4 Küsten-Land Far
+
+  // Alle Home-Land Positionen: 15 Inner + 5 Küste = 20
+  var innerHome=[]; region.forEach(function(rg,hi){ if(rg==="home") innerHome.push(hi); });
+  var homeAllLand=innerHome.concat(homeCoastLand);
+  // Alle Far-Land Positionen: 15 Inner + 4 Küste + 2 Inseln = 21
+  var innerFar=[]; region.forEach(function(rg,hi){ if(rg==="far") innerFar.push(hi); });
+  var islands=[]; region.forEach(function(rg,hi){ if(rg==="island") islands.push(hi); });
+  var farAllLand=innerFar.concat(farCoastLand).concat(islands);
+
+  // Home-Verteilung: 2 Wüsten + 1 Gold + 17 Standard = 20
+  var homeShuf=shuffle(homeAllLand.slice());
+  var homeDesert=homeShuf.slice(0,2);
+  var homeGold  =homeShuf.slice(2,3);
+  var homeStd   =homeShuf.slice(3);       // 17 Standard-Land
+
+  // Far-Verteilung: 2 Wüsten + 2 Gold + 17 Standard = 21
+  var farShuf=shuffle(farAllLand.slice());
+  var farDesert=farShuf.slice(0,2);
+  var farGold  =farShuf.slice(2,4);
+  var farStd   =farShuf.slice(4);         // 17 Standard-Land
+
+  // Chip-Distribution: proportional erweitertes PDF-Muster für 37 Chips
+  // (34 Standard + 3 Gold = 37 → 2:1, 3:5, 4:5, 5:5, 6:4, 8:4, 9:4, 10:4, 11:4, 12:1)
+  var chipCfg={2:1,3:5,4:5,5:5,6:4,8:4,9:4,10:4,11:4,12:1};
+  var toks=chipBag(chipCfg);
+
+  // Ressourcen-Verteilung: 7+7+7+7+6 = 34 Standard (Hügel/Wald/Weide/Acker + Gebirge)
+  var landBag=shuffle(resBag({brick:7,wood:7,sheep:7,wheat:7,ore:6}));
+
+  homeStd.forEach(function(hi){ tiles[hi]={resource:landBag.pop(), number:toks.pop()}; });
+  farStd.forEach(function(hi){ tiles[hi]={resource:landBag.pop(), number:toks.pop()}; });
+  homeGold.forEach(function(hi){ tiles[hi]={resource:"gold", number:toks.pop()}; });
+  farGold.forEach(function(hi){ tiles[hi]={resource:"gold", number:toks.pop()}; });
+  homeDesert.concat(farDesert).forEach(function(hi){ tiles[hi]={resource:"desert",number:null}; });
+
+  // homeHexes: alle Home-Land-Positionen (für Startaufstellung "home"-Regel)
+  var homeHexes={};
+  homeAllLand.forEach(function(hi){ homeHexes[hi]=true; });
+
+  // Tribe-Häfen auf Far-Küsten-Land + Islands (nur Standard-Land, keine Wüste/Gold)
+  var specialSet={};
+  homeDesert.concat(homeGold).concat(farDesert).concat(farGold).forEach(function(hi){ specialSet[hi]=true; });
+  var tribeHarborCandidates=farCoastLand.concat(islands).filter(function(hi){ return !specialSet[hi]; });
+  var harborHexes=shuffle(tribeHarborCandidates.slice()).slice(0,Math.min(6,tribeHarborCandidates.length));
   var harborSet={}; harborHexes.forEach(function(hi){ harborSet[hi]=true; });
   var hspec=shuffle([
     {ratio:3,kind:"any"},{ratio:3,kind:"any"},{ratio:3,kind:"any"},
     {ratio:2,kind:"brick"},{ratio:2,kind:"ore"},{ratio:2,kind:"wheat"},{ratio:2,kind:"wood"},{ratio:2,kind:"sheep"}
   ]);
-  var tribeHarbors={}; harborHexes.forEach(function(hi,k){ var s=hspec[k%hspec.length]; tribeHarbors[hi]={ratio:s.ratio,kind:s.kind}; });
-  var rewardIds=farIds.filter(function(hi){ return !harborSet[hi]; });
+  var tribeHarbors={};
+  harborHexes.forEach(function(hi,k){ var s=hspec[k%hspec.length]; tribeHarbors[hi]={ratio:s.ratio,kind:s.kind}; });
+
+  // Tribe-Rewards auf innerer Far (nur Standard-Land, nicht Wüste/Gold, nicht Hafen)
+  var rewardIds=innerFar.filter(function(hi){ return !specialSet[hi] && !harborSet[hi]; });
   var kinds=shuffle(rewardIds.map(function(_,i){ var m=i%10; return m<4?"res":(m<7?"dev":"vp"); }));
-  var tribe={}; rewardIds.forEach(function(hi,k){ tribe[hi]={kind:kinds[k],res:tiles[hi].resource}; });
-  var robberHex=region.indexOf("home");
+  var tribe={};
+  rewardIds.forEach(function(hi,k){ tribe[hi]={kind:kinds[k],res:tiles[hi].resource}; });
+
+  var robberHex=homeDesert.length ? homeDesert[0] : (farDesert.length ? farDesert[0] : homeStd[0]);
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
   return {board:board,tiles:tiles,harbors:assignSeaHarbors(board,tiles),robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,homeHexes:homeHexes,tribe:tribe,tribeHarbors:tribeHarbors};
 }
@@ -1263,58 +1353,80 @@ function buildWueste(n){
 }
 
 /* Szenario 4 "Durch die Wüste" für 5-6 Spieler.
-   Layout-Kompromiss ggü. dem 2025er-PDF: R=5-Board (91 Hex) mit äußerem Sea-Ring
-   (30 Hex); Wüstengürtel r=0 mit 5 Wüsten + 3 Goldflüssen + 1 wildcard-Land;
-   symmetrische Home-/Far-Zonen (26+26 Hex). Ressourcen-Anteile proportional
-   skaliert; Feintuning gegen die PDF-Vorgabe (5 Wüste, 3 Gold, 7×5 Land, 20 Meer,
-   38 Chips) erfolgt später im dedizierten Regelkonformitäts-Durchgang. */
+   PDF-konformes Layout (2025er Ausgabe): exakt 63 Hex = 20 Meer + 5 Wüsten +
+   3 Goldflüsse + 35 Standard-Land (7 pro Ressource). 38 Chips genau nach
+   PDF-Muster (2:3,3:4,4:4,5:4,6:4,8:4,9:4,10:4,11:4,12:3). 6 Spezialhäfen
+   (2× Wolle) + 5 3:1-Häfen.
+   Board-Konstruktion: R=4-Basis (61 Hex) + 2 kleine Inseln bei (-4,-1) und
+   (4,1) im dist=5-Ring → 63 Hex gesamt. Wüsten-Kern immer im Zentrum (0,0);
+   Wüstengürtel r=0 dist=1..4 bietet weitere 4 Wüsten + 3 Gold + 1 wildcard;
+   dist=4-Ring (22 nicht-Gürtel-Positionen) trägt 20 Meer + 2 Küsten-Land;
+   Home (r≥1, dist≤3) und Far (r≤-1, dist≤3) je 15 Standard-Land + die
+   jeweils zugewiesene Insel. Farbonus (+1 VP) gilt für die Far-Zone inkl.
+   beider kleiner Inseln. */
 function buildWuesteBig(n){
-  var R=5, coords=seaCoords(R);
+  // 63 Hex-Koordinaten: R=4-Basis + 2 kleine Inseln
+  var coords=seaCoords(4).concat([
+    {q:-4,r:-1,s:5,dist:5},   // kleine Insel im Nord-West (Far-Seite)
+    {q: 4,r: 1,s:-5,dist:5}   // kleine Insel im Süd-Ost (Far-Seite, thematisch außerhalb)
+  ]);
   var centers=coords.map(function(c){return{x:SIZE*SQRT3*(c.q+c.r/2),y:SIZE*1.5*c.r};});
   var board=assembleBoard(centers); board.coords=coords;
 
-  // Regionen zuweisen
+  // Regionen zuweisen — Kernwüste am Zentrum, Gürtel drumherum, Küstenring am Rand
   var region=coords.map(function(c){
-    if(c.dist===R) return "sea";     // Küstenring
-    if(c.r===0)   return "belt";     // Wüsten-/Goldgürtel in der Mitte
-    if(c.r>=1)    return "home";     // Startseite (Foundation hier)
-    return "far";                    // fruchtbares Land jenseits des Gürtels
+    if(c.dist===5) return "island";               // die 2 kleinen Inseln
+    if(c.q===0 && c.r===0) return "beltdesert";   // Zentrum: immer Wüste
+    if(c.r===0) return "belt";                    // 8 restliche Gürtel-Positionen
+    if(c.dist===4) return "outer";                // dist=4 non-r0: 22 Positionen (20 sea + 2 Land)
+    if(c.r>=1) return "home";                     // Home (r>=1, dist<=3): 15 Positionen
+    return "far";                                 // Far (r<=-1, dist<=3): 15 Positionen
   });
 
   var tiles=board.hexes.map(function(){return{resource:"sea",number:null};});
 
-  // Gürtel-Positionen aufteilen: 5 Wüsten + 3 Goldflüsse + Rest Standard-Land
+  // 8 Belt-Positionen: 4 Wüsten + 3 Gold + 1 Standard-Land
   var beltIdx=[]; region.forEach(function(rg,hi){ if(rg==="belt") beltIdx.push(hi); });
   var beltShuf=shuffle(beltIdx.slice());
-  var beltDesert=beltShuf.slice(0,5);
-  var beltGold  =beltShuf.slice(5,8);
-  var beltLand  =beltShuf.slice(8); // 1 Rest-Feld → normales Land
+  var beltDesert=beltShuf.slice(0,4);
+  var beltGold  =beltShuf.slice(4,7);
+  var beltLand  =beltShuf.slice(7,8);
 
-  // Landverteilung: home + far + beltLand bekommen Standard-Ressourcen
-  var landIdx=[]; region.forEach(function(rg,hi){ if(rg==="home"||rg==="far") landIdx.push(hi); });
-  landIdx=landIdx.concat(beltLand);
+  // 22 Outer-Positionen (dist=4 non-r0): 20 Sea + 2 Land — verteilt an der Küste
+  var outerIdx=[]; region.forEach(function(rg,hi){ if(rg==="outer") outerIdx.push(hi); });
+  var outerShuf=shuffle(outerIdx.slice());
+  var outerLand=outerShuf.slice(0,2);
+  // Rest bleibt "sea" (bereits initialisiert)
 
-  var landBag=shuffle(spreadRes(landIdx.length));
+  // Alle Standard-Land Positionen: Home (15) + Far (15) + Belt-Wildcard (1) + Outer-Land (2) + Islands (2) = 35
+  var homeIdx=[]; region.forEach(function(rg,hi){ if(rg==="home") homeIdx.push(hi); });
+  var farIdx =[]; region.forEach(function(rg,hi){ if(rg==="far")  farIdx.push(hi); });
+  var islandIdx=[]; region.forEach(function(rg,hi){ if(rg==="island") islandIdx.push(hi); });
+  var landIdx=homeIdx.concat(farIdx).concat(beltLand).concat(outerLand).concat(islandIdx);
 
-  // Chip-Pool: passend zur Anzahl Land + Gold (Wüsten kriegen keine).
-  // Verteilung erweitert das PDF-Muster (2:3,3:4,...,12:3) proportional aufs
-  // größere Board.
-  var chipCount=landIdx.length+beltGold.length;
-  var chipCfg={2:4,3:6,4:6,5:6,6:6,8:6,9:6,10:6,11:6,12:4}; // 56 Chips (für Ø 56 Felder)
+  // Ressourcen: exakt 7 pro Standard-Ressource (regelkonform)
+  var landBag=shuffle(resBag({brick:7,wood:7,sheep:7,wheat:7,ore:7}));
+
+  // Chips: exakt nach PDF (2:3,3:4,4:4,5:4,6:4,8:4,9:4,10:4,11:4,12:3) = 38 Chips
+  // für 35 Standard-Land + 3 Goldflüsse
+  var chipCfg={2:3,3:4,4:4,5:4,6:4,8:4,9:4,10:4,11:4,12:3};
   var toks=chipBag(chipCfg);
-  // Falls exakter Match nötig: auffüllen/kürzen um Rundungen abzufedern
-  while(toks.length<chipCount) toks.push(6);
-  toks=toks.slice(0,chipCount);
 
   landIdx.forEach(function(hi){ tiles[hi]={resource:landBag.pop(), number:toks.pop()}; });
-  beltGold.forEach(function(hi){ tiles[hi]={resource:"gold", number:toks.pop()}; });
+  beltGold.forEach(function(hi){ tiles[hi]={resource:"gold",    number:toks.pop()}; });
   beltDesert.forEach(function(hi){ tiles[hi]={resource:"desert", number:null}; });
+  // Zentrum immer Wüste
+  var centerIdx=coords.findIndex(function(c){return c.q===0&&c.r===0;});
+  tiles[centerIdx]={resource:"desert",number:null};
 
-  var farHexes={}; region.forEach(function(rg,hi){ if(rg==="far") farHexes[hi]=true; });
-  var robberHex=beltDesert[0];
+  // Far-Zone für +1 VP: r<=-1 (klassisch) plus beide kleinen Inseln (thematisch "jenseits")
+  var farHexes={};
+  region.forEach(function(rg,hi){ if(rg==="far"||rg==="island") farHexes[hi]=true; });
+
+  var robberHex=centerIdx;
   var seaRobberHex=tiles.findIndex(function(t){return t.resource==="sea";});
 
-  // 6 Spezialhäfen (davon 2× Wolle) + 5 3:1-Häfen — analog zu Ufern 5-6
+  // 6 Spezialhäfen (2× Wolle) + 5 3:1-Häfen — regelkonform
   var harbors=assignSeaHarborsList(board,tiles,harborList(5,5,["sheep"]));
 
   return {board:board,tiles:tiles,harbors:harbors,robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:null,farHexes:farHexes};
