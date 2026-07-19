@@ -252,7 +252,7 @@
    ============================================================ */
 
 /* ---------- constants ---------- */
-var VERSION="26.07.18.5";
+var VERSION="26.07.18.18";
 function fmtClock(){
   if(!window.state||!state.startTime) return "00:00";
   var s=Math.floor((Date.now()-state.startTime)/1000);
@@ -270,9 +270,195 @@ var COMM_META={
   coin:{icon:"🪙",label:"Münzen",from:"ore"}
 };
 var COMM_OF={wood:"paper",sheep:"cloth",ore:"coin"};
+/* ---- Städte & Ritter: Stadtausbau-Tableaus ---- */
+var AREAS=["science","trade","politics"];
+var AREA_META={
+  science:{comm:"paper", label:"Wissenschaft", icon:"📜",
+           steps:["Stadt","Bibliothek","Schule","Aquädukt","Theater","Universität"]},
+  trade:  {comm:"cloth", label:"Handel", icon:"🧵",
+           steps:["Stadt","Markt","Zunft","Gilde","Bank","Handelszentrum"]},
+  politics:{comm:"coin", label:"Politik", icon:"🪙",
+           steps:["Stadt","Rathaus","Botschaft","Festung","Gericht","Rat Catans"]}
+};
+/* 54 Fortschrittskarten nach PDF-Aufteilung (18 je Bereich) */
+var PROG_DECK={
+  science:{alchemie:2,baukran:2,bergbau:2,bewaesserung:2,erfindung:2,ingenieurwesen:1,medizin:2,schmiedekunst:2,strassenbau:2,buchdruck:1},
+  trade:{haendler:6,handelshafen:2,handelsflotte:2,abgaben:2,warenmonopol:2,rohstoffmonopol:4},
+  politics:{steuern:2,diplomatie:2,motivation:2,hochzeit:2,intrige:2,sabotage:2,spionage:3,verrat:2,verfassung:1}
+};
+var PROG_NAME={
+  alchemie:"Alchemie",baukran:"Baukran",bergbau:"Bergbau",bewaesserung:"Bewässerung",erfindung:"Erfindung",
+  ingenieurwesen:"Ingenieurwesen",medizin:"Medizin",schmiedekunst:"Schmiedekunst",strassenbau:"Straßenbau",buchdruck:"Buchdruck",
+  haendler:"Händler",handelshafen:"Handelshafen",handelsflotte:"Handelsflotte",abgaben:"Abgaben",
+  warenmonopol:"Handelswaren-Monopol",rohstoffmonopol:"Rohstoff-Monopol",
+  steuern:"Steuern",diplomatie:"Diplomatie",motivation:"Motivation",hochzeit:"Hochzeit",intrige:"Intrige",
+  sabotage:"Sabotage",spionage:"Spionage",verrat:"Verrat",verfassung:"Verfassung"
+};
+var PROG_VP={buchdruck:1,verfassung:1};
+function buildProgDecks(){
+  var out={};
+  AREAS.forEach(function(a){
+    var arr=[]; for(var k in PROG_DECK[a]){ for(var i=0;i<PROG_DECK[a][k];i++) arr.push(k); }
+    out[a]=shuffle(arr);
+  });
+  return out;
+}
+function impLevel(pi,area){ var p=state.players[pi]; return (p&&p.imp&&p.imp[area])||0; }
+function impCost(level){ return level+1; }   // 1. Ausbau 1 Karte, 2. Ausbau 2 Karten usw.
+function craneCost(pi,level){ return Math.max(0,impCost(level)-((state.turn&&state.turn.crane)?1:0)); }  // laut PDF darf auch der erste Ausbau gratis sein
+function hasCity(pi){ return countType(pi,"city")>0; }
+function freeWallCity(pi){
+  return Object.keys(state.buildings).find(function(b){
+    var x=state.buildings[b];
+    return x.owner===pi&&x.type==="city"&&!x.captured&&!state.walls[b];
+  });
+}
+function metroOf(area){ return (state.metro&&state.metro[area]!=null)?state.metro[area]:null; }
+function metroCount(pi){ var n=0; AREAS.forEach(function(a){ if(metroOf(a)===pi)n++; }); return n; }
+function isMetroVertex(v){ if(!state.metroVertex)return false; return AREAS.some(function(a){return state.metroVertex[a]===Number(v);}); }
+function freeCityVertex(pi){
+  return Object.keys(state.buildings).find(function(v){
+    var b=state.buildings[v];
+    return b.owner===pi&&b.type==="city"&&!b.captured&&!isMetroVertex(v);
+  });
+}
+function canImprove(pi,area){
+  if(!isSR())return false;
+  var lvl=impLevel(pi,area);
+  if(lvl>=5)return false;
+  if(!hasCity(pi))return false;                             // ohne Stadt kein Stadtausbau
+  if(lvl===3 && freeCityVertex(pi)==null)return false;      // 4. Stufe braucht eine freie Stadt für die Metropole
+  var need=craneCost(pi,lvl), c=AREA_META[area].comm;
+  return (state.players[pi].comm[c]||0)>=need;
+}
+function grantMetropolis(pi,area){
+  var v=freeCityVertex(pi); if(v==null)return false;
+  var prev=metroOf(area);
+  if(prev!=null && prev!==pi){ state.metroVertex[area]=null; pushLog("log_metro_lost",{name:prev,a:tr("area_"+area)}); }
+  state.metro[area]=pi; state.metroVertex[area]=Number(v);
+  pushLog("log_metro",{name:pi,a:tr("area_"+area)});
+  return true;
+}
+/* Hilfen für die Kartenwirkungen */
+function progAreaOf(card){
+  for(var a in PROG_DECK){ if(PROG_DECK[a][card]!=null) return a; }
+  return "science";
+}
+function hexHarvest(pi,resKind){        // Bergbau / Bewässerung: 2 Karten je passendem Feld
+  var got=0;
+  state.tiles.forEach(function(t,hi){
+    if(t.resource!==resKind)return;
+    var touches=state.board.hexes[hi].vertices.some(function(v){
+      var b=state.buildings[v]; return b&&b.owner===pi&&!b.captured;
+    });
+    if(touches){ state.players[pi].res[resKind]+=2; got+=2; }
+  });
+  return got;
+}
+function handPool(pi){                  // alle Handkarten als Liste (Rohstoffe + Handelswaren)
+  var p=state.players[pi], pool=[];
+  RES.forEach(function(r){ for(var i=0;i<p.res[r];i++) pool.push(r); });
+  if(isSR()) COMM.forEach(function(c){ for(var j=0;j<(p.comm[c]||0);j++) pool.push(c); });
+  return pool;
+}
+function takeRandomCards(fromPi,toPi,count){
+  var moved=[];
+  for(var i=0;i<count;i++){
+    var pool=handPool(fromPi); if(!pool.length)break;
+    var k=pool[Math.floor(Math.random()*pool.length)];
+    addHold(fromPi,k,-1); if(toPi!=null) addHold(toPi,k,1);
+    moved.push(k);
+  }
+  return moved;
+}
+function playersWithMoreVP(pi){
+  return state.players.map(function(_,i){return i;}).filter(function(i){ return i!==pi && fullVP(i)>fullVP(pi); });
+}
+/* Offene Straße im Sinne der Karte Diplomatie: liegt am Ende einer Route und
+   endet nicht an einer eigenen Siedlung, Stadt oder einem eigenen Ritter. */
+function ownEdgeCount(v,pl){
+  return state.board.vertices[v].edges.filter(function(e){
+    var r=state.roads[e], s=state.ships&&state.ships[e];
+    return (r&&r.owner===pl)||(s&&s.owner===pl);
+  }).length;
+}
+function openRoadEdges(){
+  var out={};
+  state.board.edges.forEach(function(e){
+    var r=state.roads[e.id]; if(!r)return;
+    [e.v1,e.v2].forEach(function(v){
+      if(out[e.id])return;
+      if(ownEdgeCount(v,r.owner)>1)return;                       // wird fortgeführt
+      var b=state.buildings[v]; if(b&&b.owner===r.owner)return;   // endet an eigenem Gebäude
+      var k=knightAt(v); if(k&&k.owner===r.owner)return;          // endet an eigenem Ritter
+      out[e.id]=r.owner;
+    });
+  });
+  return out;
+}
+/* Zahlenchips, die die Karte Erfindung tauschen darf (2, 12, 6 und 8 sind tabu) */
+function swappableHexes(){
+  var out={};
+  state.tiles.forEach(function(t,hi){
+    if(t.number==null)return;
+    if([2,12,6,8].indexOf(t.number)>=0)return;
+    out[hi]=1;
+  });
+  return out;
+}
+/* Fremde Ritter, die die Karte Intrige vertreiben darf */
+function intrigueTargets(pi){
+  var out={};
+  for(var v in (state.knights||{})){
+    var k=state.knights[v];
+    if(k.owner===pi)continue;
+    if(!vertexOnMyNetwork(Number(v),pi))continue;
+    out[v]=1;
+  }
+  return out;
+}
+function progPlayable(pi,card){
+  var p=state.players[pi];
+  if(card==="alchemie") return !state.turn.rolled;
+  if(!state.turn.rolled) return false;
+  if(card==="medizin") return countType(pi,"settlement")>0&&canAfford(p.res,{ore:2,wheat:1});
+  if(card==="ingenieurwesen") return (p.walls||0)<3&&freeWallCity(pi)!=null;
+  if(card==="diplomatie") return Object.keys(openRoadEdges()).length>0;
+  if(card==="intrige") return Object.keys(intrigueTargets(pi)).length>0;
+  if(card==="erfindung") return Object.keys(swappableHexes()).length>=2;
+  return true;
+}
+function drawProgress(area,red){
+  var n=state.players.length, order=[];
+  for(var i=0;i<n;i++) order.push((state.current+i)%n);
+  order.forEach(function(pi){
+    var lvl=impLevel(pi,area);
+    if(lvl<1)return;
+    if(red>lvl+1)return;                                    // rote Würfelzahl muss die Bedingung erfüllen
+    var deck=state.progDecks&&state.progDecks[area];
+    if(!deck||!deck.length)return;
+    var card=deck.shift(), p=state.players[pi];
+    if(PROG_VP[card]){ p.vpCards+=PROG_VP[card]; pushLog("log_prog_vp",{name:pi,a:PROG_NAME[card]}); return; }
+    p.prog=p.prog||[];
+    p.prog.push(card);
+    pushLog("log_prog_draw",{name:pi,a:tr("area_"+area)});
+    if(p.prog.length>4){
+      // 5. Karte: Wer an der Reihe ist, muss sofort eine Karte einsetzen,
+      // alle anderen geben eine beliebige Karte unter den Stapel zurück (PDF S. 7).
+      if(pi===state.current) state.mustPlayProg=pi;
+      else{
+        var di=Math.floor(Math.random()*p.prog.length), back=p.prog.splice(di,1)[0];
+        state.progDecks[progAreaOf(back)].push(back);
+        pushLog("log_prog_giveback",{name:pi,a:PROG_NAME[back]});
+      }
+    }
+  });
+}
 function emptyComm(){return{paper:0,cloth:0,coin:0};}
+function freshDiscardSel(){ var o=emptyRes(); COMM.forEach(function(c){o[c]=0;}); return o; }
+function selTotal(sel){ return Object.keys(sel).reduce(function(s,k){return s+(sel[k]||0);},0); }
 function commTotal(c){return c?COMM.reduce(function(s,k){return s+(c[k]||0);},0):0;}
-function isSR(){return state.mode==="sr";}
+function isSR(){return state.mode==="sr"||!!state.srSea;}   // Seefahrer-Szenarien lassen sich mit Städte & Ritter kombinieren
 function handTotal(p){return totalCards(p.res)+(isSR()?commTotal(p.comm):0);}
 function handLimit(p){return 7+(isSR()?2*(p.walls||0):0);}
 var RES_META={
@@ -328,7 +514,12 @@ var STR={
     place_a:"Setze die hervorgehobene", s_settlement:"Siedlung", s_road:"Straße", s_road_ship:"Straße oder Schiff", on_board:"auf den Plan.",
     click_robber:"Klicke ein Feld, um den Räuber zu versetzen.",
     click_searobber:"Klicke ein Seefeld, um den Seeräuber zu versetzen.",
-    menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer", menu_sr:"Städte & Ritter", menu_skiproll:"Startspieler-Wurf überspringen",
+    menu_mode:"Spielvariante", menu_base:"Grundspiel", menu_sea:"Seefahrer", menu_sr:"Städte & Ritter", menu_srsea:"Mit Städte & Ritter kombinieren (+2 Siegpunkte)",
+    menu_tactic:"Taktische Variante: Ritter-Einsatz frei wählen",
+    barb_commit_title:"{name}: Wie viele Ritter einsetzen?",
+    barb_commit_desc:"Das Barbarenheer hat die Stärke {a}. Nur eingesetzte Ritter werden danach deaktiviert.",
+    log_barb_commit_prompt:"Die Barbaren landen – reihum entscheiden, wie viele Ritter kämpfen.",
+    log_barb_commit:"{name} setzt {a} Ritter ein.", menu_skiproll:"Startspieler-Wurf überspringen",
     menu_scenario:"Szenario", menu_scn_frei:"Neue Welt", menu_scn_ufern:"Zu neuen Ufern", menu_scn_vier:"Die vier Inseln", menu_scn_sechs:"Die sechs Inseln", menu_scn_wueste:"Durch die Wüste", menu_scn_vergessen:"Der vergessene Stamm", menu_scn_stoffe:"Stoffe für Catan", menu_scn_ozeanien:"Ozeanien", menu_scn_piraten:"Die Pirateninseln",
     menu_piraten_blurb:"Die Pirateninseln: Siedle auf der Ostinsel und baue je 1 feste Schiffslinie zu deiner eigenen, von Piraten besetzten Festung im Westen. Statt des Räubers patrouilliert eine Piratenflotte – trifft sie eine Siedlung, entscheidet die Zahl der Kriegsschiffe über Sieg oder Verlust. Ritter- (und zu viert Siegpunkt-)Karten verwandeln ein Schiff in ein Kriegsschiff. Erobere deine Festung und erreiche 10 Siegpunkte, um zu gewinnen.",
     attack_fortress:"⚔️ Piratenfestung angreifen", tip_fortress:"Piratenfestung (verbleibende Chips)",
@@ -397,6 +588,66 @@ var STR={
     c0:"Rot", c1:"Blau", c2:"Orange", c3:"Weiß", c4:"Grün", c5:"Lila",
     foot:"aufgeräumt · deutschsprachig · offline",
     b_wall:"Stadtmauer", b_knight:"Ritter", b_kact:"Aktivieren", b_kup:"Aufwerten",
+    area_science:"Wissenschaft", area_trade:"Handel", area_politics:"Politik",
+    b_kmove:"Versetzen", b_kdisp:"Vertreiben", b_kchase:"Räuber jagen",
+    burg1:"Burg 1", burg2:"Burg 2", ship1:"Schiff 1", ship2:"Schiff 2",
+    burg1_hint:"Burg 1 – voller Zug (Würfeln, Handel, Bauen).",
+    burg2_hint:"Burg 2 – eingeschränkter Zug: kein Würfeln, Handel nur mit dem Vorrat.",
+    log_burg2:"Burg 2: {name} macht einen eingeschränkten Zug (nur Vorrat-Handel).",
+    log_burg2_alchemie:"Alchemie darf mit Burg 2 nicht gespielt werden.",
+    warenmono_title:"Handelswaren-Monopol", warenmono_desc:"Bestimme eine Handelsware – alle anderen geben dir je 1 Karte davon.",
+    rohmono_desc:"Bestimme eine Rohstoffsorte – alle anderen geben dir je 2 Karten davon.",
+    fleet_title:"Handelsflotte", fleet_desc:"Wähle eine Sorte – du tauschst sie bis zum Ende deines Zuges 2:1.",
+    log_prog_play:"{name} spielt die Fortschrittskarte {a}.",
+    log_prog_gain:"{name} erhält {a}× {b}.",
+    log_prog_motivate:"{name} aktiviert alle eigenen Ritter.",
+    log_prog_medizin:"{name} wandelt eine Siedlung günstig in eine Stadt um.",
+    log_prog_smith:"{name} wertet {a} Ritter kostenlos auf.",
+    log_prog_mono:"{name} nimmt {b}× {a} aus fremden Händen.",
+    log_prog_fleet:"{name} handelt {a} bis zum Zugende 2:1.",
+    log_prog_merchant:"{name} stellt den Händler auf ein Feld mit {a}.",
+    log_prog_merchant_hint:"Wähle ein Landschaftsfeld neben einer eigenen Siedlung oder Stadt.",
+    log_prog_sabotage:"{name} verliert {a} Handkarten.",
+    log_prog_gift:"{name} schenkt {a} Karten.",
+    log_prog_levy:"{name} muss {a} Karten abgeben.",
+    log_prog_spy:"Ausspioniert: {name} verliert die Karte {a}.",
+    log_prog_betray:"{name} muss einen Ritter vom Spielfeld nehmen.",
+    log_prog_betray_place:"{name} stellt dafür einen Ritter der Stufe {a} auf.",
+    log_prog_tax:"{name} gibt eine Handkarte ab.",
+    log_prog_none:"Die Karte zeigt keine Wirkung.",
+    spy_title:"Spionage", spy_pick:"Wessen Fortschrittskarten möchtest du ansehen?",
+    spy_take:"Karten von {name} – wähle eine aus.",
+    levy_title:"Abgaben", levy_pick:"Von wem möchtest du 2 Karten nehmen?",
+    levy_take:"Handkarten von {name} – wähle {a} aus.",
+    betray_title:"Verrat", betray_pick:"Wer muss einen Ritter vom Spielfeld nehmen?",
+    betray_remove:"{name}: Wähle einen deiner Ritter, der entfernt wird.",
+    log_prog_levy_one:"{name} gibt 1 {a} ab.",
+    log_prog_giveback:"{name} hat zu viele Fortschrittskarten und legt {a} zurück.",
+    log_prog_must:"Du hast 5 Fortschrittskarten – spiele erst eine aus.",
+    alchemy_title:"Alchemie", alchemy_d1:"Wähle die erste Augenzahl.", alchemy_d2:"Erste Augenzahl: {a}. Wähle die zweite.",
+    log_prog_alchemy:"{name} bestimmt mit Alchemie die Augen {a} und {b}.",
+    log_prog_crane:"{name} spielt den Baukran – der nächste Stadtausbau kostet eine Ware weniger.",
+    log_prog_swap_hint:"Wähle nacheinander zwei Zahlenchips (2, 12, 6 und 8 sind ausgenommen).",
+    log_prog_swap:"Zahlenchips getauscht: {a} und {b}.",
+    log_prog_diplo_hint:"Wähle eine offene Straße, die entfernt werden soll.",
+    log_prog_diplo:"Eine offene Straße von {name} wird entfernt.",
+    log_prog_intrigue_hint:"Wähle einen fremden Ritter an deinem Straßennetz.",
+    log_prog_port:"Handelshafen: {name} tauscht mit {a} Personen je 1 {b} gegen eine Handelsware.",
+    log_prog_todo:"{a} ist noch nicht umgesetzt – die Karte bleibt auf der Hand.",
+    log_knight_move:"{name} versetzt einen Ritter.",
+    log_knight_displace:"{name} vertreibt einen fremden Ritter.",
+    log_knight_displaced:"{name} muss den vertriebenen Ritter versetzen.",
+    log_knight_removed:"{name} hat keinen Platz für den vertriebenen Ritter – er wird entfernt.",
+    log_knight_chase:"{name} vertreibt mit einem Ritter den Räuber.",
+    hint_ksel:"Wähle zuerst einen einsatzbereiten Ritter.",
+    sr_improve:"Stadtausbau", sr_prog:"Fortschrittskarten", sr_metro:"Metropole",
+    log_improve:"{name} baut aus: {a} – {b}.",
+    log_metro:"{name} errichtet die Metropole {a}.",
+    log_metro_lost:"{name} verliert die Metropole {a}.",
+    log_prog_draw:"{name} zieht eine Fortschrittskarte ({a}).",
+    log_prog_vp:"{name} erhält die Siegpunktkarte {a}.",
+    log_prog_full:"{name} hat bereits 4 Fortschrittskarten und muss verzichten.",
+    log_aqueduct:"Aquädukt: {name} geht leer aus und darf sich einen Rohstoff nehmen.",
     sr_barb:"Barbaren", sr_comm:"Handelswaren", sr_knights:"Ritter",
     ev_science:"Wissenschaft", ev_trade:"Handel", ev_politics:"Politik",
     log_built_wall:"{name} baut eine Stadtmauer.",
@@ -408,6 +659,7 @@ var STR={
     log_barb_landed:"Die Barbaren landen auf Catan! Ritterstärke {a} gegen Barbarenstärke {b}.",
     log_barb_hero:"{name} hat die Barbaren am stärksten zurückgedrängt und erhält einen Siegpunkt-Chip.",
     log_barb_win:"Die Ritter Catans schlagen die Barbaren zurück.",
+    log_barb_tie_card:"{name} war gleichauf an der Spitze und zieht eine Fortschrittskarte.",
     log_barb_lose:"Das Barbarenheer verwüstet Catan.",
     log_barb_sack:"{name} verliert eine Stadt an die Barbaren.",
     log_sr_robber_locked:"Der Räuber bleibt stehen – die Barbaren haben Catan noch nicht erreicht.",
@@ -620,7 +872,42 @@ function assignHarbors(board,n){
   }
   return harbors;
 }
+/* Städte & Ritter: Handelswaren zählen als eigene Sorten. Häfen und Vorrat gelten
+   für sie ebenso; die Gilde (Handel 3) erlaubt zusätzlich den 2:1-Tausch. */
+function isComm(k){ return COMM.indexOf(k)>=0; }
+function holdOf(pi,k){ var p=state.players[pi]; return isComm(k)?((p.comm&&p.comm[k])||0):p.res[k]; }
+function commSupply(k){ return (state.commSupply&&state.commSupply[k]!=null)?state.commSupply[k]:12; }
+/* Karten wandern immer über den Vorrat: 12 Papier, 12 Tuch, 12 Münzen (PDF-Material). */
+function addHold(pi,k,n){
+  var p=state.players[pi];
+  if(!isComm(k)){ p.res[k]+=n; return n; }
+  if(n>0){
+    var take=Math.min(n,commSupply(k));
+    if(state.commSupply) state.commSupply[k]-=take;
+    p.comm[k]=(p.comm[k]||0)+take;
+    return take;
+  }
+  var give=Math.min(-n,p.comm[k]||0);
+  p.comm[k]=(p.comm[k]||0)-give;
+  if(state.commSupply) state.commSupply[k]+=give;
+  return -give;
+}
+function tradeKinds(){ return isSR()?RES.concat(COMM):RES; }
+function kindIcon(k){ return isComm(k)?COMM_META[k].icon:RES_META[k].icon; }
+function kindLabel(k){ return isComm(k)?COMM_META[k].label:resLabel(k); }
 function bestRatio(pi,res){
+  if(isSR()&&state.turn&&state.turn.fleetKind===res) return 2;                     // Handelsflotte
+  if(isSR()&&state.merchant&&state.merchant.owner===pi&&state.merchant.res===res) return 2;  // Händler
+  if(isComm(res)){
+    // Handelswaren: 3:1-Hafen gilt, Spezialhäfen nicht; mit der Gilde 2:1
+    if(isSR()&&impLevel(pi,"trade")>=3) return 2;
+    var rc=4;
+    for(var i=0;i<state.harbors.length;i++){
+      var hb2=state.harbors[i], a1=state.buildings[hb2.v1], a2=state.buildings[hb2.v2];
+      if(((a1&&a1.owner===pi)||(a2&&a2.owner===pi))&&hb2.kind==="any") rc=Math.min(rc,3);
+    }
+    return rc;
+  }
   var r=4;
   for(var k=0;k<state.harbors.length;k++){
     var hb=state.harbors[k];
@@ -635,6 +922,7 @@ function bestRatio(pi,res){
 /* ---------- rules helpers ---------- */
 function distanceOK(v,b,board){if(b[v])return false;return board.vertices[v].adj.every(function(a){return !b[a];});}
 function settlementLegal(v,pl,b,roads,board,setup){
+  if(state.knights&&state.knights[v])return false;   // auf einer Ritter-Kreuzung wird nicht gebaut
   if(!distanceOK(v,b,board))return false; if(setup)return true;
   var ships=state.ships||{};
   return board.vertices[v].edges.some(function(e){return (roads[e]&&roads[e].owner===pl)||(ships[e]&&ships[e].owner===pl);});
@@ -700,7 +988,11 @@ function longestRoute(pl){
   if(owned.length===0)return 0;
   var inc={};
   owned.forEach(function(e){(inc[e.v1]=inc[e.v1]||[]).push(e);(inc[e.v2]=inc[e.v2]||[]).push(e);});
-  function blocked(v){return b[v]&&b[v].owner!==pl;}
+  function blocked(v){
+    if(b[v]&&b[v].owner!==pl)return true;
+    var kb=state.knights&&state.knights[v];          // fremder Ritter unterbricht die Route
+    return !!(kb&&kb.owner!==pl);
+  }
   function hasBuilding(v){return !!b[v];}
   var best=0;
   function dfs(vertex,arrived,used){
@@ -720,6 +1012,13 @@ function countRoads(pl){var n=0;for(var k in state.roads)if(state.roads[k].owner
 function countShips(pl){var n=0,s=state.ships||{};for(var k in s)if(s[k].owner===pl)n++;return n;}
 function countType(pl,type){var n=0;for(var k in state.buildings){var b=state.buildings[k];if(b.owner===pl&&b.type===type)n++;}return n;}
 function seaBig(){ return state.mode==="sea" && state.players.length>=5; }
+/* Zu fünft/sechst teilen sich zwei Personen einen Spielzug:
+   Seefahrer = Schiff 1/Schiff 2, Städte & Ritter = Burg 1/Burg 2 (PDF 5-6, S. 3). */
+function bigTwo(){ return seaBig() || (isSR() && state.players.length>=5); }
+function tokenLabel(second){
+  if(isSR()) return tr(second?"burg2":"burg1");
+  return tr(second?"ship2":"ship1");
+}
 function schiff2Seat(){ return (state.current+3)%state.players.length; }
 function activePlayer(){
   if(state.firstRoll)return state.firstRoll.active[state.firstRoll.idx];
@@ -730,6 +1029,8 @@ function activePlayer(){
 }
 function isBot(pi){ return pi!=null && state.players && state.players[pi] && !!state.players[pi].bot; }
 function pendingDeciderPi(){
+  if(state.pending&&state.pending.type==="barbCommit") return state.pending.queue[state.pending.idx];
+  if(state.pending&&state.pending.type==="betrayKnight") return state.pending.victim;
   if(!state.pending)return null;
   if(state.pending.type==="discard"||state.pending.type==="gold")return state.pending.queue[state.pending.qi].pi;
   if(state.pending.type==="trade_offer")return state.pending.partner;
@@ -744,7 +1045,11 @@ function nextActorPi(){
   if(state.special)return state.special.queue[state.special.idx];
   return activePlayer();
 }
-function resIcons(map){var o=[];RES.forEach(function(r){if(map[r]>0)o.push(map[r]+RES_META[r].icon);});return o.join(" ")||"–";}
+function resIcons(map){
+  var o=[], kinds=(typeof isSR==="function"&&isSR())?RES.concat(COMM):RES;
+  kinds.forEach(function(r){ if((map[r]||0)>0) o.push(map[r]+(COMM.indexOf(r)>=0?COMM_META[r].icon:RES_META[r].icon)); });
+  return o.join(" ")||"–";
+}
 
 /* ---------- victory points ---------- */
 function publicVP(pi){
@@ -754,6 +1059,8 @@ function publicVP(pi){
   if(state.largestArmyOwner===pi)vp+=2;
   vp+=state.players[pi].islandVP||0;   // Seefahrer Sondersiegpunkte
   vp+=Math.floor((state.players[pi].cloth||0)/2); // Stoffe für Catan: 2 Stoff = 1 SP
+  if(isSR()) vp+=2*metroCount(pi);                 // Städte & Ritter: je Metropole 2 SP
+  if(isSR()&&state.merchant&&state.merchant.owner===pi) vp+=1;   // der Händler zählt 1 SP
   return vp;
 }
 function fullVP(pi){return publicVP(pi)+state.players[pi].vpCards;}
@@ -789,7 +1096,7 @@ function recomputeAwards(){
 
 /* ---------- state ---------- */
 var state=menuState();
-function menuState(){return{phase:"menu",ui:{startN:3,startMode:"base",startScn:"frei",startSkipRoll:false,seatBots:[null,null,null]}};}
+function menuState(){return{phase:"menu",ui:{startN:3,startMode:"base",startScn:"frei",startSrSea:false,startTactic:false,startSkipRoll:false,seatBots:[null,null,null]}};}
 function menuCounts(){
   if(state.ui.startMode==="sea"){ return (SCEN[state.ui.startScn]||SCEN.frei).players; }
   if(state.ui.startMode==="sr"){ return [3,4,5,6]; }
@@ -803,7 +1110,7 @@ function clampSeatBots(){
   state.ui.seatBots=arr;
 }
 function cycleBotLevel(lvl){ return lvl===null?"easy":lvl==="easy"?"medium":lvl==="medium"?"hard":null; }
-function freshUi(){return{bankGive:"wood",bankGet:"ore",discardSel:emptyRes(),plentyPicks:[],goldSel:emptyRes(),trade:{give:emptyRes(),want:emptyRes(),partner:null},showCosts:false,showSave:false,saveMsg:""};}
+function freshUi(){return{bankGive:"wood",bankGet:"ore",discardSel:emptyRes(),plentyPicks:[],goldSel:emptyRes(),trade:{give:freshDiscardSel(),want:freshDiscardSel(),partner:null},showCosts:false,showSave:false,saveMsg:""};}
 function serialize(){var snap={};for(var k in state){if(k==="ui")continue;snap[k]=state[k];}return JSON.stringify(snap);}
 function applyLoad(json){var parsed=JSON.parse(json);parsed.ui=freshUi();state=parsed;}
 function saveTitle(){
@@ -1271,13 +1578,14 @@ function pirateAdvance(d1,d2){
 function rollResourcesAndSeven(sum){
   if(sum===7){
     var queue=[]; state.players.forEach(function(p,pi){var nn=handTotal(p);if(nn>handLimit(p))queue.push({pi:pi,count:Math.floor(nn/2)});});
-    if(queue.length>0){ state.pending={type:"discard",queue:queue,qi:0}; state.ui.discardSel=emptyRes(); pushLog("log_robber_discard"); }
+    if(queue.length>0){ state.pending={type:"discard",queue:queue,qi:0}; state.ui.discardSel=freshDiscardSel(); pushLog("log_robber_discard"); }
     else if(state.scenario==="piraten"){
       state.pending={type:"pirateSteal",candidates:state.players.map(function(_,i){return i;}).filter(function(i){return i!==state.current;})};
       pushLog("log_pirate_steal_prompt");
     } else beginRobber("roll");
   }else{
     var goldGain={};
+    var _beforeHand=state.players.map(function(p){return handTotal(p);});
     state.tiles.forEach(function(t,hi){
       if(t.number!==sum||hi===state.robberHex)return;
       state.board.hexes[hi].vertices.forEach(function(v){
@@ -1288,12 +1596,21 @@ function rollResourcesAndSeven(sum){
           if(isSR()&&b.type==="city"&&COMM_OF[t.resource]){
             // Städte & Ritter: Stadt an Wald/Weideland/Gebirge → 1 Rohstoff + 1 Handelsware
             state.players[b.owner].res[t.resource]+=1;
-            state.players[b.owner].comm[COMM_OF[t.resource]]+=1;
+            addHold(b.owner,COMM_OF[t.resource],1);   // nur solange der Vorrat reicht
           } else state.players[b.owner].res[t.resource]+=amt;
         }
       });
     });
     clothRoll(sum);
+    if(isSR()){
+      // Aquädukt: wer beim Auswürfeln leer ausgeht, darf sich einen Rohstoff nehmen
+      state.players.forEach(function(p,pi){
+        if(impLevel(pi,"science")<3)return;
+        if(_beforeHand[pi]!==handTotal(p))return;
+        if(goldGain[pi])return;
+        goldGain[pi]=1; pushLog("log_aqueduct",{name:pi});
+      });
+    }
     var gq=Object.keys(goldGain).map(function(pik){return{pi:Number(pik),count:goldGain[pik]};});
     if(gq.length>0){ state.pending={type:"gold",queue:gq,qi:0}; state.ui.goldSel=emptyRes(); pushLog("log_gold"); }
   }
@@ -2001,7 +2318,7 @@ function buildUfern(n){
   var harbors=assignSeaHarborsList(board,tiles,harborList(5,S.nAny,S.extraSpecial));
   return {board:board,tiles:tiles,harbors:harbors,robberHex:robberHex,seaRobberHex:seaRobberHex,islandOf:islandOf};
 }
-function freshGame(n,mode,scnId,skip,seatBots){
+function freshGame(n,mode,scnId,skip,seatBots,srSea,tactic){
   mode=mode||"base";
   var board,tiles,harbors,robberHex,seaRobberHex=null,islandOf=null,vpTarget=10,scenario=null,fog={},fogTokens=[],farHexes={},homeHexes=null,homeIsland=null,tribe={},tribeHarbors={},villages={},clothReserve=0,R=3;
   var preBuildings={}, fortresses=null, pathEdges=null, pathSet=null, pirateRoute=null, pirateSafeHex=null, wonders=null, wonderTaboo=null;
@@ -2020,16 +2337,20 @@ function freshGame(n,mode,scnId,skip,seatBots){
     if(mode==="sr") vpTarget=13;   // Städte & Ritter: 13 Siegpunkte
   }
   fixRedAdjacency(board,tiles); // no two red numbers (6/8) adjacent
-  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0,cloth:0,comm:emptyComm(),walls:0,bot:(seatBots&&seatBots[i])||null});
+  var players=[]; for(var i=0;i<n;i++) players.push({id:i,res:emptyRes(),dev:[],newDev:[],vpCards:0,knights:0,playedDevThisTurn:false,islandVP:0,cloth:0,comm:emptyComm(),walls:0,imp:{science:0,trade:0,politics:0},prog:[],bot:(seatBots&&seatBots[i])||null});
   var active=[]; for(var a=0;a<n;a++)active.push(a);
   var base={
-    phase:"firstroll", mode:mode, scenario:scenario, vpTarget:vpTarget,
+    phase:"firstroll", mode:mode, scenario:scenario, vpTarget:vpTarget+((mode==="sea"&&srSea)?2:0),  // Kombination: Siegziel +2
+
     board:board, tiles:tiles, robberHex:robberHex, seaRobberHex:seaRobberHex, harbors:harbors, players:players,
     islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, homeIsland:homeIsland, tribe:tribe, tribeHarbors:tribeHarbors, villages:villages, clothReserve:clothReserve, clothConn:{}, startTime:Date.now(), turnCount:0,
     fortresses:fortresses, pathEdges:pathEdges, pathSet:pathSet, pirateRoute:pirateRoute, pirateSafeHex:pirateSafeHex, pirateIdx:0, attackedFortress:false, pendingPirateSum:null,
     wonders:wonders, wonderTaboo:wonderTaboo, wonderClaims:{}, wonderStage:{}, wonderChoices:wonderList(n),
     buildings:JSON.parse(JSON.stringify(preBuildings)), roads:{}, ships:{}, current:0,
+    srSea:(mode==="sea"&&!!srSea), tactic:!!tactic, commSupply:{paper:12,cloth:12,coin:12},
     knights:{}, walls:{}, barb:0, barbMax:7, barbAttacks:0, barbLanded:false,
+    metro:{science:null,trade:null,politics:null}, metroVertex:{science:null,trade:null,politics:null},
+    progDecks:buildProgDecks(),
     devDeck:(scenario==="piraten")?buildPirateDevDeck(n):buildDevDeck(n), movedShip:false,
     setup:null, firstRoll:{active:active,idx:0,rolls:{},lastRoller:null,tie:false},
     turn:null, uiMode:null, pending:null, special:null,
@@ -2144,19 +2465,68 @@ function knightBuildable(v,pi){
 function knightMayUpgrade(v,pi){
   var k=knightAt(v); if(!k||k.owner!==pi)return false;
   if(k.level>=3)return false;
-  if(k.level===2)return false;   // 3. Stufe erst mit Stadtausbau Festung (Block B)
+  if(k.level===2 && impLevel(pi,"politics")<3)return false;   // 3. Stufe erst mit der Festung (Politik 3)
   return knightCount(pi,k.level+1)<2;
 }
-function defenseStrength(pi){
-  return myKnights(pi).reduce(function(s,v){ var k=state.knights[v]; return s+(k.active?k.level:0); },0);
+/* Ein Ritter darf frühestens im Zug nach seiner Aktivierung handeln (PDF S. 9). */
+function knightReady(v,pi){
+  var k=knightAt(v);
+  return !!(k&&k.owner===pi&&k.active&&k.ready);
+}
+function readyKnights(pi){ return myKnights(pi).filter(function(v){return knightReady(v,pi);}); }
+/* Zielkreuzungen für das Versetzen: frei und im eigenen Straßen-/Schiffsnetz */
+function knightMoveTargets(pi){
+  var out={};
+  state.board.vertices.forEach(function(v){
+    if(state.buildings[v.id]||knightAt(v.id))return;
+    if(vertexOnMyNetwork(v.id,pi)) out[v.id]=1;
+  });
+  return out;
+}
+/* Zielkreuzungen für das Vertreiben: fremder, schwächerer Ritter im eigenen Netz */
+function knightDisplaceTargets(pi,fromV){
+  var mine=knightAt(fromV); if(!mine)return {};
+  var out={};
+  for(var v in state.knights){
+    var k=state.knights[v];
+    if(k.owner===pi)continue;                       // eigene Ritter nicht vertreiben
+    if(k.level>=mine.level)continue;                // nur schwächere Ritter
+    if(!vertexOnMyNetwork(Number(v),pi))continue;
+    out[v]=1;
+  }
+  return out;
+}
+/* Ausweichplatz für einen vertriebenen Ritter: freie Kreuzung im eigenen Netz */
+function displaceRefuge(pi,fromV){
+  var cand=null;
+  state.board.vertices.forEach(function(v){
+    if(cand!=null)return;
+    if(v.id===fromV||state.buildings[v.id]||knightAt(v.id))return;
+    if(vertexOnMyNetwork(v.id,pi)) cand=v.id;
+  });
+  return cand;
+}
+/* Hexfelder, von denen aus ein Ritter den Räuber vertreiben kann */
+function knightChaseVerts(pi){
+  var out={};
+  if(state.robberHex==null)return out;
+  var rv=state.board.hexes[state.robberHex].vertices;
+  readyKnights(pi).forEach(function(v){ if(rv.indexOf(Number(v))>=0) out[v]=1; });
+  return out;
+}
+function activeKnights(pi){ return myKnights(pi).filter(function(v){return state.knights[v].active;}); }
+function defenseStrength(pi,commit){
+  var list=activeKnights(pi);
+  if(commit&&commit[pi]!=null) list=list.slice(0,commit[pi]);   // taktische Variante: nur eingesetzte Ritter
+  return list.reduce(function(s,v){ return s+state.knights[v].level; },0);
 }
 function barbarianStrength(){
   var n=0; for(var b in state.buildings){ if(state.buildings[b].type==="city"&&!state.buildings[b].captured)n++; }
   return n;
 }
-function barbarianAttack(){
+function barbarianAttack(commit){
   var strength=barbarianStrength();
-  var def=state.players.map(function(_,pi){return defenseStrength(pi);});
+  var def=state.players.map(function(_,pi){return defenseStrength(pi,commit);});
   var total=def.reduce(function(a,b){return a+b;},0);
   state.barbLanded=true; state.barbAttacks+=1;
   pushLog("log_barb_landed",{a:total,b:strength});
@@ -2165,19 +2535,37 @@ function barbarianAttack(){
     var max=Math.max.apply(null,def);
     var best=[]; def.forEach(function(d,pi){ if(d===max&&d>0)best.push(pi); });
     if(best.length===1){ state.players[best[0]].vpCards+=1; pushLog("log_barb_hero",{name:best[0]}); }
-    else if(best.length>1) pushLog("log_barb_win");
+    else if(best.length>1){
+      // Gleichstand: alle Beteiligten ziehen eine Fortschrittskarte, es gibt keinen Siegpunkt-Chip
+      best.forEach(function(pi){
+        var order=AREAS.filter(function(ar){return state.progDecks[ar]&&state.progDecks[ar].length;});
+        if(!order.length)return;
+        var ar=order[Math.floor(Math.random()*order.length)], card=state.progDecks[ar].shift(), pp=state.players[pi];
+        if(PROG_VP[card]){ pp.vpCards+=PROG_VP[card]; pushLog("log_prog_vp",{name:pi,a:PROG_NAME[card]}); return; }
+        pp.prog=pp.prog||[]; pp.prog.push(card);
+        pushLog("log_barb_tie_card",{name:pi});
+        if(pp.prog.length>4){
+          if(pi===state.current) state.mustPlayProg=pi;
+          else{ var di=Math.floor(Math.random()*pp.prog.length), back=pp.prog.splice(di,1)[0];
+                state.progDecks[progAreaOf(back)].push(back); pushLog("log_prog_giveback",{name:pi,a:PROG_NAME[back]}); }
+        }
+      });
+      pushLog("log_barb_win");
+    }
     else pushLog("log_barb_win");
   }else{
     // Das Barbarenheer gewinnt: wer am wenigsten beigetragen hat, verliert eine Stadt
     var owners=state.players.map(function(_,pi){return pi;}).filter(function(pi){
-      return Object.keys(state.buildings).some(function(b){ var x=state.buildings[b]; return x.owner===pi&&x.type==="city"&&!x.captured; });
+      return Object.keys(state.buildings).some(function(b){ var x=state.buildings[b]; return x.owner===pi&&x.type==="city"&&!x.captured&&!isMetroVertex(b); });
     });
     if(owners.length){
       var min=Math.min.apply(null,owners.map(function(pi){return def[pi];}));
       owners.filter(function(pi){return def[pi]===min;}).forEach(function(pi){
-        var cityV=Object.keys(state.buildings).find(function(b){ var x=state.buildings[b]; return x.owner===pi&&x.type==="city"&&!x.captured; });
+        var cityV=Object.keys(state.buildings).find(function(b){ var x=state.buildings[b]; return x.owner===pi&&x.type==="city"&&!x.captured&&!isMetroVertex(b); });
         if(cityV!=null){
           state.buildings[cityV].type="settlement";
+          // Sind schon alle Siedlungen verbaut, gilt die Stadt fortan als „umgedrehte" Siedlung
+          if(countType(pi,"settlement")>=PIECE.settlement) state.buildings[cityV].downgraded=true;
           if(state.walls[cityV]){ delete state.walls[cityV]; state.players[pi].walls=Math.max(0,state.players[pi].walls-1); }
           pushLog("log_barb_sack",{name:pi});
         }
@@ -2185,8 +2573,12 @@ function barbarianAttack(){
     }
     pushLog("log_barb_lose");
   }
-  // Alle Ritter deaktivieren, Barbarenschiff zurück auf Startfeld
-  for(var v in state.knights) state.knights[v].active=false;
+  // Eingesetzte Ritter deaktivieren, Barbarenschiff zurück auf Startfeld
+  state.players.forEach(function(_,pi){
+    var list=activeKnights(pi);
+    if(commit&&commit[pi]!=null) list=list.slice(0,commit[pi]);   // nur die eingesetzten Ritter
+    list.forEach(function(v){ state.knights[v].active=false; state.knights[v].ready=false; });
+  });
   state.barb=0;
 }
 function rollEventDie(){
@@ -2194,19 +2586,51 @@ function rollEventDie(){
   var faces=["ship","ship","ship","science","trade","politics"];
   return faces[Math.floor(Math.random()*6)];
 }
+/* Ein Wurf mit vorgegebenen Augen – so kann auch die Karte Alchemie den Zug auslösen. */
+function performRoll(d1,d2){
+  var sum=d1+d2;
+  state.turn.rolled=true; state.turn.dice=[d1,d2];
+  pushLog("log_roll",{name:state.current,sum:sum,d1:d1,d2:d2});
+  if(isSR()){
+    var ev=rollEventDie();
+    state.turn.event=ev;
+    if(ev==="ship"){
+      state.barb+=1;
+      if(state.barb>=state.barbMax){
+        if(state.tactic){
+          // Taktische Variante: reihum entscheiden, wie viele Ritter eingesetzt werden
+          var qOrder=[]; for(var qi=0;qi<state.players.length;qi++) qOrder.push((state.current+qi)%state.players.length);
+          state.pending={type:"barbCommit",queue:qOrder,idx:0,commit:{},sum:sum};
+          pushLog("log_barb_commit_prompt");
+          return;                       // Erträge folgen nach dem Kampf
+        }
+        barbarianAttack(null);
+      }
+      else pushLog("log_barb_move",{a:state.barb,b:state.barbMax});
+    } else {
+      pushLog("log_event_symbol",{a:tr("ev_"+ev)});
+      drawProgress(ev,d2);   // d2 ist der rote Augenwürfel
+    }
+  }
+  if(state.scenario==="piraten"){
+    var atk=pirateAdvance(d1,d2);
+    if(atk==="reward"){ state.pendingPirateSum=sum; return; }
+  }
+  rollResourcesAndSeven(sum);
+}
 function beginRobber(source){
   // Der Räuber darf erst versetzt werden, wenn die Barbaren einmal gelandet sind
-  if(isSR()&&!state.barbLanded){ pushLog("log_sr_robber_locked"); return; }
+  if(isSR()&&!state.barbLanded){ state.pending=null; state.uiMode=null; pushLog("log_sr_robber_locked"); return; }
   if(state.mode==="sea"&&state.seaRobberHex!=null){ state.pending={type:"robberChoice",source:source}; pushLog("log_robber_choice"); }
   else { state.uiMode="moveRobber"; state.pending={type:"robber",source:source}; pushLog("log_move_robber"); }
 }
 
 function stealFrom(victimPi){
-  var v=state.players[victimPi], pool=[];
-  RES.forEach(function(r){for(var i=0;i<v.res[r];i++)pool.push(r);});
+  // In Städte & Ritter zählen Handelswaren als Handkarten und können ebenfalls gezogen werden
+  var pool=handPool(victimPi);
   if(pool.length===0){pushLog("log_nothing_steal");return;}
   var r=pool[Math.floor(Math.random()*pool.length)];
-  var thief=activePlayer(); v.res[r]-=1; state.players[thief].res[r]+=1;
+  var thief=activePlayer(); addHold(victimPi,r,-1); addHold(thief,r,1);
   pushLog("log_stole",{name:thief,victim:victimPi});
 }
 function checkWin(){
@@ -2374,7 +2798,9 @@ function apply(a){
       return;
     }
     case "SET_SKIPROLL": state.ui.startSkipRoll=!state.ui.startSkipRoll; return;
-    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei", state.ui.startSkipRoll, (state.ui.seatBots||[]).slice(0,a.n||state.ui.startN||3)); return;
+    case "SET_SRSEA": state.ui.startSrSea=!state.ui.startSrSea; return;
+    case "SET_TACTIC": state.ui.startTactic=!state.ui.startTactic; return;
+    case "NEW_GAME": state=freshGame(a.n||state.ui.startN||3, a.mode||state.ui.startMode||"base", a.scn||state.ui.startScn||"frei", state.ui.startSkipRoll, (state.ui.seatBots||[]).slice(0,a.n||state.ui.startN||3), state.ui.startSrSea, state.ui.startTactic); return;
     case "ASK_NEWGAME": state.ui.confirmNew=true; return;
     case "TOGGLE_INFO": state.ui.showInfo=!state.ui.showInfo; return;
     case "CLOSE_INFO": state.ui.showInfo=false; return;
@@ -2397,7 +2823,7 @@ function apply(a){
 
     case "SETUP_SETTLEMENT":{
       var v=a.vertexId, pi=state.setup.order[state.setup.idx];
-      var srCity=(state.mode==="sr" && state.setup.idx>=state.players.length);
+      var srCity=(isSR() && state.setup.idx>=state.players.length && state.setup.idx<2*state.players.length);
       state.buildings[v]={owner:pi,type:(srCity?"city":"settlement")};
       markIslandsScored(pi,v); // founding settlements make their island "home" (no later bonus)
       if(state.setup.idx>=state.setup.order.length-state.players.length){
@@ -2419,37 +2845,31 @@ function apply(a){
 
     case "ROLL":{
       if(state.part2)return; // Schiff 2 does not roll
-      var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6), sum=d1+d2;
-      state.turn.rolled=true; state.turn.dice=[d1,d2];
-      pushLog("log_roll",{name:state.current,sum:sum,d1:d1,d2:d2});
-      if(isSR()){
-        var ev=rollEventDie();
-        state.turn.event=ev;
-        if(ev==="ship"){
-          state.barb+=1;
-          if(state.barb>=state.barbMax) barbarianAttack();
-          else pushLog("log_barb_move",{a:state.barb,b:state.barbMax});
-        } else pushLog("log_event_symbol",{a:tr("ev_"+ev)});
-      }
-      if(state.scenario==="piraten"){
-        var atk=pirateAdvance(d1,d2);
-        if(atk==="reward"){ state.pendingPirateSum=sum; return; }
-      }
-      rollResourcesAndSeven(sum);
-      return;
+      var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6);
+      performRoll(d1,d2); return;
+    }
+    case "ALCHEMY_PICK":{
+      if(!state.pending||state.pending.type!=="alchemy")return;
+      if(state.pending.d1==null){ state.pending.d1=a.value; return; }
+      var ad1=state.pending.d1, ad2=a.value;
+      state.pending=null;
+      pushLog("log_prog_alchemy",{name:activePlayer(),a:ad1,b:ad2});
+      performRoll(ad1,ad2); return;
     }
 
     case "DISCARD_ADJ":{
-      var p=state.players[state.pending.queue[state.pending.qi].pi];
-      var cur=state.ui.discardSel[a.res]+a.d;
-      cur=Math.max(0,Math.min(p.res[a.res],cur)); state.ui.discardSel[a.res]=cur; return;
+      var dpi=state.pending.queue[state.pending.qi].pi;
+      var cur=(state.ui.discardSel[a.res]||0)+a.d;
+      cur=Math.max(0,Math.min(holdOf(dpi,a.res),cur)); state.ui.discardSel[a.res]=cur; return;
     }
     case "DISCARD_CONFIRM":{
       var item=state.pending.queue[state.pending.qi]; var pl=state.players[item.pi];
-      RES.forEach(function(r){pl.res[r]-=state.ui.discardSel[r];});
+      RES.forEach(function(r){pl.res[r]-=(state.ui.discardSel[r]||0);});
+      if(isSR()) COMM.forEach(function(c){ addHold(item.pi,c,-(state.ui.discardSel[c]||0)); });
       pushLog("log_discarded",{name:item.pi,count:item.count});
-      state.pending.qi+=1; state.ui.discardSel=emptyRes();
+      state.pending.qi+=1; state.ui.discardSel=freshDiscardSel();
       if(state.pending.qi>=state.pending.queue.length){
+        state.pending=null;                       // Abwurf abgeschlossen, bevor der Räuber dran ist
         if(state.scenario==="piraten"){
           state.pending={type:"pirateSteal",candidates:state.players.map(function(_,i){return i;}).filter(function(i){return i!==state.current;})};
         } else beginRobber("roll");
@@ -2459,6 +2879,17 @@ function apply(a){
 
     case "MOVE_ROBBER":{
       state.robberHex=a.hexId;
+      if(state.taxRobber){
+        var txP=activePlayer(), hit={};
+        state.board.hexes[a.hexId].vertices.forEach(function(v){
+          var b=state.buildings[v]; if(b&&b.owner!==txP&&!hit[b.owner]) hit[b.owner]=1;
+        });
+        Object.keys(hit).forEach(function(qi){
+          var mv=takeRandomCards(Number(qi),txP,1);
+          if(mv.length) pushLog("log_prog_tax",{name:Number(qi)});
+        });
+        state.taxRobber=false; state.uiMode=null; state.pending=null; return;
+      }
       var victims={};
       var mvr=activePlayer(); state.board.hexes[a.hexId].vertices.forEach(function(v){var b=state.buildings[v];if(b&&b.owner!==mvr&&totalCards(state.players[b.owner].res)>0)victims[b.owner]=true;});
       var list=Object.keys(victims).map(Number);
@@ -2500,7 +2931,7 @@ function apply(a){
       return;
     }
 
-    case "SET_MODE": state.uiMode=(state.uiMode===a.mode?null:a.mode); return;
+    case "SET_MODE": state.ui.ksel=null; state.uiMode=(state.uiMode===a.mode?null:a.mode); return;
 
     case "BUILD_ROAD":{
       var me0=activePlayer(), pr=state.players[me0], free=state.pending&&state.pending.type==="roadbuilding";
@@ -2555,19 +2986,335 @@ function apply(a){
       pushLog("log_built_settle",{name:me1}); recomputeAwards(); checkWin(); return;
     }
     case "BUILD_CITY":{
+      if(state.freeCity){
+        var fcP=activePlayer();
+        if(state.buildings[a.vertexId]&&state.buildings[a.vertexId].owner===fcP&&state.buildings[a.vertexId].type==="settlement"){
+          state.buildings[a.vertexId].type="city"; state.buildings[a.vertexId].downgraded=false; state.freeCity=false; state.uiMode=null;
+          pushLog("log_built_city",{name:fcP}); recomputeAwards(); checkWin(); return;
+        }
+        return;
+      }
       var me2=activePlayer(), pc=state.players[me2];
       if(countType(me2,"city")>=PIECE.city)return;
       if(!canAfford(pc.res,COSTS.city))return; pc.res=pay(pc.res,COSTS.city);
       state.buildings[a.vertexId]={owner:me2,type:"city"}; state.uiMode=null;
       pushLog("log_built_city",{name:me2}); checkWin(); return;
     }
+    case "PLAY_PROG":{
+      var pr=activePlayer(), pl=state.players[pr];
+      if(!isSR()||state.pending)return;
+      if(!state.turn.rolled&&a.card!=="alchemie")return;   // nur Alchemie darf vor dem Wurf gespielt werden
+      var pidx=(pl.prog||[]).indexOf(a.card); if(pidx<0)return;
+      var card=a.card;
+      if(state.part2&&card==="alchemie"){ pushLog("log_burg2_alchemie"); return; }   // Burg 2 darf Alchemie nicht spielen
+      var DEFERRED={};
+      if(DEFERRED[card]){ pushLog("log_prog_todo",{a:PROG_NAME[card]}); return; }
+
+      // Karten mit Vorbedingung: erst prüfen, dann abwerfen
+      if(card==="medizin"){
+        if(countType(pr,"settlement")===0)return;
+        if(!canAfford(pl.res,{ore:2,wheat:1}))return;
+      }
+      if(card==="ingenieurwesen"){
+        if((pl.walls||0)>=3||freeWallCity(pr)==null)return;
+      }
+      if(card==="alchemie"&&state.turn.rolled)return;
+      if(card==="diplomatie"&&Object.keys(openRoadEdges()).length===0)return;
+      if(card==="intrige"&&Object.keys(intrigueTargets(pr)).length===0)return;
+      if(card==="erfindung"&&Object.keys(swappableHexes()).length<2)return;
+      pl.prog.splice(pidx,1);
+      if(state.mustPlayProg===pr&&pl.prog.length<=4) state.mustPlayProg=null;
+      pushLog("log_prog_play",{name:pr,a:PROG_NAME[card]});
+
+      switch(card){
+        case "bergbau":      pushLog("log_prog_gain",{name:pr,a:hexHarvest(pr,"ore"),b:esc(resLabel("ore"))}); break;
+        case "bewaesserung": pushLog("log_prog_gain",{name:pr,a:hexHarvest(pr,"wheat"),b:esc(resLabel("wheat"))}); break;
+        case "motivation":
+          myKnights(pr).forEach(function(v){ if(!state.knights[v].active){ state.knights[v].active=true; state.knights[v].ready=false; } });
+          pushLog("log_prog_motivate",{name:pr}); break;
+        case "strassenbau":
+          state.pending={type:"roadbuilding",left:2}; state.uiMode="road"; break;
+        case "ingenieurwesen":{
+          var wv2=freeWallCity(pr);
+          if(wv2!=null){ state.walls[wv2]=pr; pl.walls=(pl.walls||0)+1; pushLog("log_built_wall",{name:pr}); }
+          break;
+        }
+        case "medizin":
+          pl.res=pay(pl.res,{ore:2,wheat:1});
+          state.freeCity=true; state.uiMode="city";
+          pushLog("log_prog_medizin",{name:pr}); break;
+        case "schmiedekunst":{
+          var done=0;
+          myKnights(pr).forEach(function(v){
+            if(done>=2)return;
+            if(knightMayUpgrade(v,pr)){ state.knights[v].level+=1; done++; }
+          });
+          pushLog("log_prog_smith",{name:pr,a:done}); break;
+        }
+        case "baukran":
+          state.turn.crane=true; pushLog("log_prog_crane",{name:pr}); break;
+        case "alchemie":
+          state.pending={type:"alchemy",d1:null}; break;
+        case "erfindung":
+          state.uiMode="swapchip"; state.ui.swapFirst=null; pushLog("log_prog_swap_hint"); break;
+        case "diplomatie":
+          state.uiMode="diplomacy"; pushLog("log_prog_diplo_hint"); break;
+        case "intrige":
+          state.uiMode="intrigue"; pushLog("log_prog_intrigue_hint"); break;
+        case "handelshafen":{
+          // Jede andere Person tauscht, wenn sie eine Handelsware besitzt, 1 Rohstoff gegen 1 Handelsware
+          var give=null;
+          RES.forEach(function(r){ if(give==null&&pl.res[r]>0) give=r; });
+          if(give==null){ pushLog("log_prog_none"); break; }
+          var swaps=0;
+          state.players.forEach(function(q,qi){
+            if(qi===pr||pl.res[give]<=0)return;
+            var own=COMM.filter(function(c){return (q.comm[c]||0)>0;});
+            if(!own.length)return;
+            var pickC=own[Math.floor(Math.random()*own.length)];
+            addHold(qi,pickC,-1); addHold(pr,pickC,1);
+            pl.res[give]-=1; q.res[give]+=1; swaps++;
+          });
+          pushLog("log_prog_port",{name:pr,a:swaps,b:esc(resLabel(give))});
+          break;
+        }
+        case "rohstoffmonopol": state.pending={type:"progmono",kind:"res"}; break;
+        case "warenmonopol":    state.pending={type:"progmono",kind:"comm"}; break;
+        case "handelsflotte":   state.pending={type:"progfleet"}; break;
+        case "haendler":        state.uiMode="merchant"; pushLog("log_prog_merchant_hint"); break;
+        case "steuern":
+          state.taxRobber=true;
+          if(!state.barbLanded) pushLog("log_sr_robber_locked");
+          else { state.uiMode="moveRobber"; state.pending={type:"robber",source:"tax"}; pushLog("log_move_robber"); }
+          break;
+        case "sabotage":{
+          state.players.forEach(function(q,qi){
+            if(qi===pr)return;
+            if(fullVP(qi)<fullVP(pr))return;
+            var n2=Math.floor(handPool(qi).length/2);
+            if(n2>0){ takeRandomCards(qi,null,n2); pushLog("log_prog_sabotage",{name:qi,a:n2}); }
+          });
+          break;
+        }
+        case "hochzeit":{
+          playersWithMoreVP(pr).forEach(function(qi){
+            var mv=takeRandomCards(qi,pr,2);
+            if(mv.length) pushLog("log_prog_gift",{name:qi,a:mv.length});
+          });
+          break;
+        }
+        case "abgaben":{
+          var richer=playersWithMoreVP(pr).filter(function(q){return handPool(q).length>0;});
+          if(!richer.length){ pushLog("log_prog_none"); break; }
+          state.pending={type:"levyPick",targets:richer};      // Person wählen, dann 2 Karten aussuchen
+          break;
+        }
+        case "spionage":{
+          var cands=state.players.map(function(_,i){return i;})
+            .filter(function(i){ return i!==pr && (state.players[i].prog||[]).length>0; });
+          if(!cands.length){ pushLog("log_prog_none"); break; }
+          state.pending={type:"spyPick",targets:cands};        // Person wählen, dann Karte aussuchen
+          break;
+        }
+        case "verrat":{
+          var withK=state.players.map(function(_,i){return i;})
+            .filter(function(i){ return i!==pr && myKnights(i).length>0; });
+          if(!withK.length){ pushLog("log_prog_none"); break; }
+          state.pending={type:"betrayPick",targets:withK,by:pr};  // Person wählen; sie entfernt selbst einen Ritter
+          break;
+        }
+      }
+      recomputeAwards(); checkWin(); return;
+    }
+    case "PROG_MONO":{
+      var pmP=activePlayer(), kind=state.pending&&state.pending.kind, got=0;
+      if(!state.pending||state.pending.type!=="progmono")return;
+      var per=(kind==="comm")?1:2;
+      state.players.forEach(function(q,qi){
+        if(qi===pmP)return;
+        var have=holdOf(qi,a.res), take=Math.min(per,have);
+        if(take>0){ addHold(qi,a.res,-take); addHold(pmP,a.res,take); got+=take; }
+      });
+      pushLog("log_prog_mono",{name:pmP,a:kindLabel(a.res),b:got});
+      state.pending=null; return;
+    }
+    case "PLACE_MERCHANT":{
+      var meP=activePlayer(), t2=state.tiles[a.hexId];
+      if(state.uiMode!=="merchant")return;
+      if(!t2||RES.indexOf(t2.resource)<0)return;                       // nur Landschaftsfelder, kein Goldfluss
+      var touches=state.board.hexes[a.hexId].vertices.some(function(v){
+        var b=state.buildings[v]; return b&&b.owner===meP&&!b.captured;
+      });
+      if(!touches)return;                                              // nur neben eigener Siedlung/Stadt
+      state.merchant={hex:a.hexId,owner:meP,res:t2.resource};
+      state.uiMode=null; pushLog("log_prog_merchant",{name:meP,a:esc(resLabel(t2.resource))});
+      recomputeAwards(); checkWin(); return;
+    }
+    case "SWAP_CHIP":{
+      if(state.uiMode!=="swapchip")return;
+      if(!swappableHexes()[a.hexId])return;
+      if(state.ui.swapFirst==null){ state.ui.swapFirst=a.hexId; return; }
+      if(state.ui.swapFirst===a.hexId){ state.ui.swapFirst=null; return; }
+      var h1=state.ui.swapFirst, h2=a.hexId, tmp=state.tiles[h1].number;
+      state.tiles[h1].number=state.tiles[h2].number; state.tiles[h2].number=tmp;
+      state.ui.swapFirst=null; state.uiMode=null;
+      pushLog("log_prog_swap",{name:activePlayer(),a:state.tiles[h2].number,b:state.tiles[h1].number});
+      return;
+    }
+    case "DIPLOMACY_REMOVE":{
+      if(state.uiMode!=="diplomacy")return;
+      var open=openRoadEdges(); if(open[a.edgeId]==null)return;
+      var owner=open[a.edgeId], meD=activePlayer();
+      delete state.roads[a.edgeId];
+      pushLog("log_prog_diplo",{name:owner});
+      state.uiMode=null;
+      if(owner===meD){ state.pending={type:"roadbuilding",left:1}; state.uiMode="road"; }  // eigene Straße darf neu gesetzt werden
+      recomputeAwards(); checkWin(); return;
+    }
+    case "INTRIGUE_DISPLACE":{
+      if(state.uiMode!=="intrigue")return;
+      var meI=activePlayer();
+      if(!intrigueTargets(meI)[a.vertexId])return;
+      var vic=state.knights[a.vertexId], ref=displaceRefuge(vic.owner,a.vertexId);
+      delete state.knights[a.vertexId];
+      if(ref!=null){ state.knights[ref]={owner:vic.owner,level:vic.level,active:vic.active,ready:vic.ready}; pushLog("log_knight_displaced",{name:vic.owner}); }
+      else pushLog("log_knight_removed",{name:vic.owner});
+      state.uiMode=null; recomputeAwards(); return;
+    }
+    case "BARB_COMMIT":{
+      if(!state.pending||state.pending.type!=="barbCommit")return;
+      var bq=state.pending, who=bq.queue[bq.idx];
+      var maxK=activeKnights(who).length;
+      bq.commit[who]=Math.max(0,Math.min(maxK,a.count));
+      pushLog("log_barb_commit",{name:who,a:bq.commit[who]});
+      bq.idx+=1;
+      if(bq.idx<bq.queue.length)return;
+      var cm=bq.commit, sm=bq.sum;
+      state.pending=null;
+      barbarianAttack(cm);
+      rollResourcesAndSeven(sm);
+      return;
+    }
+    case "SPY_PICK":{
+      if(!state.pending||state.pending.type!=="spyPick")return;
+      if(state.pending.targets.indexOf(a.pi)<0)return;
+      state.pending={type:"spyCard",target:a.pi}; return;
+    }
+    case "SPY_TAKE":{
+      if(!state.pending||state.pending.type!=="spyCard")return;
+      var sTarget=state.pending.target, sp=state.players[sTarget], meS=activePlayer();
+      var si=(sp.prog||[]).indexOf(a.card); if(si<0)return;
+      var stolen=sp.prog.splice(si,1)[0], pS=state.players[meS];
+      pS.prog=pS.prog||[]; pS.prog.push(stolen);
+      pushLog("log_prog_spy",{name:sTarget,a:PROG_NAME[stolen]});
+      if(pS.prog.length>4) state.mustPlayProg=meS;
+      state.pending=null; return;
+    }
+    case "LEVY_PICK":{
+      if(!state.pending||state.pending.type!=="levyPick")return;
+      if(state.pending.targets.indexOf(a.pi)<0)return;
+      state.pending={type:"levyCards",target:a.pi,left:2}; return;
+    }
+    case "LEVY_TAKE":{
+      if(!state.pending||state.pending.type!=="levyCards")return;
+      var lT=state.pending.target, meL=activePlayer();
+      if(holdOf(lT,a.res)<=0)return;
+      addHold(lT,a.res,-1); addHold(meL,a.res,1);
+      state.pending.left-=1;
+      pushLog("log_prog_levy_one",{name:lT,a:kindLabel(a.res)});
+      if(state.pending.left<=0||handPool(lT).length===0) state.pending=null;
+      return;
+    }
+    case "BETRAY_PICK":{
+      if(!state.pending||state.pending.type!=="betrayPick")return;
+      if(state.pending.targets.indexOf(a.pi)<0)return;
+      state.pending={type:"betrayKnight",victim:a.pi,by:state.pending.by};
+      state.uiMode="betrayremove";
+      pushLog("log_prog_betray",{name:a.pi}); return;
+    }
+    case "BETRAY_REMOVE":{
+      if(!state.pending||state.pending.type!=="betrayKnight")return;
+      var vic=state.pending.victim, by=state.pending.by, kk=knightAt(a.vertexId);
+      if(!kk||kk.owner!==vic)return;
+      var lvlB=kk.level, wasActive=kk.active;
+      delete state.knights[a.vertexId];
+      state.pending=null; state.uiMode=null;
+      // Angreifer stellt einen eigenen Ritter derselben Stufe auf, sonst eine Stufe tiefer
+      var lvl2=lvlB;
+      while(lvl2>=1&&knightCount(by,lvl2)>=2) lvl2--;
+      if(lvl2>=1){
+        var spot=null;
+        state.board.vertices.forEach(function(vt){
+          if(spot!=null)return;
+          if(state.buildings[vt.id]||knightAt(vt.id))return;
+          if(vertexOnMyNetwork(vt.id,by)) spot=vt.id;
+        });
+        if(spot!=null){ state.knights[spot]={owner:by,level:lvl2,active:wasActive,ready:false}; pushLog("log_prog_betray_place",{name:by,a:lvl2}); }
+      }
+      recomputeAwards(); return;
+    }
+    case "PROG_FLEET":{
+      if(!state.pending||state.pending.type!=="progfleet")return;
+      state.turn.fleetKind=a.res; state.pending=null;
+      pushLog("log_prog_fleet",{name:activePlayer(),a:kindLabel(a.res)}); return;
+    }
+    case "KNIGHT_SELECT":{
+      if(!isSR())return;
+      var msel=activePlayer();
+      if(!knightReady(a.vertexId,msel))return;
+      state.ui.ksel=a.vertexId; return;
+    }
+    case "KNIGHT_MOVE":{
+      var mm=activePlayer(), from=state.ui.ksel;
+      if(!isSR()||from==null||!knightReady(from,mm))return;
+      if(!knightMoveTargets(mm)[a.vertexId])return;
+      var kmv=state.knights[from]; delete state.knights[from];
+      state.knights[a.vertexId]={owner:mm,level:kmv.level,active:false,ready:false};  // nach der Aktion deaktiviert
+      state.ui.ksel=null; state.uiMode=null;
+      pushLog("log_knight_move",{name:mm}); recomputeAwards(); return;
+    }
+    case "KNIGHT_DISPLACE":{
+      var md=activePlayer(), fromD=state.ui.ksel;
+      if(!isSR()||fromD==null||!knightReady(fromD,md))return;
+      if(!knightDisplaceTargets(md,fromD)[a.vertexId])return;
+      var victim=state.knights[a.vertexId], attacker=state.knights[fromD];
+      var refuge=displaceRefuge(victim.owner,a.vertexId);
+      delete state.knights[a.vertexId]; delete state.knights[fromD];
+      state.knights[a.vertexId]={owner:md,level:attacker.level,active:false,ready:false};
+      if(refuge!=null){ state.knights[refuge]={owner:victim.owner,level:victim.level,active:victim.active,ready:victim.ready}; pushLog("log_knight_displaced",{name:victim.owner}); }
+      else pushLog("log_knight_removed",{name:victim.owner});
+      state.ui.ksel=null; state.uiMode=null;
+      pushLog("log_knight_displace",{name:md}); recomputeAwards(); return;
+    }
+    case "KNIGHT_CHASE":{
+      var mc=activePlayer();
+      if(!isSR()||!knightChaseVerts(mc)[a.vertexId])return;
+      if(!state.barbLanded){ pushLog("log_sr_robber_locked"); return; }
+      state.knights[a.vertexId].active=false; state.knights[a.vertexId].ready=false;
+      state.ui.ksel=null;
+      state.uiMode="moveRobber"; state.pending={type:"robber",source:"knight"};
+      pushLog("log_knight_chase",{name:mc}); return;
+    }
+    case "BUILD_IMPROVEMENT":{
+      var mi=activePlayer(), area=a.area;
+      if(!isSR()||AREAS.indexOf(area)<0||!canImprove(mi,area))return;
+      var pim=state.players[mi], cm=AREA_META[area].comm, lvl0=impLevel(mi,area);
+      addHold(mi,cm,-craneCost(mi,lvl0));   // ausgegebene Handelswaren gehen zurück in den Vorrat
+      if(state.turn&&state.turn.crane) state.turn.crane=false;   // Baukran gilt für einen Ausbau
+      pim.imp[area]=lvl0+1;
+      pushLog("log_improve",{name:mi,a:tr("area_"+area),b:AREA_META[area].steps[lvl0+1]});
+      if(pim.imp[area]===4 && metroOf(area)==null) grantMetropolis(mi,area);
+      else if(pim.imp[area]===5){
+        var holder=metroOf(area);
+        if(holder==null||(holder!==mi&&impLevel(holder,area)<5)) grantMetropolis(mi,area);
+      }
+      checkWin(); return;
+    }
     case "BUILD_WALL":{
       var mw=activePlayer(), pw=state.players[mw];
       if(!isSR()||!canAfford(pw.res,COSTS.wall))return;
       if((pw.walls||0)>=3)return;
-      var target=Object.keys(state.buildings).find(function(b){
-        var x=state.buildings[b]; return x.owner===mw&&x.type==="city"&&!x.captured&&!state.walls[b];
-      });
+      var target=freeWallCity(mw);
       if(target==null)return;
       pw.res=pay(pw.res,COSTS.wall); state.walls[target]=mw; pw.walls=(pw.walls||0)+1;
       pushLog("log_built_wall",{name:mw}); return;
@@ -2582,7 +3329,7 @@ function apply(a){
     case "ACTIVATE_KNIGHT":{
       var ma=activePlayer(), pa2=state.players[ma], ka=knightAt(a.vertexId);
       if(!isSR()||!ka||ka.owner!==ma||ka.active||!canAfford(pa2.res,COSTS.kact))return;
-      pa2.res=pay(pa2.res,COSTS.kact); ka.active=true;
+      pa2.res=pay(pa2.res,COSTS.kact); ka.active=true; ka.ready=false;
       state.uiMode=null; pushLog("log_knight_active",{name:ma}); return;
     }
     case "UPGRADE_KNIGHT":{
@@ -2627,9 +3374,10 @@ function apply(a){
     }
 
     case "SET_BANK": state.ui[a.side]=a.res; return;    case "BANK_TRADE":{
-      var bkP=activePlayer(), pb=state.players[bkP], g=state.ui.bankGive, ge=state.ui.bankGet;
+      var bkP=activePlayer(), g=state.ui.bankGive, ge=state.ui.bankGet;
       var ratio=bestRatio(bkP,g);
-      if(pb.res[g]<ratio||g===ge)return; pb.res[g]-=ratio; pb.res[ge]+=1;
+      if(holdOf(bkP,g)<ratio||g===ge)return;
+      addHold(bkP,g,-ratio); addHold(bkP,ge,1);
       pushLog("log_bank",{name:bkP,ratio:ratio,give:g,get:ge}); return;
     }
 
@@ -2639,30 +3387,30 @@ function apply(a){
       state.ui.trade={give:emptyRes(),want:emptyRes(),partner:null};
       state.pending={type:"trade_compose"}; return;
     case "TRADE_ADJ":{
-      var slot=a.slot, r=a.res, p=state.players[state.current];
-      var max=slot==="give"?p.res[r]:19;
-      var v=Math.max(0,Math.min(max,state.ui.trade[slot][r]+a.d));
+      var slot=a.slot, r=a.res;
+      var max=slot==="give"?holdOf(state.current,r):19;
+      var v=Math.max(0,Math.min(max,(state.ui.trade[slot][r]||0)+a.d));
       state.ui.trade[slot][r]=v; return;
     }
     case "TRADE_PARTNER": state.ui.trade.partner=a.pi; return;
     case "TRADE_CANCEL": state.pending=null; return;
     case "TRADE_SEND":{
       var T=state.ui.trade;
-      if(T.partner===null||totalCards(T.give)<1||totalCards(T.want)<1)return;
-      var pg=state.players[state.current];
-      if(!RES.every(function(x){return pg.res[x]>=T.give[x];}))return;
-      var g={},w={};RES.forEach(function(x){g[x]=T.give[x];w[x]=T.want[x];});
+      if(T.partner===null||selTotal(T.give)<1||selTotal(T.want)<1)return;
+      if(!tradeKinds().every(function(x){return holdOf(state.current,x)>=(T.give[x]||0);}))return;
+      var g={},w={};tradeKinds().forEach(function(x){g[x]=T.give[x]||0;w[x]=T.want[x]||0;});
       state.pending={type:"trade_offer",partner:T.partner,give:g,want:w}; return;
     }
     case "TRADE_DECLINE":
       pushLog("log_trade_decline",{name:state.current,victim:state.pending.partner});
       state.pending=null; return;
     case "TRADE_ACCEPT":{
-      var o=state.pending, act=state.players[state.current], par=state.players[o.partner];
-      if(!RES.every(function(x){return par.res[x]>=o.want[x];}))return;
-      RES.forEach(function(x){
-        act.res[x]-=o.give[x]; act.res[x]+=o.want[x];
-        par.res[x]+=o.give[x]; par.res[x]-=o.want[x];
+      var o=state.pending, kinds=tradeKinds();
+      if(!kinds.every(function(x){return holdOf(o.partner,x)>=(o.want[x]||0);}))return;
+      kinds.forEach(function(x){
+        var g=o.give[x]||0, w=o.want[x]||0;
+        addHold(state.current,x,-g); addHold(state.current,x,w);
+        addHold(o.partner,x,g);      addHold(o.partner,x,-w);
       });
       pushLog("log_trade",{name:state.current,victim:o.partner,g:resIcons(o.give),w:resIcons(o.want)});
       state.pending=null; return;
@@ -2670,14 +3418,22 @@ function apply(a){
 
     case "END_TURN":{
       var actor=activePlayer(), pe=state.players[actor];
+      if(state.mustPlayProg===actor&&(pe.prog||[]).length>4){
+        var anyPlayable=(pe.prog||[]).some(function(c){return progPlayable(actor,c);});
+        if(anyPlayable&&!isBot(actor)){ pushLog("log_prog_must"); return; }
+        var bi=Math.floor(Math.random()*pe.prog.length), backC=pe.prog.splice(bi,1)[0];
+        state.progDecks[progAreaOf(backC)].push(backC);
+        pushLog("log_prog_giveback",{name:actor,a:PROG_NAME[backC]});
+        state.mustPlayProg=null;
+      }
       pe.dev=pe.dev.concat(pe.newDev); pe.newDev=[]; pe.playedDevThisTurn=false;
       state.uiMode=null; state.pending=null;
-      if(seaBig()){
+      if(bigTwo()){
         if(!state.part2){
           // Schiff 1 done -> Schiff 2 (3 seats left) takes a restricted turn (no roll, bank trade only)
           state.part2=true; state.movedShip=false;
           state.turn={rolled:true,dice:state.turn?state.turn.dice:null};
-          pushLog("log_ship2",{name:schiff2Seat()}); return;
+          pushLog(isSR()?"log_burg2":"log_ship2",{name:schiff2Seat()}); return;
         }
         // both done -> new Spielzug: Schiff 1 moves one seat left
         state.part2=false; advanceTurn(); return;
@@ -2733,8 +3489,12 @@ function apply(a){
 function advanceTurn(){
   state.current=(state.current+1)%state.players.length;
   state.turnCount=(state.turnCount||0)+1;
-  state.turn={rolled:false,dice:null}; state.uiMode=null; state.pending=null; state.special=null; state.part2=false;
+  state.turn={rolled:false,dice:null,fleetKind:null,crane:false}; state.uiMode=null; state.pending=null; state.special=null; state.part2=false;
   state.movedShip=false; state.attackedFortress=false;
+  for(var kv2 in (state.knights||{})){                 // aktivierte Ritter werden im Folgezug einsatzbereit
+    var kk=state.knights[kv2];
+    if(kk.owner===state.current&&kk.active) kk.ready=true;
+  }
   for(var k in state.ships) state.ships[k].fresh=false;
   pushLog("log_next",{name:state.current});
 }
@@ -2857,14 +3617,17 @@ function botMoveRobberHex(pi,seaMode){
   return cands.length?cands[0]:0;
 }
 function botDiscard(){
-  var item=state.pending.queue[state.pending.qi], p=state.players[item.pi], need=item.count;
-  var sel=emptyRes(), guard=0;
+  var item=state.pending.queue[state.pending.qi], need=item.count;
+  var kinds=isSR()?RES.concat(COMM):RES;
+  var sel=freshDiscardSel(), guard=0;
   while(need>0&&guard<2000){
     guard++;
-    var order=RES.slice().sort(function(a,b){return (p.res[b]-sel[b])-(p.res[a]-sel[a]);});
+    var order=kinds.slice().sort(function(a,b){
+      return (holdOf(item.pi,b)-(sel[b]||0))-(holdOf(item.pi,a)-(sel[a]||0));
+    });
     var r=order[0];
-    if(sel[r]>=p.res[r])break;
-    sel[r]++; need--;
+    if((sel[r]||0)>=holdOf(item.pi,r))break;
+    sel[r]=(sel[r]||0)+1; need--;
   }
   state.ui.discardSel=sel;
   apply({type:"DISCARD_CONFIRM"});
@@ -2882,8 +3645,8 @@ function botSteal(){
 }
 function botTradeOfferDecision(){
   var o=state.pending, me=o.partner, p=state.players[me];
-  if(!RES.every(function(r){return p.res[r]>=o.want[r];})){ apply({type:"TRADE_DECLINE"}); return; }
-  var giveThem=totalCards(o.want), getFromThem=totalCards(o.give);
+  if(!tradeKinds().every(function(r){return holdOf(me,r)>=(o.want[r]||0);})){ apply({type:"TRADE_DECLINE"}); return; }
+  var giveThem=selTotal(o.want), getFromThem=selTotal(o.give);
   if(getFromThem>=giveThem||Math.random()<0.15)apply({type:"TRADE_ACCEPT"});
   else apply({type:"TRADE_DECLINE"});
 }
@@ -2933,9 +3696,102 @@ function botSpecialAction(pi){
   if(canAfford(p.res,COSTS.dev)&&state.devDeck.length>0&&Math.random()<sk.buyDevChance){apply({type:"BUY_DEV"});return;}
   apply({type:"SPECIAL_DONE"});
 }
+/* ---- Bots in Städte & Ritter: Ritter, Stadtmauern, Stadtausbau, Fortschrittskarten ---- */
+function botKnightSpot(pi){
+  var best=null,bestScore=-1;
+  state.board.vertices.forEach(function(v){
+    if(state.buildings[v.id]||knightAt(v.id))return;
+    if(!vertexOnMyNetwork(v.id,pi))return;
+    var sc=Math.random();                               // leichte Streuung, damit Ritter nicht klumpen
+    if(sc>bestScore){bestScore=sc;best=v.id;}
+  });
+  return best;
+}
+function botSRAction(pi){
+  if(!isSR())return false;
+  var p=state.players[pi];
+
+  // 0. Kartenzwang: mit 5 Karten muss sofort eine gespielt werden
+  if(state.mustPlayProg===pi&&(p.prog||[]).length>4){
+    var forced=(p.prog||[]).filter(function(c){
+      return progPlayable(pi,c)&&["alchemie","erfindung","diplomatie","intrige","haendler"].indexOf(c)<0;
+    });
+    if(forced.length){ apply({type:"PLAY_PROG",card:forced[0]}); return true; }
+  }
+
+  // 1. Verteidigung: kurz vor der Landung Ritter aktivieren
+  var soon=state.barb>=state.barbMax-1;
+  if(soon){
+    var passive=myKnights(pi).filter(function(v){return !state.knights[v].active;});
+    if(passive.length&&canAfford(p.res,COSTS.kact)){ apply({type:"ACTIVATE_KNIGHT",vertexId:passive[0]}); return true; }
+  }
+  // 2. Ritter aufstellen (höchstens 2 je Stufe, Regel greift in knightBuildable)
+  if(canAfford(p.res,COSTS.knight)&&myKnights(pi).length<3){
+    var spot=botKnightSpot(pi);
+    if(spot!=null&&knightBuildable(spot,pi)){ apply({type:"BUILD_KNIGHT",vertexId:spot}); return true; }
+  }
+  // 3. Ritter aufwerten, wenn Vorrat da ist
+  if(canAfford(p.res,COSTS.kup)&&Math.random()<0.6){
+    var up=myKnights(pi).filter(function(v){return knightMayUpgrade(v,pi);});
+    if(up.length){ apply({type:"UPGRADE_KNIGHT",vertexId:up[0]}); return true; }
+  }
+  // 4. Stadtausbau: Bereich mit den meisten passenden Handelswaren zuerst
+  var areas=AREAS.slice().sort(function(a,b){
+    return (p.comm[AREA_META[b].comm]||0)-(p.comm[AREA_META[a].comm]||0);
+  });
+  for(var i=0;i<areas.length;i++){
+    if(canImprove(pi,areas[i])){ apply({type:"BUILD_IMPROVEMENT",area:areas[i]}); return true; }
+  }
+  // 5. Stadtmauer als Schutz vor dem Räuber
+  if(canAfford(p.res,COSTS.wall)&&(p.walls||0)<3&&freeWallCity(pi)!=null&&Math.random()<0.5){
+    apply({type:"BUILD_WALL"}); return true;
+  }
+  // 6. Fortschrittskarten spielen, die ohne weitere Auswahl auskommen
+  var playable={bergbau:1,bewaesserung:1,motivation:1,strassenbau:1,ingenieurwesen:1,schmiedekunst:1,
+                sabotage:1,hochzeit:1,abgaben:1,spionage:1,verrat:1,rohstoffmonopol:1,warenmonopol:1,medizin:1,
+                baukran:1,handelsflotte:1,handelshafen:1,steuern:1,haendler:1,erfindung:1,diplomatie:1,intrige:1};
+  var hand=(p.prog||[]).filter(function(c){return playable[c];});
+  if(hand.length&&Math.random()<0.7){
+    var pick=hand[Math.floor(Math.random()*hand.length)];
+    if(pick&&!progPlayable(pi,pick))pick=null;
+    if(pick==="steuern"&&!state.barbLanded)pick=null;
+    if(pick==="baukran"&&!AREAS.some(function(ar){return canImprove(pi,ar);}))pick=null;
+    if(pick==="haendler"&&state.merchant&&state.merchant.owner===pi)pick=null;
+    if(pick){ apply({type:"PLAY_PROG",card:pick}); return true; }
+  }
+  // 6b. Ritteraktionen mit einsatzbereiten Rittern
+  var ready=readyKnights(pi);
+  if(ready.length){
+    // Räuber vertreiben, wenn er auf einem eigenen Feld sitzt
+    var chase=Object.keys(knightChaseVerts(pi)).map(Number);
+    if(state.barbLanded&&chase.length&&state.robberHex!=null){
+      var hurts=state.board.hexes[state.robberHex].vertices.some(function(v){
+        var b=state.buildings[v]; return b&&b.owner===pi;
+      });
+      if(hurts){ apply({type:"KNIGHT_CHASE",vertexId:chase[0]}); return true; }
+    }
+    // Schwächeren fremden Ritter vertreiben
+    for(var ri=0;ri<ready.length;ri++){
+      var dt=Object.keys(knightDisplaceTargets(pi,ready[ri])).map(Number);
+      if(dt.length&&Math.random()<0.5){
+        apply({type:"KNIGHT_SELECT",vertexId:ready[ri]});
+        apply({type:"KNIGHT_DISPLACE",vertexId:dt[0]});
+        return true;
+      }
+    }
+  }
+
+  // 7. Ritter aktivieren, wenn noch Getreide übrig ist
+  if(canAfford(p.res,COSTS.kact)&&p.res.wheat>=2){
+    var pas2=myKnights(pi).filter(function(v){return !state.knights[v].active;});
+    if(pas2.length&&Math.random()<0.5){ apply({type:"ACTIVATE_KNIGHT",vertexId:pas2[0]}); return true; }
+  }
+  return false;
+}
 function botTurnAction(pi){
   var p=state.players[pi], sk=botSkill(pi);
   if(!state.turn||!state.turn.rolled){ apply({type:"ROLL"}); return; }
+  if(botSRAction(pi))return;
   if(state.scenario==="piraten"&&canAttackFortress(pi)){
     var mineWS=countWarShips(pi);
     if(mineWS>=2&&Math.random()<0.9){ apply({type:"ATTACK_FORTRESS"}); return; }
@@ -2992,9 +3848,111 @@ function botStep(){
       case "roadbuilding": botRoadBuildingPending(pi,botSkill(pi)); return;
       case "plenty": botPlentyPending(pi); return;
       case "monopoly": botMonopolyPending(pi); return;
+      case "progmono":{
+        var kindsM=(state.pending.kind==="comm")?COMM:RES;
+        var bestM=kindsM[0],cntM=-1;
+        kindsM.forEach(function(r){
+          var tot=0; state.players.forEach(function(q,qi){ if(qi!==pi) tot+=holdOf(qi,r); });
+          if(tot>cntM){cntM=tot;bestM=r;}
+        });
+        apply({type:"PROG_MONO",res:bestM}); return;
+      }
+      case "spyPick":{
+        var tS=state.pending.targets;
+        tS.sort(function(x,y){return state.players[y].prog.length-state.players[x].prog.length;});
+        apply({type:"SPY_PICK",pi:tS[0]}); return;
+      }
+      case "spyCard":{
+        var sp2=state.players[state.pending.target];
+        apply({type:"SPY_TAKE",card:sp2.prog[Math.floor(Math.random()*sp2.prog.length)]}); return;
+      }
+      case "levyPick":{
+        var tL=state.pending.targets.slice();
+        tL.sort(function(x,y){return handPool(y).length-handPool(x).length;});
+        apply({type:"LEVY_PICK",pi:tL[0]}); return;
+      }
+      case "levyCards":{
+        var tgL=state.pending.target;
+        var kindsL=tradeKinds().filter(function(r){return holdOf(tgL,r)>0;});
+        if(!kindsL.length){ state.pending=null; return; }
+        apply({type:"LEVY_TAKE",res:kindsL[Math.floor(Math.random()*kindsL.length)]}); return;
+      }
+      case "betrayPick":{
+        var tB=state.pending.targets.slice();
+        tB.sort(function(x,y){
+          var mx=Math.max.apply(null,myKnights(x).map(function(v){return state.knights[v].level;}).concat([0]));
+          var my=Math.max.apply(null,myKnights(y).map(function(v){return state.knights[v].level;}).concat([0]));
+          return my-mx;
+        });
+        apply({type:"BETRAY_PICK",pi:tB[0]}); return;
+      }
+      case "betrayKnight":{
+        var vicB2=state.pending.victim, ks=myKnights(vicB2);
+        ks.sort(function(x,y){return state.knights[x].level-state.knights[y].level;});   // schwächsten Ritter opfern
+        if(ks.length) apply({type:"BETRAY_REMOVE",vertexId:ks[0]});
+        else { state.pending=null; state.uiMode=null; }
+        return;
+      }
+      case "barbCommit":{
+        var meB=state.pending.queue[state.pending.idx];
+        apply({type:"BARB_COMMIT",count:activeKnights(meB).length});   // Bots setzen alle aktiven Ritter ein
+        return;
+      }
+      case "alchemy":{
+        apply({type:"ALCHEMY_PICK",value:1+Math.floor(Math.random()*6)});
+        apply({type:"ALCHEMY_PICK",value:1+Math.floor(Math.random()*6)});
+        return;
+      }
+      case "progfleet":{
+        var kindsF=tradeKinds(), bestF=kindsF[0], cntF=-1;
+        kindsF.forEach(function(r){ var v2=holdOf(pi,r); if(v2>cntF){cntF=v2;bestF=r;} });
+        apply({type:"PROG_FLEET",res:bestF}); return;
+      }
       case "robber": case "searobber": break; // fall through to the uiMode robber-move handling below
       default: return;
     }
+  }
+  if(state.uiMode==="swapchip"){                          // Erfindung: schlechten gegen guten Chip tauschen
+    var sw=Object.keys(swappableHexes()).map(Number);
+    function chipValue(hi){ var nn=state.tiles[hi].number; return nn==null?0:6-Math.abs(7-nn); }
+    var mineSw=sw.filter(function(hi){
+      return state.board.hexes[hi].vertices.some(function(v){var b=state.buildings[v];return b&&b.owner===pi;});
+    });
+    var otherSw=sw.filter(function(hi){return mineSw.indexOf(hi)<0;});
+    mineSw.sort(function(x,y){return chipValue(x)-chipValue(y);});      // eigenes schwächstes Feld
+    otherSw.sort(function(x,y){return chipValue(y)-chipValue(x);});     // fremdes stärkstes Feld
+    if(mineSw.length&&otherSw.length){
+      apply({type:"SWAP_CHIP",hexId:mineSw[0]}); apply({type:"SWAP_CHIP",hexId:otherSw[0]}); return;
+    }
+    state.ui.swapFirst=null; state.uiMode=null; return;
+  }
+  if(state.uiMode==="diplomacy"){                         // Diplomatie: fremde offene Straße entfernen
+    var op=openRoadEdges(), foreign=Object.keys(op).filter(function(e){return op[e]!==pi;});
+    if(foreign.length){ apply({type:"DIPLOMACY_REMOVE",edgeId:Number(foreign[0])}); return; }
+    state.uiMode=null; return;
+  }
+  if(state.uiMode==="intrigue"){                          // Intrige: stärksten erreichbaren Ritter vertreiben
+    var it=Object.keys(intrigueTargets(pi)).map(Number);
+    it.sort(function(x,y){return state.knights[y].level-state.knights[x].level;});
+    if(it.length){ apply({type:"INTRIGUE_DISPLACE",vertexId:it[0]}); return; }
+    state.uiMode=null; return;
+  }
+  if(state.uiMode==="merchant"){                         // Händlerkarte: Feld neben eigener Siedlung
+    var hx=null;
+    state.tiles.forEach(function(t,hi){
+      if(hx!=null||RES.indexOf(t.resource)<0)return;
+      var mine=state.board.hexes[hi].vertices.some(function(v){var b=state.buildings[v];return b&&b.owner===pi&&!b.captured;});
+      if(mine)hx=hi;
+    });
+    if(hx!=null){ apply({type:"PLACE_MERCHANT",hexId:hx}); return; }
+    state.uiMode=null; return;
+  }
+  if(state.freeCity&&state.uiMode==="city"){             // Medizin: Siedlung zur Stadt machen
+    var fv=Object.keys(state.buildings).find(function(v){
+      var b=state.buildings[v]; return b&&b.owner===pi&&b.type==="settlement"&&!b.captured;
+    });
+    if(fv!=null){ apply({type:"BUILD_CITY",vertexId:Number(fv)}); return; }
+    state.freeCity=false; state.uiMode=null; return;
   }
   if(state.uiMode==="moveRobber"){ apply({type:"MOVE_ROBBER",hexId:botMoveRobberHex(pi,false)}); return; }
   if(state.uiMode==="moveSeaRobber"){ apply({type:"MOVE_SEA_ROBBER",hexId:botMoveRobberHex(pi,true)}); return; }
@@ -3061,6 +4019,10 @@ function renderMenu(){
     '<div class="q">'+esc(tr("choose"))+'</div>'+
     '<div class="ns">'+counts.map(function(k){return '<button data-act="setn" data-n="'+k+'" class="'+(n===k?"on":"")+'">'+k+'</button>';}).join("")+'</div>'+
     seatRow+
+    ((mode==="sr"||(mode==="sea"&&state.ui.startSrSea))?('<button class="skiproll'+(state.ui.startTactic?" on":"")+'" data-act="tactic">'+
+      (state.ui.startTactic?"☑":"☐")+' '+esc(tr("menu_tactic"))+'</button>'):'')+
+    (mode==="sea"?('<button class="skiproll'+(state.ui.startSrSea?" on":"")+'" data-act="srsea">'+
+      (state.ui.startSrSea?"☑":"☐")+' '+esc(tr("menu_srsea"))+'</button>'):'')+
     '<button class="skiproll'+(state.ui.startSkipRoll?" on":"")+'" data-act="skiproll">'+
       (state.ui.startSkipRoll?"☑":"☐")+' '+esc(tr("menu_skiproll"))+'</button>'+
     '<button class="begin" data-act="begin">'+esc(tr("begin"))+'</button>'+
@@ -3081,7 +4043,7 @@ function renderGame(){
       '<span class="title">CATAN</span><span class="phase">'+meta+'</span></div>'+
     '<div class="right">'+
       '<div class="turn"><span style="color:#9fc0d4">'+esc(tr("turn"))+'</span>'+
-        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(ap))+(isBot(ap)?' '+tr("bot_tag"):'')+(seaBig()&&state.phase==="play"?('<span class="ship-badge '+(state.part2?"ship2":"ship1")+'">'+(state.part2?"Schiff 2":"Schiff 1")+'</span>'):'')+'</span></div>'+
+        '<span class="who"><span class="dot" style="background:'+c.main+'"></span>'+esc(colorName(ap))+(isBot(ap)?' '+tr("bot_tag"):'')+(bigTwo()&&state.phase==="play"?('<span class="ship-badge '+(state.part2?"ship2":"ship1")+'">'+tokenLabel(state.part2)+'</span>'):'')+'</span></div>'+
       '<button class="btn-new" data-act="toginfo">'+esc(tr("info_btn"))+'</button>'+
       '<button class="btn-new" data-act="costs">'+esc(tr("costs_btn"))+'</button>'+
       '<button class="btn-new" data-act="togglesave">'+esc(tr("save_btn"))+'</button>'+
@@ -3162,6 +4124,17 @@ function legalVertSet(){
       }
       out[v.id]=1;
     });
+  }else if(mode==="kmove"||mode==="kdisp"){
+    if(state.ui.ksel==null) readyKnights(me).forEach(function(v){ out[v]=1; });
+    else if(mode==="kmove"){ var mt=knightMoveTargets(me); for(var tv in mt) out[tv]=1; }
+    else { var dt=knightDisplaceTargets(me,state.ui.ksel); for(var dv in dt) out[dv]=1; }
+  }else if(mode==="betrayremove"){
+    var vicB=state.pending&&state.pending.victim;
+    if(vicB!=null) myKnights(vicB).forEach(function(v){ out[v]=1; });
+  }else if(mode==="intrigue"){
+    var it=intrigueTargets(me); for(var iv in it) out[iv]=1;
+  }else if(mode==="kchase"){
+    var cv=knightChaseVerts(me); for(var c2 in cv) out[c2]=1;
   }else if(mode==="knight"){
     board.vertices.forEach(function(v){ if(knightBuildable(v.id,me)) out[v.id]=1; });
   }else if(mode==="kact"){
@@ -3176,11 +4149,15 @@ function legalVertSet(){
     });
   }else if(mode==="city"&&countType(me,"city")<PIECE.city){
     for(var k in state.buildings){var b=state.buildings[k];if(b.owner===me&&b.type==="settlement"&&!b.captured)out[k]=1;}
+  }else if(mode==="city"){
+    // Städtevorrat erschöpft: nur eine umgedrehte Stadt darf zurückgewandelt werden
+    for(var k2 in state.buildings){var b2=state.buildings[k2];if(b2.owner===me&&b2.type==="settlement"&&b2.downgraded&&!b2.captured)out[k2]=1;}
   }
   return out;
 }
 function legalEdgeSet(){
   var out={}, me=activePlayer(), mode=state.uiMode, setup=state.setup, board=state.board;
+  if(mode==="diplomacy"){ var op=openRoadEdges(); for(var oe in op) out[oe]="diplo"; return out; }
   if(state.phase==="setup"&&setup&&setup.placing==="road"){
     var who=setup.order[setup.idx], rv=setup.lastSettlement;
     board.edges.forEach(function(e){
@@ -3326,12 +4303,31 @@ function renderBoard(){
   // Städte & Ritter: Ritterfiguren auf den Kreuzungen
   for(var kv in _knights){
     var k=_knights[kv], kvt=board.vertices[kv], kc=PCOL[k.owner];
-    s+='<circle cx="'+kvt.x+'" cy="'+kvt.y+'" r="9" fill="'+kc.main+'" stroke="'+(k.active?"#ffd98a":"#2b1b12")+'" stroke-width="'+(k.active?2.4:1.4)+'"/>';
+    var ksel=(state.ui&&state.ui.ksel===Number(kv));
+    s+='<circle cx="'+kvt.x+'" cy="'+kvt.y+'" r="'+(ksel?11:9)+'" fill="'+kc.main+'" stroke="'+(ksel?"#fff":(k.active?"#ffd98a":"#2b1b12"))+'" stroke-width="'+(ksel?3:(k.active?2.4:1.4))+'"/>';
+    if(k.active&&!k.ready) s+='<circle cx="'+(kvt.x+7)+'" cy="'+(kvt.y-7)+'" r="3" fill="#f3ecda" opacity=".75"/>';
     s+='<text x="'+kvt.x+'" y="'+(kvt.y+4)+'" text-anchor="middle" font-size="11" font-weight="700" fill="'+kc.text+'" pointer-events="none">'+k.level+'</text>';
   }
 
+  if(state.merchant&&state.merchant.hex!=null){
+    var mh=board.hexes[state.merchant.hex];
+    s+='<circle cx="'+(mh.x+SIZE*0.5)+'" cy="'+(mh.y-SIZE*0.5)+'" r="12" fill="rgba(20,10,8,.55)" stroke="'+PCOL[state.merchant.owner].main+'" stroke-width="2"/>';
+    s+='<text x="'+(mh.x+SIZE*0.5)+'" y="'+(mh.y-SIZE*0.5+5)+'" text-anchor="middle" font-size="14">🧭</text>';
+  }
+  // Städte & Ritter: Metropolenaufsätze
+  if(state.metroVertex){
+    AREAS.forEach(function(ar){
+      var mv=state.metroVertex[ar]; if(mv==null)return;
+      var mvt=board.vertices[mv], mo=state.metro[ar];
+      if(!mvt||mo==null)return;
+      s+='<text x="'+mvt.x+'" y="'+(mvt.y-13)+'" text-anchor="middle" font-size="13">🏰</text>';
+    });
+  }
   for(var bid in state.buildings){
     var b=state.buildings[bid], v=board.vertices[bid], col=PCOL[b.owner];
+    if(b.type==="settlement"&&b.downgraded){
+      s+='<text x="'+vt.x+'" y="'+(vt.y-12)+'" text-anchor="middle" font-size="10" opacity=".85">↺</text>';
+    }
     if(b.type==="city"){
       // Klassische Catan-Stadt: Haupthaus mit angebautem hohen Turm links.
       // Zwei separate Pfade in Spielerfarbe; überlappen sich, sodass eine markante
@@ -3419,8 +4415,46 @@ function renderSidebar(){
   }).join("");
   if(isSR()){
     resCells+=COMM.map(function(c){
-      return '<div class="res-cell" style="background:#efe7d8" title="'+esc(COMM_META[c].label)+'"><div class="ic">'+COMM_META[c].icon+'</div><div class="n">'+(p.comm[c]||0)+'</div></div>';
+      return '<div class="res-cell" style="background:#efe7d8" title="'+esc(COMM_META[c].label)+' · '+esc(tr("supply"))+' '+commSupply(c)+'"><div class="ic">'+COMM_META[c].icon+'</div><div class="n">'+(p.comm[c]||0)+'</div></div>';
     }).join("");
+  }
+
+  var srSection="";
+  if(isSR()){
+    var rows=AREAS.map(function(area){
+      var M=AREA_META[area], lvl=impLevel(me,area), cost=impCost(lvl), can=canImprove(me,area)&&canBuild;
+      var pips=""; for(var s=1;s<=5;s++){
+        pips+='<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;'+
+          'background:'+(s<=lvl?"#c98a1e":"rgba(42,38,32,.16)")+';'+
+          (metroOf(area)===me&&s>=4?"box-shadow:0 0 0 1.5px #8d2a12;":"")+'"></span>';
+      }
+      var owner=metroOf(area);
+      var metroTag=(owner!=null)?'<span style="font-size:9px;letter-spacing:.06em;color:'+PCOL[owner].dark+'">🏰 '+esc(colorName(owner))+'</span>':'';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0">'+
+        '<span style="font-size:14px;width:18px">'+M.icon+'</span>'+
+        '<span style="flex:1;min-width:0">'+
+          '<span style="font-size:11px;font-weight:700;color:#2a2620">'+esc(tr("area_"+area))+'</span> '+
+          '<span style="font-size:10px;color:var(--muted)">'+esc(M.steps[lvl])+'</span>'+
+          '<div style="margin-top:3px">'+pips+' '+metroTag+'</div>'+
+        '</span>'+
+        '<button data-act="improve" data-area="'+area+'" '+(can?"":"disabled")+
+          ' style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:11px;padding:5px 8px;border-radius:7px;'+
+          'border:1px solid rgba(42,38,32,.2);background:'+(can?"#f6e6c4":"#eee6d4")+';color:#2a2620;opacity:'+(can?"1":".45")+'">'+
+          (lvl>=5?"max":(cost+"×"+COMM_META[M.comm].icon))+'</button>'+
+      '</div>';
+    }).join("");
+    var progList=(p.prog&&p.prog.length)
+      ? p.prog.map(function(c){
+          var playable=canBuild&&!state.pending;
+          return '<button data-act="playprog" data-card="'+c+'" '+(playable?"":"disabled")+
+            ' style="font-family:ui-sans-serif,system-ui,sans-serif;font-size:10px;padding:4px 8px;border-radius:6px;background:#efe7d8;'+
+            'border:1px solid rgba(42,38,32,.18);margin:0 4px 4px 0;opacity:'+(playable?"1":".5")+'">'+esc(PROG_NAME[c]||c)+'</button>';
+        }).join("")
+      : '<span style="font-size:10px;color:var(--muted)">–</span>';
+    srSection='<div style="margin-bottom:12px">'+
+      '<div class="seclbl">'+esc(tr("sr_improve"))+'</div>'+rows+
+      '<div class="seclbl" style="margin-top:8px">'+esc(tr("sr_prog"))+' ('+((p.prog&&p.prog.length)||0)+'/4)</div>'+
+      '<div>'+progList+'</div></div>';
   }
 
   var devSection="";
@@ -3478,12 +4512,15 @@ function renderSidebar(){
         bb(tr("b_wall"),COSTS.wall,"wall",canBuild&&canAfford(p.res,COSTS.wall)&&(p.walls||0)<3&&countType(me,"city")>(p.walls||0),"buildwall")+
         bb(tr("b_knight"),COSTS.knight,"knight",canBuild&&canAfford(p.res,COSTS.knight)&&knightCount(me,1)<2)+
         bb(tr("b_kact"),COSTS.kact,"kact",canBuild&&canAfford(p.res,COSTS.kact)&&myKnights(me).some(function(v){return !state.knights[v].active;}))+
-        bb(tr("b_kup"),COSTS.kup,"kup",canBuild&&canAfford(p.res,COSTS.kup)&&myKnights(me).some(function(v){return knightMayUpgrade(v,me);}))
+        bb(tr("b_kup"),COSTS.kup,"kup",canBuild&&canAfford(p.res,COSTS.kup)&&myKnights(me).some(function(v){return knightMayUpgrade(v,me);}))+
+        bb(tr("b_kmove"),{},"kmove",canBuild&&readyKnights(me).length>0)+
+        bb(tr("b_kdisp"),{},"kdisp",canBuild&&readyKnights(me).some(function(v){return Object.keys(knightDisplaceTargets(me,v)).length>0;}))+
+        bb(tr("b_kchase"),{},"kchase",canBuild&&state.barbLanded&&Object.keys(knightChaseVerts(me)).length>0)
       ):"")+
     '</div>';
     var giveRatio=bestRatio(me,state.ui.bankGive);
-    var bankDisabled=(!canBuild)||p.res[state.ui.bankGive]<giveRatio||state.ui.bankGive===state.ui.bankGet;
-    var sel=function(side){return '<select data-act="setbank" data-side="'+side+'">'+RES.map(function(r){return '<option value="'+r+'"'+(state.ui[side]===r?" selected":"")+'>'+RES_META[r].icon+' '+esc(resLabel(r))+'</option>';}).join("")+'</select>';};
+    var bankDisabled=(!canBuild)||holdOf(me,state.ui.bankGive)<giveRatio||state.ui.bankGive===state.ui.bankGet;
+    var sel=function(side){return '<select data-act="setbank" data-side="'+side+'">'+tradeKinds().map(function(r){return '<option value="'+r+'"'+(state.ui[side]===r?" selected":"")+'>'+kindIcon(r)+' '+esc(kindLabel(r))+'</option>';}).join("")+'</select>';};
     var bank='<div class="banktrade"><div class="seclbl" style="margin-bottom:4px">'+esc(tr("bank_trade"))+'</div>'+
       '<div class="row">'+sel("bankGive")+'<span class="ratio">'+giveRatio+':1</span><span class="arrow">→</span>'+sel("bankGet")+
       '<button class="tradebtn" data-act="trade" '+(bankDisabled?"disabled":"")+'>'+esc(tr("trade"))+'</button></div></div>';
@@ -3506,8 +4543,8 @@ function renderSidebar(){
         }
       }
     }
-    var endBtn='<button class="btn-end" data-act="endturn" '+((rolled&&canAct)?"":"disabled")+'>'+esc(tr(state.part2?"end_turn":(seaBig()?"end_ship1":"end_turn")))+'</button>';
-    var ship12=seaBig()?('<div class="hint'+(state.part2?" gold":"")+'">'+esc(state.part2?tr("ship2_hint"):tr("ship1_hint"))+'</div>'):'';
+    var endBtn='<button class="btn-end" data-act="endturn" '+((rolled&&canAct)?"":"disabled")+'>'+esc(tr(state.part2?"end_turn":(bigTwo()?"end_ship1":"end_turn")))+'</button>';
+    var ship12=bigTwo()?('<div class="hint'+(state.part2?" gold":"")+'">'+esc(state.part2?tr(isSR()?"burg2_hint":"ship2_hint"):tr(isSR()?"burg1_hint":"ship1_hint"))+'</div>'):'';
     actions='<div class="actions">'+ship12+rb+rollRow+buildGrid+bank+tradeBtn+moveShipBtn+atkBtn+wonderBox+endBtn+'</div>';
   }
 
@@ -3521,7 +4558,7 @@ function renderSidebar(){
         (sea?'<span title="'+esc(tr("b_ship"))+'">⛵ '+shipsLeft+'</span>':'')+
         '<span title="'+esc(tr("b_settlement"))+'">🏠 '+settLeft+'</span>'+
         '<span title="'+esc(tr("b_city"))+'">🏛️ '+cityLeft+'</span></span></div>'+
-      devSection+actions+
+      devSection+srSection+actions+
     '</div></div>';
 
   return '<div class="sidebar">'+card+renderScoreboard()+renderLog()+'</div>';
@@ -3539,7 +4576,7 @@ function renderScoreboard(){
     var c=PCOL[pi];
     return '<div class="score-row'+(pi===activePlayer()?" cur":"")+'">'+
       '<span class="dot" style="background:'+c.main+'"></span>'+
-      '<span class="nm">'+esc(colorName(pi))+(p.bot?' '+tr("bot_tag"):'')+(seaBig()&&state.phase==="play"&&pi===state.current?' <span class="sb-ship sb-ship1" title="Schiff 1">🚢1</span>':'')+(seaBig()&&state.phase==="play"&&pi===schiff2Seat()?' <span class="sb-ship sb-ship2" title="Schiff 2">🚢2</span>':'')+'</span>'+
+      '<span class="nm">'+esc(colorName(pi))+(p.bot?' '+tr("bot_tag"):'')+(bigTwo()&&state.phase==="play"&&pi===state.current?' <span class="sb-ship sb-ship1" title="Burg/Schiff 1">🚢1</span>':'')+(bigTwo()&&state.phase==="play"&&pi===schiff2Seat()?' <span class="sb-ship sb-ship2" title="Burg/Schiff 2">🚢2</span>':'')+'</span>'+
       '<span class="vp">'+publicVP(pi)+' ★</span>'+
       '<span class="meta"><span title="'+esc(tr("tip_hand"))+'">🂠 '+totalCards(p.res)+'</span>'+
         '<span title="'+esc(tr("tip_knights"))+'">⚔ '+p.knights+'</span>'+
@@ -3569,6 +4606,16 @@ function renderModals(){
     case "steal": return modalSteal();
     case "plenty": return modalPlenty();
     case "monopoly": return modalMonopoly();
+    case "progmono": return modalProgMono();
+    case "progfleet": return modalProgFleet();
+    case "alchemy": return modalAlchemy();
+    case "barbCommit": return modalBarbCommit();
+    case "spyPick": return modalSpyPick();
+    case "spyCard": return modalSpyCard();
+    case "levyPick": return modalLevyPick();
+    case "levyCards": return modalLevyCards();
+    case "betrayPick": return modalBetrayPick();
+    case "betrayKnight": return modalBetrayKnight();
     case "trade_compose": return modalTradeCompose();
     case "trade_offer": return modalTradeOffer();
     case "robberChoice": return modalRobberChoice();
@@ -3590,7 +4637,7 @@ function modalGold(){
   var rows=RES.map(function(r){
     return '<div class="drow"><span class="rn">'+RES_META[r].icon+' '+esc(resLabel(r))+'</span>'+
       '<button class="pm" data-act="goldadj" data-res="'+r+'" data-d="-1">−</button>'+
-      '<span class="cnt">'+sel[r]+'</span>'+
+      '<span class="cnt">'+(sel[r]||0)+'</span>'+
       '<button class="pm" data-act="goldadj" data-res="'+r+'" data-d="1">+</button></div>';
   }).join("");
   var btn='<button class="mbtn" style="background:'+c.main+'" '+(selected===item.count?"":"disabled")+' data-act="goldconfirm">'+
@@ -3600,10 +4647,10 @@ function modalGold(){
 }
 function modalDiscard(){
   var item=state.pending.queue[state.pending.qi], p=state.players[item.pi], c=PCOL[item.pi];
-  var sel=state.ui.discardSel, selected=totalCards(sel);
-  var rows=RES.filter(function(r){return p.res[r]>0;}).map(function(r){
-    return '<div class="drow"><span class="rn">'+RES_META[r].icon+' '+esc(resLabel(r))+'</span>'+
-      '<span class="have">'+esc(tr("discard_have"))+' '+p.res[r]+'</span>'+
+  var sel=state.ui.discardSel, selected=selTotal(sel);
+  var rows=(isSR()?RES.concat(COMM):RES).filter(function(r){return holdOf(item.pi,r)>0;}).map(function(r){
+    return '<div class="drow"><span class="rn">'+kindIcon(r)+' '+esc(kindLabel(r))+'</span>'+
+      '<span class="have">'+esc(tr("discard_have"))+' '+holdOf(item.pi,r)+'</span>'+
       '<button class="pm" data-act="discadj" data-res="'+r+'" data-d="-1">−</button>'+
       '<span class="cnt">'+sel[r]+'</span>'+
       '<button class="pm" data-act="discadj" data-res="'+r+'" data-d="1">+</button></div>';
@@ -3628,6 +4675,70 @@ function modalPlenty(){
   return shell("#caa33a",'<h3 style="color:#7a5e12">'+esc(tr("plenty_title"))+'</h3><p>'+esc(tr("plenty_desc"))+'</p>'+
     '<div class="resgrid">'+grid+'</div>'+picked+btn);
 }
+function modalPick(title,desc,kinds,act){
+  var grid=kinds.map(function(r){
+    return '<button data-act="'+act+'" data-res="'+r+'" style="background:'+(isComm(r)?"#efe7d8":RES_META[r].token)+'">'+
+      '<div class="ic">'+kindIcon(r)+'</div><div class="nm">'+esc(kindLabel(r))+'</div></button>';
+  }).join("");
+  return shell("#caa33a",'<h3 style="color:#7a5e12">'+esc(title)+'</h3><p>'+esc(desc)+'</p><div class="resgrid">'+grid+'</div>');
+}
+function modalPlayerPick(title,desc,targets,act){
+  var pills=targets.map(function(pi){
+    var c=PCOL[pi];
+    return '<button class="partpill" data-act="'+act+'" data-pi="'+pi+'" style="background:'+c.main+';color:#fff">'+esc(colorName(pi))+'</button>';
+  }).join("");
+  return shell("#caa33a",'<h3 style="color:#7a5e12">'+esc(title)+'</h3><p>'+esc(desc)+'</p><div class="partrow">'+pills+'</div>');
+}
+function modalSpyPick(){ return modalPlayerPick(tr("spy_title"),tr("spy_pick"),state.pending.targets,"spypick"); }
+function modalSpyCard(){
+  var tg=state.pending.target, sp=state.players[tg];
+  var btns=(sp.prog||[]).map(function(c){
+    return '<button data-act="spytake" data-card="'+c+'" style="background:#efe7d8;min-width:110px"><div class="nm">'+esc(PROG_NAME[c]||c)+'</div></button>';
+  }).join("");
+  return shell("#caa33a",'<h3 style="color:#7a5e12">'+esc(tr("spy_title"))+'</h3>'+
+    '<p>'+esc(tr("spy_take",{name:colorName(tg)}))+'</p><div class="resgrid">'+btns+'</div>');
+}
+function modalLevyPick(){ return modalPlayerPick(tr("levy_title"),tr("levy_pick"),state.pending.targets,"levypick"); }
+function modalLevyCards(){
+  var tg=state.pending.target;
+  var btns=tradeKinds().filter(function(r){return holdOf(tg,r)>0;}).map(function(r){
+    return '<button data-act="levytake" data-res="'+r+'" style="background:'+(isComm(r)?"#efe7d8":RES_META[r].token)+'">'+
+      '<div class="ic">'+kindIcon(r)+'</div><div class="nm">'+esc(kindLabel(r))+' ('+holdOf(tg,r)+')</div></button>';
+  }).join("");
+  return shell("#caa33a",'<h3 style="color:#7a5e12">'+esc(tr("levy_title"))+'</h3>'+
+    '<p>'+esc(tr("levy_take",{name:colorName(tg),a:state.pending.left}))+'</p><div class="resgrid">'+btns+'</div>');
+}
+function modalBetrayPick(){ return modalPlayerPick(tr("betray_title"),tr("betray_pick"),state.pending.targets,"betraypick"); }
+function modalBetrayKnight(){
+  var vic=state.pending.victim, c=PCOL[vic];
+  return shell(c.main,'<h3 style="color:'+c.main+'">'+esc(tr("betray_title"))+'</h3>'+
+    '<p>'+esc(tr("betray_remove",{name:colorName(vic)}))+'</p>');
+}
+function modalBarbCommit(){
+  var who=state.pending.queue[state.pending.idx], maxK=activeKnights(who).length, c=PCOL[who];
+  var btns=""; for(var i=0;i<=maxK;i++){
+    btns+='<button data-act="barbcommit" data-count="'+i+'" style="background:#f6e6c4;min-width:52px"><div class="ic">'+i+'</div></button>';
+  }
+  return shell(c.main,'<h3 style="color:'+c.main+'">'+esc(tr("barb_commit_title",{name:colorName(who)}))+'</h3>'+
+    '<p>'+esc(tr("barb_commit_desc",{a:barbarianStrength()}))+'</p><div class="resgrid">'+btns+'</div>');
+}
+function modalAlchemy(){
+  var first=state.pending.d1;
+  var grid=[1,2,3,4,5,6].map(function(v){
+    return '<button data-act="alchemy" data-val="'+v+'" style="background:#f6e6c4;min-width:52px">'+
+      '<div class="ic">'+v+'</div></button>';
+  }).join("");
+  return shell("#caa33a",'<h3 style="color:#7a5e12">'+esc(tr("alchemy_title"))+'</h3>'+
+    '<p>'+esc(first==null?tr("alchemy_d1"):tr("alchemy_d2",{a:first}))+'</p>'+
+    '<div class="resgrid">'+grid+'</div>');
+}
+function modalProgMono(){
+  var comm=state.pending.kind==="comm";
+  return modalPick(tr(comm?"warenmono_title":"mono_title"), tr(comm?"warenmono_desc":"rohmono_desc"), comm?COMM:RES, "progmono");
+}
+function modalProgFleet(){
+  return modalPick(tr("fleet_title"), tr("fleet_desc"), tradeKinds(), "progfleet");
+}
 function modalMonopoly(){
   var grid=RES.map(function(r){return '<button data-act="monopoly" data-res="'+r+'" style="background:'+RES_META[r].token+'"><div class="ic">'+RES_META[r].icon+'</div><div class="nm">'+esc(resLabel(r))+'</div></button>';}).join("");
   return shell("#cf3a36",'<h3 style="color:#8e221f">'+esc(tr("mono_title"))+'</h3><p>'+esc(tr("mono_desc"))+'</p><div class="resgrid">'+grid+'</div>');
@@ -3639,15 +4750,15 @@ function modalTradeCompose(){
     return '<button class="partpill" data-act="tradepartner" data-pi="'+pi+'" style="background:'+(on?c.main:"#e6dcc2")+';color:'+(on?"#fff":"#5a523f")+'">'+esc(colorName(pi))+'</button>';
   }).join("");
   function rows(slot){
-    return RES.map(function(r){
-      return '<div class="drow"><span class="rn">'+RES_META[r].icon+' '+esc(resLabel(r))+'</span>'+
-        (slot==="give"?'<span class="have">'+esc(tr("discard_have"))+' '+p.res[r]+'</span>':'<span class="have"></span>')+
+    return tradeKinds().map(function(r){
+      return '<div class="drow"><span class="rn">'+kindIcon(r)+' '+esc(kindLabel(r))+'</span>'+
+        (slot==="give"?'<span class="have">'+esc(tr("discard_have"))+' '+holdOf(me,r)+'</span>':'<span class="have"></span>')+
         '<button class="pm" data-act="tradeadj" data-slot="'+slot+'" data-res="'+r+'" data-d="-1">−</button>'+
-        '<span class="cnt">'+T[slot][r]+'</span>'+
+        '<span class="cnt">'+(T[slot][r]||0)+'</span>'+
         '<button class="pm" data-act="tradeadj" data-slot="'+slot+'" data-res="'+r+'" data-d="1">+</button></div>';
     }).join("");
   }
-  var ok=totalCards(T.give)>=1&&totalCards(T.want)>=1&&T.partner!==null;
+  var ok=selTotal(T.give)>=1&&selTotal(T.want)>=1&&T.partner!==null;
   var body='<h3 style="color:#5b7d3a">'+esc(tr("trade_title"))+'</h3>'+
     '<div class="seclbl" style="margin:2px 0 6px">'+esc(tr("trade_partner"))+'</div><div class="partrow">'+pills+'</div>'+
     '<div class="seclbl" style="margin:12px 0 4px">'+esc(tr("trade_give"))+'</div>'+rows("give")+
@@ -3660,7 +4771,7 @@ function modalTradeCompose(){
 }
 function modalTradeOffer(){
   var o=state.pending, me=state.current, par=state.players[o.partner], c=PCOL[o.partner];
-  var canCover=RES.every(function(r){return par.res[r]>=o.want[r];});
+  var canCover=tradeKinds().every(function(r){return holdOf(o.partner,r)>=(o.want[r]||0);});
   var body='<h3 style="color:'+c.main+'">'+esc(tr("trade_offer",{name:colorName(me)}))+'</h3>'+
     '<p style="font-size:17px;color:#3a3024">'+resIcons(o.give)+' &nbsp;'+esc(tr("trade_arrow"))+'&nbsp; '+resIcons(o.want)+'</p>'+
     (canCover?'':'<p style="color:#b8302c">'+esc(tr("trade_cant"))+'</p>')+
@@ -3711,10 +4822,18 @@ function clickVertex(v){
   else if(mode==="knight")dispatch({type:"BUILD_KNIGHT",vertexId:Number(v)});
   else if(mode==="kact")dispatch({type:"ACTIVATE_KNIGHT",vertexId:Number(v)});
   else if(mode==="kup")dispatch({type:"UPGRADE_KNIGHT",vertexId:Number(v)});
+  else if(mode==="kmove"||mode==="kdisp"){
+    if(state.ui.ksel==null)dispatch({type:"KNIGHT_SELECT",vertexId:Number(v)});
+    else dispatch({type:(mode==="kmove"?"KNIGHT_MOVE":"KNIGHT_DISPLACE"),vertexId:Number(v)});
+  }
+  else if(mode==="kchase")dispatch({type:"KNIGHT_CHASE",vertexId:Number(v)});
+  else if(mode==="intrigue")dispatch({type:"INTRIGUE_DISPLACE",vertexId:Number(v)});
+  else if(mode==="betrayremove")dispatch({type:"BETRAY_REMOVE",vertexId:Number(v)});
 }
 function clickEdge(e){
   var setup=state.setup, le=legalEdgeSet(), kind=le[e];
   if(!kind)return;
+  if(kind==="diplo"){dispatch({type:"DIPLOMACY_REMOVE",edgeId:Number(e)});return;}
   if(kind==="movefrom"){dispatch({type:"PICK_MOVE_SHIP",edgeId:Number(e)});return;}
   if(kind==="moveto"){dispatch({type:"MOVE_SHIP",edgeId:Number(e)});return;}
   if(state.phase==="setup"&&setup.placing==="road")dispatch({type:(kind==="ship"?"SETUP_SHIP":"SETUP_ROAD"),edgeId:Number(e)});
@@ -3727,7 +4846,7 @@ document.addEventListener("click",function(ev){
   if(!t)return;
   if(t.hasAttribute("data-vert")){clickVertex(t.getAttribute("data-vert"));return;}
   if(t.hasAttribute("data-edge")){clickEdge(t.getAttribute("data-edge"));return;}
-  if(t.hasAttribute("data-hex")){dispatch({type:(state.uiMode==="moveSeaRobber"?"MOVE_SEA_ROBBER":"MOVE_ROBBER"),hexId:Number(t.getAttribute("data-hex"))});return;}
+  if(t.hasAttribute("data-hex")){dispatch({type:(state.uiMode==="swapchip"?"SWAP_CHIP":(state.uiMode==="merchant"?"PLACE_MERCHANT":(state.uiMode==="moveSeaRobber"?"MOVE_SEA_ROBBER":"MOVE_ROBBER"))),hexId:Number(t.getAttribute("data-hex"))});return;}
   var act=t.getAttribute("data-act");
   switch(act){
     case "costs": dispatch({type:"TOGGLE_COSTS"}); break;
@@ -3741,6 +4860,8 @@ document.addEventListener("click",function(ev){
     case "setstartmode": dispatch({type:"SET_STARTMODE",mode:t.getAttribute("data-mode")}); break;
     case "setstartscn": dispatch({type:"SET_STARTSCN",scn:t.getAttribute("data-scn")}); break;
     case "skiproll": dispatch({type:"SET_SKIPROLL"}); break;
+    case "srsea": dispatch({type:"SET_SRSEA"}); break;
+    case "tactic": dispatch({type:"SET_TACTIC"}); break;
     case "begin": dispatch({type:"NEW_GAME",n:state.ui.startN}); break;
     case "firstroll": dispatch({type:"FIRST_ROLL"}); break;
     case "startmoveship": dispatch({type:"START_MOVE_SHIP"}); break;
@@ -3760,6 +4881,7 @@ document.addEventListener("click",function(ev){
     case "mode": dispatch({type:"SET_MODE",mode:t.getAttribute("data-mode")}); break;
     case "buydev": dispatch({type:"BUY_DEV"}); break;
     case "buildwall": dispatch({type:"BUILD_WALL"}); break;
+    case "improve": dispatch({type:"BUILD_IMPROVEMENT",area:t.getAttribute("data-area")}); break;
     case "playdev": dispatch({type:"PLAY_DEV",card:t.getAttribute("data-card")}); break;
     case "endturn": dispatch({type:"END_TURN"}); break;
     case "specialdone": dispatch({type:"SPECIAL_DONE"}); break;
@@ -3771,6 +4893,16 @@ document.addEventListener("click",function(ev){
     case "plentyreset": dispatch({type:"PLENTY_RESET"}); break;
     case "plentyconfirm": dispatch({type:"PLENTY_CONFIRM"}); break;
     case "monopoly": dispatch({type:"MONOPOLY",res:t.getAttribute("data-res")}); break;
+    case "progmono": dispatch({type:"PROG_MONO",res:t.getAttribute("data-res")}); break;
+    case "progfleet": dispatch({type:"PROG_FLEET",res:t.getAttribute("data-res")}); break;
+    case "alchemy": dispatch({type:"ALCHEMY_PICK",value:Number(t.getAttribute("data-val"))}); break;
+    case "barbcommit": dispatch({type:"BARB_COMMIT",count:Number(t.getAttribute("data-count"))}); break;
+    case "spypick": dispatch({type:"SPY_PICK",pi:Number(t.getAttribute("data-pi"))}); break;
+    case "spytake": dispatch({type:"SPY_TAKE",card:t.getAttribute("data-card")}); break;
+    case "levypick": dispatch({type:"LEVY_PICK",pi:Number(t.getAttribute("data-pi"))}); break;
+    case "levytake": dispatch({type:"LEVY_TAKE",res:t.getAttribute("data-res")}); break;
+    case "betraypick": dispatch({type:"BETRAY_PICK",pi:Number(t.getAttribute("data-pi"))}); break;
+    case "playprog": dispatch({type:"PLAY_PROG",card:t.getAttribute("data-card")}); break;
     case "opentrade": dispatch({type:"OPEN_TRADE"}); break;
     case "tradepartner": dispatch({type:"TRADE_PARTNER",pi:Number(t.getAttribute("data-pi"))}); break;
     case "tradeadj": dispatch({type:"TRADE_ADJ",slot:t.getAttribute("data-slot"),res:t.getAttribute("data-res"),d:Number(t.getAttribute("data-d"))}); break;
