@@ -490,6 +490,10 @@ var RES_META={
   lake:{tile:"#3f9dc7",icon:"🎣",token:"#c8e6f4"},
   swamp:{tile:"#6d5c3f",icon:"🥾",token:"#d8caa5"},
   waterhole:{tile:"#c9b585",icon:"⛲",token:"#efe6cf"},
+  castle:{tile:"#7a6a52",icon:"🏰",token:"#e0d4b0"},
+  fortress:{tile:"#8b7355",icon:"🏰",token:"#e0d4b0"},
+  quarry:{tile:"#6d6055",icon:"⛏️",token:"#d8ccbc"},
+  glassworks:{tile:"#5f7684",icon:"🪟",token:"#ccdae6"},
   sea:{tile:"#2f7fb0",icon:"",token:"#dceef6"},
   fog:{tile:"#8ea3b0",icon:"☁️",token:"#dfe6ea"},
   village:{tile:"#9c6b3f",icon:"🧶",token:"#f0e0c8"},
@@ -530,6 +534,7 @@ var STR={
     costs_btn:"💰 Kosten", costs_title:"Baukosten", close:"Schließen",
     special_phase:"Außerordentliche Bauphase", special_hint:"Bauen & Karten kaufen erlaubt – kein Handel, kein Kartenausspielen.", special_done:"Fertig",
     log_special_start:"Außerordentliche Bauphase: {name} darf bauen.", log_special_next:"{name} darf bauen.", log_ship2:"Schiff 2: {name} macht einen eingeschränkten Zug (nur Vorrat-Handel).",
+    log_wagen2:"Wagen 2: {name} macht einen eingeschränkten Zug (nur Vorrat-Handel).",
     save_btn:"💾", save_title:"Speichern & Laden", save_title2:"Spiel speichern", menu_load:"Spiel laden",
     save_file_hint:"Speichere den Spielstand als Datei (.ctn.json) und lade ihn später wieder.",
     save_file_do:"Als Datei speichern", load_file_do:"Aus Datei laden", save_file_ok:"Datei wird gespeichert …",
@@ -575,6 +580,61 @@ var STR={
     tip_harbormasters:"Hafenmeister-Marker",
     tip_strongest_harbors:"Stärkste Häfen (+2 Siegpunkte)",
     menu_hb_scenario:"Szenario", menu_hb_fischfang:"Fischfang auf Catan", menu_hb_fluesse:"Die Flüsse von Catan", menu_hb_handelstross:"Der Handelstross",
+    menu_hb_barbarenueberfall:"Der Barbarenüberfall",
+    menu_hb_finale:"Händler & Barbaren (Finale)",
+    menu_barbarenueberfall_blurb:"Der Barbarenüberfall: Furchterregende Barbaren landen an den Küstenfeldern. Jede gebaute Siedlung oder Stadt löst sofort einen Überfall aus – 3 verschiedene Zahlen (kein 7) werden gewürfelt, pro Wurf 1 Barbar aufs Küstenfeld. Bei 3 Barbaren wird das Feld erobert (kein Ertrag, keine Bauten). Ritterweihe/Starker Ritter setzen Ritter auf Wege. Ritter bewegen sich bis 3 Wege (+2 gegen 1 🌾). Sind mehr Ritter als Barbaren an einem Feld, sind sie besiegt und werden zu Gefangenen (je 2 = 1 SP). Kein Räuber, kein Räuber-Diebstahl bei 7 (nur 1 Karte ziehen). Gold statt Größte Rittermacht. Ziel: 12 Siegpunkte.",
+    menu_finale_blurb:"Händler & Barbaren (Finale): Die Burg wird restauriert. Bringe mit deinem Trosswagen Marmor und Glas zur Burg, Werkzeug zum Marmorsteinbruch und Sand zur Glashütte. 3 Zielfelder ersetzen Wüste. Jede erfüllte Warenlieferung zählt 1 Siegpunkt und bringt Gold. Wagen-Tableau in 5 Stufen ausbauen (mehr Bewegung, Barbaren vertreiben, Gold). 3 Barbaren stehen auf Wegen und blockieren Trosswagen. Kein Räuber, keine Längste Handelsroute. Ziel: 13 Siegpunkte.",
+    tip_castle:"Burgfeld – Ritter starten hier",
+    tip_quarry:"Marmorsteinbruch – braucht Werkzeug, liefert Marmor+Sand",
+    tip_glass:"Glashütte – braucht Sand, liefert Glas+Werkzeug",
+    tip_fortress:"Burg – braucht Marmor+Glas, liefert Werkzeug+Sand",
+    tip_ware:"Warenplättchen (1 SP nach Lieferung)",
+    tip_trosswagen:"Trosswagen",
+    tip_barb_road:"Barbar auf Weg",
+    tip_wagen_stage:"Wagen-Tableau (Stufe {n})",
+    log_ware_pickup:"{name} nimmt Warenplättchen: {ware}",
+    log_ware_deliver:"{name} liefert {ware} → +1 SP, +{g} Gold",
+    log_wagen_upgrade:"{name} baut Wagen-Tableau aus (Stufe {n}).",
+    log_barb_move:"{name} versetzt Barbar (Würfel „7\").",
+    log_barb_defeat:"{name} vertreibt Barbar (Würfel {d}).",
+    log_barb_defeat_fail:"{name} versucht Barbaren zu vertreiben (Würfel {d}) – misslungen.",
+    trosswagen_move_btn:"🚛 Trosswagen bewegen",
+    trosswagen_end:"Bewegung beenden",
+    trosswagen_wheat:"1🌾 für +2 BP",
+    trosswagen_defeat_barb:"⚔️ Barbar vertreiben",
+    wagen_upgrade_btn:"⬆️ Wagen-Tableau ausbauen",
+    wagen_stage_label:"Wagen-Tableau",
+    ware_glas:"Glas",
+    ware_werkzeug:"Werkzeug",
+    ware_sand:"Sand",
+    ware_marmor:"Marmor",
+    tip_coast:"Küstenfeld – Barbaren landen hier",
+    tip_barb:"Barbaren auf diesem Feld",
+    tip_captured:"Feld erobert (kein Ertrag, keine Bauten)",
+    tip_bknight:"Ritter im Vorrat",
+    tip_prisoners:"Gefangene (je 2 = 1 Siegpunkt)",
+    log_barb_start:"Barbarenüberfall: {name} würfelt 3 Zahlen.",
+    log_barb_place:"Barbar landet auf Küstenfeld mit {n} ({left} übrig).",
+    log_barb_captured:"Küstenfeld ({n}) erobert – Chip umgedreht!",
+    log_barb_recaptured:"Küstenfeld ({n}) zurückerobert.",
+    log_barb_building_captured:"Siedlung/Stadt von {name} ist von Barbaren umschlossen und erobert.",
+    log_barb_building_freed:"Siedlung/Stadt von {name} ist wieder frei.",
+    log_barb_none:"Alle Barbaren sind auf Catan – keine weitere Landung.",
+    log_barb_win:"Sieg auf Küstenfeld ({n}): {n2} Ritter gegen {n3} Barbaren!",
+    log_barb_prisoner:"{name} nimmt 1 Barbar gefangen.",
+    log_barb_gold_comp:"{name} erhält 3 Gold Entschädigung.",
+    log_barb_knight_lost:"{name} verliert 1 Ritter (Farbwürfel) und erhält 3 Gold.",
+    log_barb_move_knight:"{name} bewegt Ritter.",
+    log_barb_burg:"Ritterweihe: {name} setzt Ritter aufs Burgfeld.",
+    log_barb_stark:"Starker Ritter: {name} setzt Ritter auf beliebigen Weg.",
+    log_barb_verrat:"Verrat: {name} entfernt 2 Barbaren und erhält 2 Gold.",
+    log_barb_gefangen:"Gefangen: {name} nimmt 1 Barbaren als Gefangenen.",
+    bknight_ritterweihe:"Ritterweihe", bknight_stark:"Starker Ritter",
+    bknight_verrat:"Verrat", bknight_gefangen:"Gefangen",
+    barb_move_btn:"🐎 Ritter bewegen",
+    barb_end_move:"Bewegung beenden",
+    barb_move_hint:"Klicke einen Ritter, dann eine Zielkante (max. 3 Wege, 1🌾 für +2).",
+    barb_pay_wheat:"1🌾 für +2 Wege",
     menu_fischfang_blurb:"Fischfang auf Catan: Der See ersetzt die Wüste. An 6 Rahmenspitzen (ohne Hafen) liegen Fischgründe (4/5/6/8/9/10) mit je 3 Küstenkreuzungen als Fischfanggebiet. Wird die Zahl gewürfelt, ziehen Anrainer 1 Fischplättchen (Städte 2). Fischplättchen zeigen 1, 2 oder 3 Fische. Aktionen: 2🐟 Räuber vom Feld · 3🐟 Karte stehlen · 4🐟 Rohstoff · 5🐟 gratis Straße · 7🐟 gratis Entwicklungskarte. Max. 7 Plättchen (Austausch bei Voll). Kein Handel mit Fischen. Ziel: 10 Punkte (11 mit Altem Schuh).",
     menu_fluesse_blurb:"Die Flüsse von Catan: Zwei Flüsse durchziehen die Insel. Für jede Straße, Siedlung und Brücke am Fluss erhältst du 1 Gold; beim Brückenbau (2 Lehm + 1 Holz) 3 Gold. Über Flüsse darf keine Straße gebaut werden – nur Brücken auf einem der 7 Brückenbauplätze. 2 Gold = 1 Rohstoff (max. 2× pro Zug). Sumpffelder haben keine Zahl. Reichster Cataner (+1 Punkt), Armer Cataner (–2 Punkte). Ziel: 10 Punkte.",
     menu_handelstross_blurb:"Der Handelstross: Die Wasserstelle ersetzt die Wüste. Nomaden brauchen Wolle und Getreide und schicken Trosswagen aus. Nach jedem Siedlungsbau (oder Stadt-Ausbau) wird per Abstimmung 1 Trosswagen eingesetzt – jede eingesetzte Wolle-/Getreidekarte zählt als Stimme. 3 Handelsstrosse mit je bis zu 7 Wagen entstehen. Siedlungen/Städte zwischen 2 Trosswagen zählen 1 Siegpunkt mehr; Straßen parallel zu einem Trosswagen zählen doppelt für die Längste Handelsroute. Ziel: 12 Punkte.",
@@ -1004,6 +1064,17 @@ function buildDevDeck(n){
   var kn=n>=5?20:14, pr=n>=5?3:2;
   return shuffle([].concat(Array(kn).fill("knight"),Array(5).fill("vp"),Array(pr).fill("road"),Array(pr).fill("plenty"),Array(pr).fill("monopoly")));
 }
+function buildBarbDevDeck(n){
+  // 26 Karten laut Regel: viele Ritter (weihe & stark), wenige Sonderkarten, Siegpunkte
+  return shuffle([].concat(
+    Array(8).fill("bknight_weihe"),   // Ritterweihe
+    Array(6).fill("bknight_stark"),   // Starker Ritter
+    Array(2).fill("bknight_verrat"),  // Verrat
+    Array(2).fill("bknight_gefangen"),// Gefangen
+    Array(3).fill("road"),            // Straßenbau
+    Array(5).fill("vp")               // Siegpunktkarten
+  ));
+}
 function harborTypes(n){
   var t=[{kind:"any",ratio:3},{kind:"any",ratio:3},{kind:"any",ratio:3},{kind:"any",ratio:3},
     {kind:"wood",ratio:2},{kind:"brick",ratio:2},{kind:"sheep",ratio:2},{kind:"wheat",ratio:2},{kind:"ore",ratio:2}];
@@ -1079,13 +1150,33 @@ function distanceOK(v,b,board){if(b[v])return false;return board.vertices[v].adj
 function settlementLegal(v,pl,b,roads,board,setup){
   if(state.knights&&state.knights[v])return false;
   if(!touchesLand(v))return false;                   // keine Siedlung mitten im Wasser   // auf einer Ritter-Kreuzung wird nicht gebaut
-  if(!distanceOK(v,b,board))return false; if(setup)return true;
+  if(!distanceOK(v,b,board))return false;
+  // Barbarenüberfall: keine Siedlung an eroberten Küstenfeldern
+  if(isBarb()){
+    var hasCapt=board.vertices[v].hexes.some(function(hi){ return isCapturedHex(hi); });
+    if(hasCapt) return false;
+    // Keine Siedlung am Burgfeld (nur Wege dienen für Ritter)
+    var castles=(state.castleHexes&&state.castleHexes.length)?state.castleHexes:(state.castleHex!=null?[state.castleHex]:[]);
+    if(castles.some(function(chi){ return board.vertices[v].hexes.indexOf(chi)>=0; })) return false;
+  }
+  // Finale: keine Siedlung an zentraler Kreuzung von Zielfeldern
+  if(isFinale() && isTargetCenterVertex(v)) return false;
+  if(setup)return true;
   var ships=state.ships||{};
   return board.vertices[v].edges.some(function(e){return ((roads[e]&&roads[e].owner===pl)||(ships[e]&&ships[e].owner===pl)) && !(state.brokenRoads&&state.brokenRoads[e]);});
 }
 function roadLegal(eid,pl,b,roads,board,restrict){
   if(roads[eid])return false;
   if(state.ships&&state.ships[eid])return false;
+  // Barbarenüberfall: keine Straßen an eroberten Küstenfeldern und keine auf Burgfeld-Wegen
+  if(isBarb()){
+    var e0=board.edges[eid];
+    if(e0.hexes.some(function(hi){ return isCapturedHex(hi); })) return false;
+    var castles=(state.castleHexes&&state.castleHexes.length)?state.castleHexes:(state.castleHex!=null?[state.castleHex]:[]);
+    if(castles.some(function(chi){ return e0.hexes.indexOf(chi)>=0; })) return false;
+  }
+  // Finale: keine Straßen an Zielfeld-Seewänden
+  if(isFinale() && isTargetSeaEdge(eid)) return false;
   if(state.bridges&&state.bridges[eid])return false;      // Flüsse: existierende Brücke blockt Straße
   if(state.bridgeEdges&&state.bridgeEdges[eid])return false; // Flüsse: über den Fluss darf nur eine Brücke, keine Straße
   if(edgeKind(eid)==="deep")return false;                 // offene See ist tabu
@@ -1180,7 +1271,7 @@ function countType(pl,type){var n=0;for(var k in state.buildings){var b=state.bu
 function seaBig(){ return state.mode==="sea" && state.players.length>=5; }
 /* Zu fünft/sechst teilen sich zwei Personen einen Spielzug:
    Seefahrer = Schiff 1/Schiff 2, Städte & Ritter = Burg 1/Burg 2 (PDF 5-6, S. 3). */
-function bigTwo(){ return seaBig() || (isSR() && state.players.length>=5); }
+function bigTwo(){ return seaBig() || (isSR() && state.players.length>=5) || (state.mode==="hb" && state.players.length>=5); }
 function tokenLabel(second){
   if(isSR()) return tr(second?"burg2":"burg1");
   return tr(second?"ship2":"ship1");
@@ -1221,8 +1312,8 @@ function resIcons(map){
 function publicVP(pi){
   var vp=0;
   for(var k in state.buildings){var b=state.buildings[k];if(b.owner===pi&&!b.captured)vp+=b.type==="city"?2:1;}
-  if(state.longestRoadOwner===pi)vp+=2;
-  if(state.largestArmyOwner===pi)vp+=2;
+  if(state.longestRoadOwner===pi && !isFinale())vp+=2;
+  if(state.largestArmyOwner===pi && !isBarb() && !isFinale())vp+=2;
   vp+=state.players[pi].islandVP||0;   // Seefahrer Sondersiegpunkte
   vp+=Math.floor((state.players[pi].cloth||0)/2); // Stoffe für Catan: 2 Stoff = 1 SP
   if(isSR()) vp+=2*metroCount(pi);                 // Städte & Ritter: je Metropole 2 SP
@@ -1241,7 +1332,16 @@ function publicVP(pi){
     }
   }
   // Häfen von Catan: Stärkste Häfen (+2 SP)
-  if(state.harbors && state.strongestHarbors===pi) vp+=2;
+  if(state.harborsVariant && state.strongestHarbors===pi) vp+=2;
+  // Barbarenüberfall: Gefangene zählen (je 2 = 1 SP), keine Größte Rittermacht
+  if(isBarb()){
+    vp += Math.floor((state.prisoners[pi]||0)/2);
+  }
+  // Finale: erfüllte Warenaufträge zählen als SP; Wagen-Tableau bei Max-Stufe 1 SP
+  if(isFinale()){
+    vp += (state.players[pi].wareVP||0);
+    if((state.wagenStage[pi]||0)>=4) vp+=1;
+  }
   return vp;
 }
 function fullVP(pi){return publicVP(pi)+state.players[pi].vpCards;}
@@ -1413,8 +1513,9 @@ function buildFischfang(n){
   // normale Ressourcenverteilung, dann Wüste → See
   var pool=shuffle(tilePool(n)), tokens=shuffle(tokenSet(n)), ti=0;
   var tiles=pool.map(function(res){return{resource:res,number:res==="desert"?null:tokens[ti++]};});
-  // Wüste → See. Wenn Wüste am äußersten Rand liegt, mit einem inneren Landfeld tauschen.
-  var desertIdx=tiles.findIndex(function(t){return t.resource==="desert";});
+  // Sammle alle Wüsten
+  var desertIndices=[];
+  tiles.forEach(function(t,ix){ if(t.resource==="desert") desertIndices.push(ix); });
   var isEdgeHex=function(hi){
     if(hi<0||hi>=tiles.length)return false;
     return board.hexes[hi].edges.some(function(eid){
@@ -1424,18 +1525,29 @@ function buildFischfang(n){
       return other>=tiles.length;
     });
   };
-  if(desertIdx>=0 && isEdgeHex(desertIdx)){
-    var innerLand=[];
-    for(var j=0;j<tiles.length;j++){ if(tiles[j].resource==="desert")continue; if(!isEdgeHex(j)) innerLand.push(j); }
-    if(innerLand.length){
-      var swap=innerLand[Math.floor(Math.random()*innerLand.length)];
-      var tmp=tiles[desertIdx]; tiles[desertIdx]=tiles[swap]; tiles[swap]=tmp;
-      desertIdx=swap;
+  // Für jede Wüste: falls am Rand, ins Innere tauschen
+  var lakeIndices=[];
+  desertIndices.forEach(function(desertIdx){
+    if(isEdgeHex(desertIdx)){
+      var innerLand=[];
+      for(var j=0;j<tiles.length;j++){
+        if(tiles[j].resource==="desert"||tiles[j].resource==="lake")continue;
+        if(!isEdgeHex(j)) innerLand.push(j);
+      }
+      if(innerLand.length){
+        var swap=innerLand[Math.floor(Math.random()*innerLand.length)];
+        var tmp=tiles[desertIdx]; tiles[desertIdx]=tiles[swap]; tiles[swap]=tmp;
+        desertIdx=swap;
+      }
     }
+    lakeIndices.push(desertIdx);
+  });
+  // Erster See: 2/3/11/12. Zweiter (5-6): zusätzlich 10/4
+  if(lakeIndices.length>=1){
+    tiles[lakeIndices[0]]={resource:"lake",numbers:[2,3,11,12],number:null};
   }
-  // See-Feld erhält die 4 Zahlen 2/3/11/12
-  if(desertIdx>=0){
-    tiles[desertIdx]={resource:"lake",numbers:[2,3,11,12],number:null};
+  if(lakeIndices.length>=2){
+    tiles[lakeIndices[1]]={resource:"lake",numbers:[10,4],number:null};
   }
   var harbors=assignHarbors(board,n,tiles);
 
@@ -1478,10 +1590,10 @@ function buildFischfang(n){
   // Sortiere zirkulär um Kartenzentrum
   var cx=(board.bounds.minX+board.bounds.maxX)/2, cy=(board.bounds.minY+board.bounds.maxY)/2;
   rahmenSpitzen.sort(function(a,b){return Math.atan2(a.y-cy,a.x-cx)-Math.atan2(b.y-cy,b.x-cx);});
-  // 6 möglichst gleichmäßig verteilte Spitzen auswählen
-  var fgNums=shuffle([4,5,6,8,9,10]);
+  // 6 (3-4) bzw. 8 (5-6) möglichst gleichmäßig verteilte Spitzen auswählen; zusätzliche Zahlen 5 und 9
+  var fgNums = n>=5 ? shuffle([4,5,5,6,8,9,9,10]) : shuffle([4,5,6,8,9,10]);
   var fishingGrounds=[]; var used={};
-  var target=Math.min(6, rahmenSpitzen.length);
+  var target=Math.min(fgNums.length, rahmenSpitzen.length);
   for(var f=0;f<target;f++){
     var idx=Math.round(f*rahmenSpitzen.length/target)%rahmenSpitzen.length;
     var tries=0;
@@ -1500,8 +1612,185 @@ function buildFischfang(n){
 var HB_SCEN={
   fischfang:{key:"menu_hb_fischfang",players:[3,4,5,6],vpTarget:10,build:function(n){return buildFischfang(n);}},
   fluesse:{key:"menu_hb_fluesse",players:[3,4,5,6],vpTarget:10,build:function(n){return buildFluesse(n);}},
-  handelstross:{key:"menu_hb_handelstross",players:[3,4,5,6],vpTarget:12,build:function(n){return buildHandelstross(n);}}
+  handelstross:{key:"menu_hb_handelstross",players:[3,4,5,6],vpTarget:12,build:function(n){return buildHandelstross(n);}},
+  barbarenueberfall:{key:"menu_hb_barbarenueberfall",players:[3,4,5,6],vpTarget:12,build:function(n){return buildBarbarenueberfall(n);}},
+  finale:{key:"menu_hb_finale",players:[3,4],vpTarget:13,build:function(n){return buildHaendlerBarbaren(n);}}
 };
+
+/* Der Barbarenüberfall
+   – Wüste + Burgfeld im Zentrum
+   – Äußerer Ring: Küstenfelder (Barbaren landen)
+   – Innerer Ring: normale Landschaften
+   – 6 Ritter pro Farbe, spezielle Entwicklungskarten
+   – Kein Räuber, keine Größte Rittermacht
+   – Ziel: 12 SP
+*/
+function buildBarbarenueberfall(n){
+  var board=buildBoard(rowsFor(n));
+  var pool=shuffle(tilePool(n));
+  var tokens=shuffle(tokenSet(n)), ti=0;
+  var tiles=pool.map(function(res){return{resource:res,number:res==="desert"?null:tokens[ti++]};});
+
+  var cx=(board.bounds.minX+board.bounds.maxX)/2, cy=(board.bounds.minY+board.bounds.maxY)/2;
+  var byDist=tiles.map(function(t,i){var h=board.hexes[i]; return {i:i, d:h?Math.hypot(h.x-cx,h.y-cy):Infinity, t:t};}).sort(function(a,b){return a.d-b.d;});
+
+  var numCastles=(n>=5?2:1);
+  var castleHexes=[];
+  var used={};
+  for(var c=0;c<numCastles;c++){
+    // Nächstgelegenes noch nicht genutztes Feld
+    var chosen=null;
+    for(var k=0;k<byDist.length;k++){
+      if(used[byDist[k].i]) continue;
+      chosen=byDist[k].i; break;
+    }
+    if(chosen==null) break;
+    tiles[chosen]={resource:"castle", number:null};
+    castleHexes.push(chosen);
+    used[chosen]=true;
+  }
+  // Nächstgelegenes Feld → Wüste (falls noch keine im Zentrum)
+  var existDesert=tiles.findIndex(function(t){return t.resource==="desert";});
+  var desertIdx=null;
+  if(existDesert===-1){
+    for(var k2=0;k2<byDist.length;k2++){
+      if(used[byDist[k2].i]) continue;
+      if(!isWaterRes(tiles[byDist[k2].i].resource) && tiles[byDist[k2].i].resource!=="castle"){
+        desertIdx=byDist[k2].i;
+        tiles[desertIdx]={resource:"desert", number:null};
+        used[desertIdx]=true;
+        break;
+      }
+    }
+  } else {
+    var target=null;
+    for(var k3=0;k3<byDist.length;k3++){
+      if(used[byDist[k3].i]) continue;
+      if(tiles[byDist[k3].i].resource==="desert") continue;
+      target=byDist[k3].i; break;
+    }
+    if(target!=null && target!==existDesert){
+      var tmp=tiles[existDesert]; tiles[existDesert]=tiles[target]; tiles[target]=tmp;
+    }
+    desertIdx=target!=null?target:existDesert;
+  }
+
+  var harbors=assignHarbors(board,n,tiles);
+
+  var coastHexes=[];
+  tiles.forEach(function(t,hi){
+    if(!t) return;
+    if(isWaterRes(t.resource) || t.resource==="castle" || t.resource==="desert") return;
+    var isCoast=board.hexes[hi].edges.some(function(eid){
+      var e=board.edges[eid];
+      if(e.hexes.length===1) return true;
+      return e.hexes.some(function(hj){return hj>=tiles.length || isWaterRes(tiles[hj]?tiles[hj].resource:"deepsea");});
+    });
+    if(isCoast) coastHexes.push(hi);
+  });
+
+  // Startbarbaren auf Feldern mit "2" und "12"
+  var barbarians={};
+  coastHexes.forEach(function(hi){
+    var t=tiles[hi];
+    if(t && (t.number===2 || t.number===12)) barbarians[hi]=1;
+  });
+  var barbariansMax = (n>=5 ? 48 : 36);
+
+  return {
+    board:board, tiles:tiles, harbors:harbors,
+    robberHex:-1, seaRobberHex:null, islandOf:null,
+    castleHex:castleHexes[0]!=null?castleHexes[0]:null,
+    castleHexes:castleHexes,
+    coastHexes:coastHexes,
+    barbarians:barbarians, capturedHexes:{}, capturedBuildings:{},
+    barbariansLeft:barbariansMax-Object.keys(barbarians).length,
+    barbariansMax:barbariansMax,
+    barbarenueberfall:true
+  };
+}
+
+/* Händler & Barbaren Finale
+   – 3 Zielfelder: fortress (Burg), quarry (Marmorsteinbruch), glassworks (Glashütte)
+   – Kein Räuber, keine Längste Handelsroute
+   – Ziel: 13 SP
+*/
+function buildHaendlerBarbaren(n){
+  var board=buildBoard(rowsFor(n));
+  var pool=shuffle(tilePool(n));
+  var tokens=shuffle(tokenSet(n).filter(function(x){return x!==2 && x!==12;})), ti=0;
+  var tiles=pool.map(function(res){return{resource:res,number:res==="desert"?null:tokens[ti++]||null};});
+  // 3 Zielfelder: die 3 zentrumsnächsten Land-Kacheln
+  var cx=(board.bounds.minX+board.bounds.maxX)/2, cy=(board.bounds.minY+board.bounds.maxY)/2;
+  var byDist=tiles.map(function(t,i){var h=board.hexes[i]; return {i:i, d:h?Math.hypot(h.x-cx,h.y-cy):Infinity};}).sort(function(a,b){return a.d-b.d;});
+  var targets=["fortress","quarry","glassworks"];
+  var targetHexes={};
+  var used={};
+  for(var c=0;c<3;c++){
+    var chosen=null;
+    for(var k=0;k<byDist.length;k++){
+      if(used[byDist[k].i]) continue;
+      // Bevorzugt Landfelder mit Meerkontakt
+      var h=board.hexes[byDist[k].i], t=tiles[byDist[k].i];
+      if(!t || isWaterRes(t.resource)) continue;
+      chosen=byDist[k].i; break;
+    }
+    if(chosen==null) break;
+    tiles[chosen]={resource:targets[c], number:null};
+    targetHexes[targets[c]]=chosen;
+    used[chosen]=true;
+  }
+  var harbors=assignHarbors(board,n,tiles);
+
+  // Warenplättchen-Decks (36 total, 12 pro Sorte, unter den Zielfeldern verteilt)
+  // Burg liefert Werkzeug + Sand
+  // Marmorsteinbruch liefert Marmor + Sand
+  // Glashütte liefert Glas + Werkzeug
+  var wareDecks={};
+  wareDecks.fortress=shuffle([].concat(Array(6).fill("werkzeug"),Array(6).fill("sand")));
+  wareDecks.quarry=shuffle([].concat(Array(6).fill("marmor"),Array(6).fill("sand")));
+  wareDecks.glassworks=shuffle([].concat(Array(6).fill("glas"),Array(6).fill("werkzeug")));
+
+  // 3 Barbaren auf zufälligen Land-Kanten (die nicht am Zielfeld-Wasserrand liegen)
+  var barbEdges={};
+  var candidateEdges=[];
+  board.edges.forEach(function(e){
+    // Land-Kante?
+    var landCount=0;
+    e.hexes.forEach(function(hi){
+      if(hi<tiles.length){
+        var t=tiles[hi];
+        if(t && !isWaterRes(t.resource)) landCount++;
+      }
+    });
+    if(landCount<1) return;
+    // Nicht an Zielfeld-Wasserseite (mind. eine Landkachel-Nachbarschaft)
+    candidateEdges.push(e.id);
+  });
+  shuffle(candidateEdges);
+  var placed=0;
+  for(var ci=0; ci<candidateEdges.length && placed<3; ci++){
+    var eid=candidateEdges[ci];
+    // Kein anderer Barbar in unmittelbarer Nähe
+    var eObj=board.edges[eid];
+    var close=false;
+    [eObj.v1, eObj.v2].forEach(function(v){
+      board.vertices[v].edges.forEach(function(oe){ if(barbEdges[oe]) close=true; });
+    });
+    if(close) continue;
+    barbEdges[eid]=true;
+    placed++;
+  }
+
+  return {
+    board:board, tiles:tiles, harbors:harbors,
+    robberHex:-1, seaRobberHex:null, islandOf:null,
+    targetHexes:targetHexes,
+    wareDecks:wareDecks,
+    barbEdges:barbEdges,
+    finale:true
+  };
+}
 
 /* Der Handelstross
    – Wasserstelle in der Mitte (statt Wüste), keine Ressourcenerträge
@@ -1514,30 +1803,44 @@ function buildHandelstross(n){
   var board=buildBoard(rowsFor(n));
   var pool=shuffle(tilePool(n)), tokens=shuffle(tokenSet(n)), ti=0;
   var tiles=pool.map(function(res){return{resource:res,number:res==="desert"?null:tokens[ti++]};});
-  // Wasserstelle ersetzt die Wüste, in die Mitte verschieben (falls möglich)
-  var desertIdx=tiles.findIndex(function(t){return t.resource==="desert";});
-  if(desertIdx>=0){
-    var cx=(board.bounds.minX+board.bounds.maxX)/2, cy=(board.bounds.minY+board.bounds.maxY)/2;
-    // Wähle das zentrumsnächste Landfeld
+  var cx=(board.bounds.minX+board.bounds.maxX)/2, cy=(board.bounds.minY+board.bounds.maxY)/2;
+  var deserts=[];
+  tiles.forEach(function(t,ix){ if(t.resource==="desert") deserts.push(ix); });
+  // 5-6: beide Wüsten werden zu Wasserstellen; jeweils in eine Hälfte des Bretts verschieben
+  var waterholeHexes=[];
+  var need = (n>=5 ? Math.min(2, deserts.length) : Math.min(1, deserts.length));
+  for(var wi=0; wi<need; wi++){
+    var desertIdx = deserts[wi];
+    // Wähle passendes Zielfeld (bei 5-6 links/rechts der Mitte, sonst Zentrum)
+    var width = board.bounds.maxX - board.bounds.minX;
+    var targetX = (n>=5) ? (cx + (wi===0 ? -width*0.18 : width*0.18)) : cx;
     var candidates=[];
     for(var i=0;i<tiles.length;i++){
-      if(tiles[i].resource==="desert")continue;
+      if(tiles[i].resource==="desert"||tiles[i].resource==="waterhole")continue;
       var h=board.hexes[i]; if(!h)continue;
-      candidates.push({i:i, d:Math.hypot(h.x-cx,h.y-cy)});
+      // nur Kandidaten nehmen, die weiter von der anderen Wasserstelle entfernt sind
+      var okDist = waterholeHexes.every(function(oi){ return Math.hypot(board.hexes[oi].x-h.x, board.hexes[oi].y-h.y) > 60; });
+      if(!okDist) continue;
+      candidates.push({i:i, d:Math.hypot(h.x-targetX, h.y-cy)});
     }
     candidates.sort(function(a,b){return a.d-b.d;});
-    if(candidates.length && candidates[0].d<Math.hypot(board.hexes[desertIdx].x-cx,board.hexes[desertIdx].y-cy)){
-      var swap=candidates[0].i;
-      var tmp=tiles[desertIdx]; tiles[desertIdx]=tiles[swap]; tiles[swap]=tmp;
-      desertIdx=swap;
+    if(candidates.length){
+      var currentD = Math.hypot(board.hexes[desertIdx].x-targetX, board.hexes[desertIdx].y-cy);
+      if(candidates[0].d < currentD){
+        var swap=candidates[0].i;
+        var tmp=tiles[desertIdx]; tiles[desertIdx]=tiles[swap]; tiles[swap]=tmp;
+        desertIdx=swap;
+      }
     }
     tiles[desertIdx]={resource:"waterhole", number:null};
+    waterholeHexes.push(desertIdx);
   }
   var harbors=assignHarbors(board,n,tiles);
   return {
     board:board, tiles:tiles, harbors:harbors,
     robberHex:-1, seaRobberHex:null, islandOf:null,
-    waterholeHex:desertIdx,
+    waterholeHex: waterholeHexes[0]!=null ? waterholeHexes[0] : -1,
+    waterholeHexes: waterholeHexes,
     handelstross:true
   };
 }
@@ -1567,6 +1870,14 @@ function buildFluesse(n){
   if(landIdxs.length){
     var swampSwap=landIdxs[Math.floor(Math.random()*landIdxs.length)];
     pool[swampSwap]="swamp";
+  }
+  // 5-6: dritter Sumpf für längeren Fluss
+  if(n>=5){
+    var landIdxs2=[]; for(var pp2=0;pp2<pool.length;pp2++){ if(pool[pp2]!=="swamp") landIdxs2.push(pp2); }
+    if(landIdxs2.length){
+      var swampSwap2=landIdxs2[Math.floor(Math.random()*landIdxs2.length)];
+      pool[swampSwap2]="swamp";
+    }
   }
   // Zahlenchips – wir brauchen einen zusätzlichen "2"-Chip, damit ein Feld sowohl seine Zahl als auch die 2 hat
   var tokens=shuffle(tokenSet(n));
@@ -1616,14 +1927,15 @@ function buildFluesse(n){
     return best;
   }
   var chainA=null, chainB=null;
+  var lenA = n>=5 ? 4 : 3;
+  var lenB = n>=5 ? 5 : 4;
   if(swampHexIdxs.length>=2){
-    // Versuche 3er-Kette von 1. Sumpf, 4er von 2. Sumpf
     var attemptsA=0;
-    while(!chainA && attemptsA<8){ chainA=findChain(swampHexIdxs[0],3,{}); attemptsA++; }
+    while(!chainA && attemptsA<8){ chainA=findChain(swampHexIdxs[0],lenA,{}); attemptsA++; }
     if(chainA){
       var excl={}; chainA.forEach(function(x){excl[x]=1;});
       var attemptsB=0;
-      while(!chainB && attemptsB<8){ chainB=findChain(swampHexIdxs[1],4,excl); attemptsB++; }
+      while(!chainB && attemptsB<8){ chainB=findChain(swampHexIdxs[1],lenB,excl); attemptsB++; }
     }
   }
   var chains=[chainA,chainB].filter(function(c){return c;});
@@ -1776,16 +2088,409 @@ function distributeFish(sum){
 /* ---- Flüsse von Catan Helpers ---- */
 function isRiverEdge(eid){ return state.riverEdges && state.riverEdges[eid]; }
 function isBridgeEdge(eid){ return state.bridgeEdges && state.bridgeEdges[eid]; }
+function isBarb(){ return state.hbScenario==="barbarenueberfall"; }
+function isFinale(){ return state.hbScenario==="finale"; }
+// Wagen-Tableau: BP pro Stufe, Vertreib-Würfelzahlen, Gold-Belohnung
+var WAGEN_TABLEAU=[
+  {bp:4, defeat:[], reward:1, cost:{}},                       // Stufe 0 (Start)
+  {bp:5, defeat:[6], reward:2, cost:{brick:1,wood:1}},        // Stufe 1
+  {bp:6, defeat:[5,6], reward:3, cost:{sheep:1,wheat:1}},     // Stufe 2 (Barbaren vertreiben!)
+  {bp:7, defeat:[4,5,6], reward:4, cost:{ore:2,wheat:1}},     // Stufe 3
+  {bp:8, defeat:[3,4,5,6], reward:5, cost:{ore:2,wheat:2,sheep:1}}, // Stufe 4 (letzte)
+];
+function wagenTableau(pi){
+  var stage=state.wagenStage[pi]||0;
+  return WAGEN_TABLEAU[Math.min(stage,4)];
+}
+function finaleCanUpgrade(pi){
+  var stage=state.wagenStage[pi]||0;
+  if(stage>=4) return false;
+  var cost=WAGEN_TABLEAU[stage+1].cost;
+  return canAfford(state.players[pi].res, cost);
+}
+// Ziel-Feld einer Ware
+function targetHexForWare(ware){
+  if(!state.targetHexes) return null;
+  if(ware==="glas"||ware==="marmor") return state.targetHexes.fortress;
+  if(ware==="werkzeug") return state.targetHexes.quarry;
+  if(ware==="sand") return state.targetHexes.glassworks;
+  return null;
+}
+// Zentrale Kreuzung eines Zielfelds finden (die von Land umgeben ist)
+function targetCenterVertex(hi){
+  if(hi==null) return null;
+  var h=state.board.hexes[hi];
+  var candidates=h.vertices.slice();
+  // Wähle die Kreuzung, die die meisten Landfelder als Nachbarn hat
+  var best=null, bestScore=-1;
+  candidates.forEach(function(vi){
+    var sc=state.board.vertices[vi].hexes.filter(function(hj){
+      if(hj>=state.tiles.length) return false;
+      var t=state.tiles[hj]; return t && !isWaterRes(t.resource);
+    }).length;
+    if(sc>bestScore){ bestScore=sc; best=vi; }
+  });
+  return best;
+}
+// Ist Vertex "zentrale Kreuzung" eines Zielfelds? Dort keine Siedlungen
+function isTargetCenterVertex(vi){
+  if(!isFinale() || !state.targetHexes) return false;
+  return ["fortress","quarry","glassworks"].some(function(k){
+    return targetCenterVertex(state.targetHexes[k])===vi;
+  });
+}
+// Ist Kante eine "Seewand" eines Zielfelds (Straßenbau verboten)?
+function isTargetSeaEdge(eid){
+  if(!isFinale() || !state.targetHexes) return false;
+  var e=state.board.edges[eid];
+  return ["fortress","quarry","glassworks"].some(function(k){
+    var thi=state.targetHexes[k]; if(thi==null) return false;
+    if(e.hexes.indexOf(thi)<0) return false;
+    // Wenn andere Seite Wasser ist → Seewand
+    return e.hexes.some(function(hj){
+      if(hj===thi) return false;
+      return hj>=state.tiles.length || (state.tiles[hj] && isWaterRes(state.tiles[hj].resource));
+    });
+  });
+}
+function isBarbEdge(eid){ return state.barbEdges && state.barbEdges[eid]; }
+// Bewegungskosten für Trosswagen
+function trosswagenMoveCost(eid, pi){
+  if(!state.board.edges[eid]) return null;
+  // Seewand: verboten
+  if(isTargetSeaEdge(eid)) return null;
+  // Wasser: verboten
+  var e=state.board.edges[eid];
+  var landOK=e.hexes.some(function(hi){ return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource); });
+  if(!landOK) return null;
+  var road=state.roads[eid];
+  var base;
+  if(!road) base=2;                          // Weg ohne Straße
+  else if(road.owner===pi) base=1;           // Eigene Straße
+  else base=1;                               // Fremde Straße (Gold-Zahlung separat)
+  if(isBarbEdge(eid)) base+=2;               // Barbar
+  return base;
+}
+// Ankunft an Zielfeld: Warenaufnahme/Ablieferung
+function finaleCheckArrival(pi){
+  var tw=state.trosswagen[pi]; if(!tw) return;
+  var atV=tw.atVertex;
+  // Prüfe alle 3 Zielfelder: wenn atV eine der zentralen Kreuzungen ist
+  var arrivedAt=null;
+  ["fortress","quarry","glassworks"].forEach(function(k){
+    if(state.targetHexes[k]!=null && targetCenterVertex(state.targetHexes[k])===atV) arrivedAt=k;
+  });
+  if(!arrivedAt) return;
+  // BP verfallen bei Ankunft (Regel)
+  state.wagenBP[pi]=0;
+  var ware=state.wareInHand[pi];
+  if(ware){
+    var expectedHex=targetHexForWare(ware);
+    if(expectedHex===state.targetHexes[arrivedAt]){
+      // Auftrag erfüllt: +1 SP, +Gold
+      var stage=state.wagenStage[pi]||0;
+      var reward=WAGEN_TABLEAU[Math.min(stage,4)].reward;
+      var p=state.players[pi];
+      p.gold=(p.gold||0)+reward;
+      p.wareVP=(p.wareVP||0)+1;
+      state.wareInHand[pi]=null;
+      pushLog("log_ware_deliver",{name:pi, ware:tr("ware_"+ware), g:reward});
+      checkWin();
+    } else {
+      // Ware falsch – nichts. Man muss zunächst zum richtigen Zielfeld.
+      return;
+    }
+  }
+  // Neues Warenplättchen ziehen (immer nach Ankunft, wenn keine Ware in Hand)
+  if(!state.wareInHand[pi] && state.wareDecks[arrivedAt] && state.wareDecks[arrivedAt].length){
+    var w=state.wareDecks[arrivedAt].shift();
+    state.wareInHand[pi]=w;
+    pushLog("log_ware_pickup",{name:pi, ware:tr("ware_"+w)});
+  }
+}
 function isRiverVertex(vi){ return state.riverVerts && state.riverVerts[vi]; }
 function bridgeCost(){ return {brick:2,wood:1}; }
+// Zählt eigene und fremde Ritter an Wegen um Küstenfeld
+function barbKnightsAtHex(hi){
+  if(!state.barbKnights) return {};
+  var counts={};
+  state.board.hexes[hi].edges.forEach(function(eid){
+    var k=state.barbKnights[eid];
+    if(k){ counts[k.owner]=(counts[k.owner]||0)+1; }
+  });
+  return counts;
+}
+function totalBarbKnightsAtHex(hi){
+  var c=barbKnightsAtHex(hi), total=0;
+  Object.keys(c).forEach(function(pi){ total+=c[pi]; });
+  return total;
+}
+function barbariansAtHex(hi){ return (state.barbarians && state.barbarians[hi]) || 0; }
+function isCoastHex(hi){ return state.coastHexes && state.coastHexes.indexOf(hi)>=0; }
+function isCapturedHex(hi){ return state.capturedHexes && state.capturedHexes[hi]; }
+function isBurgEdge(eid){
+  if(!isBarb()) return false;
+  var hexes=(state.castleHexes&&state.castleHexes.length)?state.castleHexes:(state.castleHex!=null?[state.castleHex]:[]);
+  return hexes.some(function(hi){ return state.board.hexes[hi].edges.indexOf(eid)>=0; });
+}
+// Barbarenüberfall auslösen (nach Bau)
+function triggerBarbInvasion(){
+  if(!isBarb()) return;
+  if((state.barbariansLeft||0)<=0){ pushLog("log_barb_none"); return; }
+  // Sammle Küstenfelder mit noch <3 Barbaren und Zahlenchip
+  var eligibleNums={}; // Zahl → [hexIndices]
+  state.coastHexes.forEach(function(hi){
+    if(isCapturedHex(hi)) return;
+    var t=state.tiles[hi]; if(t.number==null) return;
+    if(barbariansAtHex(hi)>=3) return;
+    if(!eligibleNums[t.number]) eligibleNums[t.number]=[];
+    eligibleNums[t.number].push(hi);
+  });
+  pushLog("log_barb_start",{name:state.current});
+  var rolledNums=[]; var attempts=0;
+  while(rolledNums.length<3 && attempts<40){
+    attempts++;
+    var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6), sum=d1+d2;
+    if(sum===7) continue;
+    if(rolledNums.indexOf(sum)>=0) continue;
+    rolledNums.push(sum);
+    // 5-6-Spieler: falls mehrere Felder mit dieser Zahl, ein Barbar pro Feld
+    var candidates=(eligibleNums[sum]||[]).filter(function(hi){return barbariansAtHex(hi)<3;});
+    if(candidates.length===0) continue;
+    candidates.forEach(function(hi){
+      if((state.barbariansLeft||0)<=0) return;
+      state.barbarians[hi]=(state.barbarians[hi]||0)+1;
+      state.barbariansLeft=Math.max(0,(state.barbariansLeft||36)-1);
+      pushLog("log_barb_place",{n:sum, left:state.barbariansLeft});
+      if(state.barbarians[hi]>=3){
+        state.capturedHexes[hi]=true;
+        pushLog("log_barb_captured",{n:sum});
+        updateCapturedBuildings();
+      }
+    });
+  }
+}
+// Prüft, welche Siedlungen/Städte von Barbaren umschlossen sind
+function updateCapturedBuildings(){
+  if(!isBarb()) return;
+  Object.keys(state.buildings).forEach(function(vk){
+    var v=Number(vk), b=state.buildings[vk];
+    // Prüfe alle angrenzenden Landfelder
+    var hexes=state.board.vertices[v].hexes;
+    var allCaptured=true, hasLand=false;
+    hexes.forEach(function(hi){
+      if(hi>=state.tiles.length) return;
+      var t=state.tiles[hi]; if(!t) return;
+      if(isWaterRes(t.resource)) return;
+      hasLand=true;
+      // Wüste und Burg gelten nie als erobert
+      if(t.resource==="desert"||t.resource==="castle") { allCaptured=false; return; }
+      if(!isCapturedHex(hi)) allCaptured=false;
+    });
+    var wasCaptured=!!(state.capturedBuildings && state.capturedBuildings[v]);
+    if(hasLand && allCaptured && !wasCaptured){
+      state.capturedBuildings[v]=true;
+      pushLog("log_barb_building_captured",{name:b.owner});
+    } else if(wasCaptured && !allCaptured){
+      delete state.capturedBuildings[v];
+      pushLog("log_barb_building_freed",{name:b.owner});
+    }
+  });
+}
+// Sieg über Barbaren prüfen (nach jedem Zug)
+function removeBarbariansForVerrat(count){
+  // Entferne bis zu count Barbaren von verschiedenen Feldern (nicht eroberte bevorzugt)
+  var hexes=Object.keys(state.barbarians||{}).map(Number).filter(function(hi){return state.barbarians[hi]>0;});
+  hexes.sort(function(a,b){ return state.barbarians[b]-state.barbarians[a]; });
+  var removed=0;
+  hexes.forEach(function(hi){
+    if(removed>=count) return;
+    if(state.barbarians[hi]<=0) return;
+    var was=state.barbarians[hi];
+    state.barbarians[hi]-=1;
+    if(state.barbarians[hi]<=0) delete state.barbarians[hi];
+    state.barbariansLeft = Math.min(36,(state.barbariansLeft||0)+1);
+    // Falls Feld eben mit 3 Barbaren belegt war → Erobert-Status aufheben
+    if(was===3 && isCapturedHex(hi)){
+      delete state.capturedHexes[hi];
+      pushLog("log_barb_recaptured",{n:state.tiles[hi].number});
+    }
+    removed++;
+  });
+  updateCapturedBuildings();
+}
+// Ausrichtung einer Kante: 0/1/2 (drei Winkelklassen im Hex-Grid)
+function edgeOrientation(eid){
+  var e=state.board.edges[eid];
+  if(!e) return 0;
+  var vA=state.board.vertices[e.v1], vB=state.board.vertices[e.v2];
+  var dx=vB.x-vA.x, dy=vB.y-vA.y;
+  var angle=Math.atan2(dy,dx);
+  if(angle<0) angle+=Math.PI;   // 0..π
+  var bucket=Math.floor((angle+0.001)/(Math.PI/3)) % 3;
+  return bucket;
+}
+// Farbwürfel: würfelt Farbe (0-5). Zwei Farben pro Ausrichtung. Alle Ritter dieser Ausrichtung verlieren.
+function rollColorDie(){
+  var color=Math.floor(Math.random()*6);      // 6 Farben
+  var orient=color%3;                          // 3 Ausrichtungsklassen
+  var lost=[];
+  Object.keys(state.barbKnights||{}).forEach(function(eid){
+    if(edgeOrientation(Number(eid))===orient){
+      lost.push({eid:Number(eid), owner:state.barbKnights[eid].owner});
+    }
+  });
+  lost.forEach(function(x){
+    delete state.barbKnights[x.eid];
+    state.barbKnightsLeft[x.owner]=(state.barbKnightsLeft[x.owner]||0)+1;
+    state.players[x.owner].gold=(state.players[x.owner].gold||0)+3;
+    pushLog("log_barb_knight_lost",{name:x.owner});
+  });
+  return {color:color, orient:orient, lost:lost.length};
+}
+// 2W6 pro Person, Höchste gewinnt (rekursiv bei Gleichstand)
+function rollForPrisoner(candidates){
+  var rolls=candidates.map(function(pi){
+    var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6);
+    return {pi:pi, sum:d1+d2};
+  });
+  var maxS=Math.max.apply(null,rolls.map(function(r){return r.sum;}));
+  var top=rolls.filter(function(r){return r.sum===maxS;}).map(function(r){return r.pi;});
+  if(top.length===1) return top[0];
+  return rollForPrisoner(top);
+}
+function barbKnightMoveDistance(fromEid, toEid, pl){
+  // BFS über Kanten: benachbarte Kanten teilen einen Vertex
+  var visited={}; visited[fromEid]=0;
+  var queue=[fromEid];
+  while(queue.length){
+    var eid=queue.shift();
+    var d=visited[eid];
+    if(eid===toEid) return d;
+    if(d>=5) continue; // Maximum: 3+2 mit Getreide
+    var e=state.board.edges[eid];
+    [e.v1,e.v2].forEach(function(v){
+      state.board.vertices[v].edges.forEach(function(oe){
+        if(visited[oe]!=null) return;
+        // Man darf über andere Ritter/Bauwerke springen, aber Zielkante darf keinen Ritter tragen
+        // Für den BFS: alle Kanten dürfen genutzt werden, nur die eigene Startkante nicht Endziel
+        // Einschränkung: kein Ritter auf Ziel; das prüfen wir außerhalb
+        visited[oe]=d+1;
+        queue.push(oe);
+      });
+    });
+  }
+  return null;
+}
+function takeBarbAsPrisoner(pi){
+  var hexes=Object.keys(state.barbarians||{}).map(Number).filter(function(hi){return state.barbarians[hi]>0;});
+  if(!hexes.length) return false;
+  hexes.sort(function(a,b){ return state.barbarians[b]-state.barbarians[a]; });
+  var hi=hexes[0];
+  var was=state.barbarians[hi];
+  state.barbarians[hi]-=1;
+  if(state.barbarians[hi]<=0) delete state.barbarians[hi];
+  state.prisoners[pi]=(state.prisoners[pi]||0)+1;
+  if(was===3 && isCapturedHex(hi)){
+    delete state.capturedHexes[hi];
+    pushLog("log_barb_recaptured",{n:state.tiles[hi].number});
+  }
+  updateCapturedBuildings();
+  return true;
+}
+function checkBarbarianVictory(){
+  if(!isBarb()) return;
+  // Beginne links vom Burgfeld (bei 5-6: beide Burgfelder), im Uhrzeigersinn
+  var order = (state.coastHexes||[]).slice();
+  order.forEach(function(hi){
+    if(!barbariansAtHex(hi)) return;
+    var barbs=barbariansAtHex(hi);
+    var knightsPer=barbKnightsAtHex(hi);
+    var totalKnights=totalBarbKnightsAtHex(hi);
+    if(totalKnights <= barbs) return;
+    // Sieg!
+    var t=state.tiles[hi];
+    pushLog("log_barb_win",{n:t.number, n2:totalKnights, n3:barbs});
+    // Gefangene verteilen
+    var participants=Object.keys(knightsPer).map(Number).sort(function(a,b){return knightsPer[b]-knightsPer[a];});
+    var toGive=barbs;
+    if(participants.length===1){
+      // Ein Spieler allein: bekommt alle Gefangenen
+      state.prisoners[participants[0]]=(state.prisoners[participants[0]]||0)+toGive;
+      for(var pg=0;pg<toGive;pg++) pushLog("log_barb_prisoner",{name:participants[0]});
+    } else {
+      // Mehrere Beteiligte: jede/r bekommt zunächst 1 Gefangenen
+      var enoughForAll=(toGive>=participants.length);
+      var noPrisonerYet=[];
+      if(enoughForAll){
+        participants.forEach(function(pi){
+          state.prisoners[pi]=(state.prisoners[pi]||0)+1;
+          pushLog("log_barb_prisoner",{name:pi});
+          toGive--;
+        });
+      } else {
+        // Nicht genug für alle: würfeln unter allen Beteiligten
+        // Regel: Höchste Zahl bekommt 1, wer keinen erhält bekommt 3 Gold Ausgleich
+        var remaining=participants.slice();
+        while(toGive>0 && remaining.length>0){
+          var winner=rollForPrisoner(remaining);
+          state.prisoners[winner]=(state.prisoners[winner]||0)+1;
+          pushLog("log_barb_prisoner",{name:winner});
+          toGive--;
+          remaining=remaining.filter(function(pi){return pi!==winner;});
+        }
+        noPrisonerYet=remaining.slice();
+      }
+      // Rest an die Person mit meisten Rittern (alleiniger Führer), sonst Würfeln
+      if(toGive>0){
+        var top=participants[0];
+        var tie=participants.filter(function(pi){return knightsPer[pi]===knightsPer[top];});
+        if(tie.length===1){
+          state.prisoners[top]=(state.prisoners[top]||0)+toGive;
+          pushLog("log_barb_prisoner",{name:top});
+        } else {
+          // Bei Gleichstand: 2W6 pro Führer, höchste gewinnt
+          var winner2=rollForPrisoner(tie);
+          state.prisoners[winner2]=(state.prisoners[winner2]||0)+toGive;
+          pushLog("log_barb_prisoner",{name:winner2});
+          // Verlierer bekommen 3 Gold
+          tie.filter(function(pi){return pi!==winner2;}).forEach(function(pi){
+            state.players[pi].gold=(state.players[pi].gold||0)+3;
+            pushLog("log_barb_gold_comp",{name:pi});
+          });
+        }
+      }
+      // Wer nichts bekommen hat: 3 Gold
+      noPrisonerYet.forEach(function(pi){
+        state.players[pi].gold=(state.players[pi].gold||0)+3;
+        pushLog("log_barb_gold_comp",{name:pi});
+      });
+    }
+    // Feld zurückerobern (wenn 3 Barbaren waren)
+    if(barbs===3){
+      delete state.capturedHexes[hi];
+      pushLog("log_barb_recaptured",{n:t.number});
+    }
+    // Barbaren entfernen
+    state.barbariansLeft = Math.min(state.barbariansMax||36,(state.barbariansLeft||0)+barbs);
+    delete state.barbarians[hi];
+    // Farbwürfel: alle Ritter auf gleicher Ausrichtung im gesamten Spiel gehen verloren
+    rollColorDie();
+    updateCapturedBuildings();
+  });
+}
 
 /* ---- Handelstross Helpers ---- */
 function isWagonEdge(eid){ return state.wagons && state.wagons[eid]; }
 // Alle Kanten der Wasserstelle (für erste Wagenplatzierung)
 function waterholeStartEdges(){
-  if(state.waterholeHex==null||state.waterholeHex<0)return [];
-  var h=state.board.hexes[state.waterholeHex]; if(!h)return [];
-  return h.edges.slice();
+  var out=[];
+  var whs = (state.waterholeHexes && state.waterholeHexes.length) ? state.waterholeHexes : (state.waterholeHex!=null&&state.waterholeHex>=0?[state.waterholeHex]:[]);
+  whs.forEach(function(hi){
+    var h=state.board.hexes[hi]; if(!h)return;
+    h.edges.forEach(function(eid){ if(out.indexOf(eid)<0) out.push(eid); });
+  });
+  return out;
 }
 // Kandidaten-Kanten für nächsten Wagen eines bestehenden Trossen
 function trossExtensionEdges(trossenIdx){
@@ -1867,7 +2572,7 @@ function isParallelToWagon(eid){
    Bei Human-Baumeister öffnet sich ein Voting-Modal, sonst wird sofort gelöst. */
 function collectWagonCandidates(){
   var cands=[]; // [{eid, trossen}]
-  var order=[0,1,2].sort(function(a,b){
+  var order=state.handelstrosse.map(function(_,i){return i;}).sort(function(a,b){
     return (state.handelstrosse[a].length||0) - (state.handelstrosse[b].length||0);
   });
   for(var oi=0;oi<order.length;oi++){
@@ -2040,7 +2745,7 @@ function updateRichPoor(){
 }
 /* Häfen von Catan: „Stärkste Häfen" +2 SP, an den Spieler mit den meisten 2:1-Hafenmeister-Markern (min. 2). */
 function updateStrongestHarbors(){
-  if(!state.harbors || !state.harborMasters) return;
+  if(!state.harborsVariant || !state.harborMasters) return;
   var counts={};
   Object.keys(state.harborMasters).forEach(function(k){
     var pi=state.harborMasters[k];
@@ -2168,15 +2873,13 @@ function applyEventEffect(card){
     case "rsee":
       // Person mit meisten Hafen-Siedlungen/-Städten
       var counts={};
-      if(state.harbors_data||state.harbors){
-        var hs=state.harbors;
-        hs.forEach(function(hb){
-          [hb.v1,hb.v2].forEach(function(v){
-            var b=state.buildings[v];
-            if(b&&!b.captured){ counts[b.owner]=(counts[b.owner]||0)+(b.type==="city"?2:1); }
-          });
+      var hs=state.harbors;
+      hs.forEach(function(hb){
+        [hb.v1,hb.v2].forEach(function(v){
+          var b=state.buildings[v];
+          if(b&&!b.captured){ counts[b.owner]=(counts[b.owner]||0)+(b.type==="city"?2:1); }
         });
-      }
+      });
       var maxH=0, winnerR=null, tieR=false;
       Object.keys(counts).forEach(function(pi){
         if(counts[pi]>maxH){ maxH=counts[pi]; winnerR=Number(pi); tieR=false; }
@@ -2642,10 +3345,14 @@ function rollResourcesAndSeven(sum){
       // Feld produziert bei sum, wenn primäre Nummer passt ODER (Flüsse-Regel) sum in numbers-Array
       var hits = (t.number===sum) || (t.numbers && t.numbers.indexOf(sum)>=0);
       if(!hits || hi===state.robberHex) return;
+      // Barbarenüberfall: eroberte Küstenfelder werfen nichts ab
+      if(isCapturedHex(hi)) return;
       // Sumpf und See erzeugen nie Ressourcen (See produziert Fische separat)
       if(t.resource==="lake" || t.resource==="swamp") return;
       state.board.hexes[hi].vertices.forEach(function(v){
         var b=state.buildings[v]; if(!b||b.captured)return;
+        // Barbarenüberfall: eroberte Siedlungen/Städte werfen nichts ab
+        if(isBarb() && state.capturedBuildings && state.capturedBuildings[v]) return;
         var amt=(b.type==="city"?(state.seucheThisTurn?1:2):1);
         if(t.resource==="gold"){ goldGain[b.owner]=(goldGain[b.owner]||0)+amt; }
         else if(!isWaterRes(t.resource)&&t.resource!=="desert"&&t.resource!=="village"&&t.resource!=="fortress"){
@@ -3417,8 +4124,23 @@ function freshGame(n,mode,scnId,skip,seatBots,srSea,tactic,hbScnId,friendlyRobbe
     fishingGrounds:fishingGrounds, fishPool:hbScenario==="fischfang"?buildFishPool():null, fishDiscard:[], alterSchuh:null,
     bridgeEdges:bridgeEdges, riverEdges:riverEdges, riverVerts:riverVerts, swampHexes:swampHexes,
     bridges:{}, richest:null, poorest:{},
-    waterholeHex:waterholeHex, wagons:{}, handelstrosse:[[],[],[]], wagonsLeft:22,
-    friendlyRobber:!!friendlyRobber, harbors:!!harbors, harborMasters:{}, strongestHarbors:null,
+    waterholeHex:waterholeHex, waterholeHexes:(builtHB&&builtHB.waterholeHexes)||(waterholeHex!=null&&waterholeHex>=0?[waterholeHex]:[]),
+    wagons:{}, handelstrosse:(n>=5&&hbScnId==="handelstross"?[[],[],[],[],[],[]]:[[],[],[]]),
+    wagonsLeft:(n>=5&&hbScnId==="handelstross"?33:22),
+    castleHex:(builtHB&&builtHB.castleHex!=null?builtHB.castleHex:null),
+    castleHexes:(builtHB&&builtHB.castleHexes)||(builtHB&&builtHB.castleHex!=null?[builtHB.castleHex]:[]),
+    coastHexes:(builtHB&&builtHB.coastHexes)||[],
+    barbarians:(builtHB&&builtHB.barbarians)||{},
+    capturedHexes:(builtHB&&builtHB.capturedHexes)||{},
+    capturedBuildings:(builtHB&&builtHB.capturedBuildings)||{},
+    barbariansLeft:(builtHB&&builtHB.barbariansLeft!=null?builtHB.barbariansLeft:36),
+    barbariansMax:(builtHB&&builtHB.barbariansMax!=null?builtHB.barbariansMax:36),
+    barbKnights:{}, prisoners:{}, barbKnightsLeft:{}, barbMove:null,
+    targetHexes:(builtHB&&builtHB.targetHexes)||null,
+    wareDecks:(builtHB&&builtHB.wareDecks)||null,
+    barbEdges:(builtHB&&builtHB.barbEdges)||{},
+    trosswagen:{}, wagenStage:{}, wagenBP:{}, wagenWheatUsed:{}, wareInHand:{},
+    friendlyRobber:!!friendlyRobber, harborsVariant:!!harbors, harborMasters:{}, strongestHarbors:null,
     events:!!events, eventDeck:events?buildEventDeck():null, eventDiscard:events?[]:null, currentEvent:null, brokenRoads:{},
     islandOf:islandOf, islandScored:{}, fog:fog, fogTokens:fogTokens, farHexes:farHexes, homeHexes:homeHexes, homeIsland:homeIsland, tribe:tribe, tribeHarbors:tribeHarbors, villages:villages, clothReserve:clothReserve, clothConn:{}, startTime:Date.now(), turnCount:0,
     fortresses:fortresses, pathEdges:pathEdges, pathSet:pathSet, pirateRoute:pirateRoute, pirateSafeHex:pirateSafeHex, pirateIdx:0, attackedFortress:false, pendingPirateSum:null,
@@ -3428,13 +4150,27 @@ function freshGame(n,mode,scnId,skip,seatBots,srSea,tactic,hbScnId,friendlyRobbe
     knights:{}, walls:{}, barb:0, barbMax:7, barbAttacks:0, barbLanded:false,
     metro:{science:null,trade:null,politics:null}, metroVertex:{science:null,trade:null,politics:null},
     progDecks:buildProgDecks(),
-    devDeck:(scenario==="piraten")?buildPirateDevDeck(n):buildDevDeck(n), movedShip:false,
+    devDeck:(scenario==="piraten")?buildPirateDevDeck(n):(hbScnId==="barbarenueberfall"?buildBarbDevDeck(n):buildDevDeck(n)), movedShip:false,
     setup:null, firstRoll:{active:active,idx:0,rolls:{},lastRoller:null,tie:false},
     turn:null, uiMode:null, pending:null, special:null,
     longestRoadOwner:null,longestRoadLength:0,largestArmyOwner:null,largestArmySize:0,
     winner:null, log:[{k:"log_first_intro"}],
     ui:freshUi()
   };
+  if(hbScnId==="barbarenueberfall"){
+    // 6 Ritter pro Person, keine Größte Rittermacht
+    for(var kp=0; kp<n; kp++){ base.barbKnightsLeft[kp]=6; base.prisoners[kp]=0; }
+  }
+  if(hbScnId==="finale"){
+    // Finale: 5 Gold, Wagen-Tableau Stufe 0, 4 BP
+    for(var kf=0; kf<n; kf++){
+      base.players[kf].gold=5;
+      base.wagenStage[kf]=0;
+      base.wagenBP[kf]=4;
+      base.wagenWheatUsed[kf]=false;
+      base.wareInHand[kf]=null;
+    }
+  }
   if(skip){ // skip the first-player roll: go straight to founding, starter = player 0
     var rr=(scnId&&SCEN[scnId]&&SCEN[scnId].setupSettlements)||2;
     base.phase="setup"; base.firstRoll=null;
@@ -3706,6 +4442,47 @@ function performRoll(d1,d2){
   rollResourcesAndSeven(sum);
 }
 function beginRobber(source){
+  // Barbarenüberfall: kein Räuber, direkt 1 Karte von beliebiger Person ziehen
+  if(isBarb()){
+    var thief=activePlayer();
+    var victims=state.players.map(function(_,i){return i;}).filter(function(i){ return i!==thief && handPool(i).length>0; });
+    if(victims.length){
+      var vpick=victims[Math.floor(Math.random()*victims.length)];
+      stealFrom(vpick);
+    }
+    state.pending=null; state.uiMode=null;
+    return;
+  }
+  // Finale: kein Räuber, Barbar versetzen (falls auf Straße → Karte vom Eigentümer)
+  if(isFinale()){
+    var thiefF=activePlayer();
+    // Wähle einen der 3 Barbaren (zufällig) und setze ihn auf eine andere Kante
+    var barbEs=Object.keys(state.barbEdges||{});
+    if(barbEs.length){
+      var oldEid=Number(barbEs[Math.floor(Math.random()*barbEs.length)]);
+      delete state.barbEdges[oldEid];
+      var candidates=[];
+      state.board.edges.forEach(function(ee){
+        if(state.barbEdges[ee.id]) return;
+        var isLand=ee.hexes.some(function(hi){ return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource); });
+        if(!isLand) return;
+        if(isTargetSeaEdge(ee.id)) return;
+        candidates.push(ee.id);
+      });
+      if(candidates.length){
+        var pickB=candidates[Math.floor(Math.random()*candidates.length)];
+        state.barbEdges[pickB]=true;
+        pushLog("log_barb_move",{name:thiefF});
+        // Auf Straße? Dann 1 Karte vom Straßeneigner
+        var roadO=state.roads[pickB];
+        if(roadO && roadO.owner!==thiefF && handPool(roadO.owner).length>0){
+          stealFrom(roadO.owner);
+        }
+      }
+    }
+    state.pending=null; state.uiMode=null;
+    return;
+  }
   // Der Räuber darf erst versetzt werden, wenn die Barbaren einmal gelandet sind
   if(isSR()&&!state.barbLanded){ state.pending=null; state.uiMode=null; pushLog("log_sr_robber_locked"); return; }
   if(state.mode==="sea"&&state.seaRobberHex!=null){ state.pending={type:"robberChoice",source:source}; pushLog("log_robber_choice"); }
@@ -3918,11 +4695,27 @@ function apply(a){
     case "SETUP_SETTLEMENT":{
       var v=a.vertexId, pi=state.setup.order[state.setup.idx];
       var srCity=(isSR() && state.setup.idx>=state.players.length && state.setup.idx<2*state.players.length);
-      state.buildings[v]={owner:pi,type:(srCity?"city":"settlement")};
+      // Barbarenüberfall: 2. Runde ist ebenfalls eine Stadt (statt Siedlung)
+      var barbCity=(state.hbScenario==="barbarenueberfall" && state.setup.idx>=state.players.length);
+      var finaleCity=(state.hbScenario==="finale" && state.setup.idx>=state.players.length);
+      state.buildings[v]={owner:pi,type:((srCity||barbCity||finaleCity)?"city":"settlement")};
       markIslandsScored(pi,v); // founding settlements make their island "home" (no later bonus)
       var isSecondRound=(state.setup.idx>=state.setup.order.length-state.players.length);
       if(isSecondRound){
-        state.board.vertices[v].hexes.forEach(function(hi){var t=state.tiles[hi];if(t.resource!=="desert"&&t.resource!=="lake"&&t.resource!=="swamp"&&!isWaterRes(t.resource)&&t.resource!=="gold")state.players[pi].res[t.resource]+=1;});
+        state.board.vertices[v].hexes.forEach(function(hi){var t=state.tiles[hi];if(t.resource!=="desert"&&t.resource!=="lake"&&t.resource!=="swamp"&&t.resource!=="castle"&&t.resource!=="fortress"&&t.resource!=="quarry"&&t.resource!=="glassworks"&&!isWaterRes(t.resource)&&t.resource!=="gold")state.players[pi].res[t.resource]+=1;});
+      }
+      // Finale: Nach Stadtbau in Setup den Trosswagen neben die Stadt setzen
+      if(finaleCity){
+        // Finde eine der Kanten des Vertex als Trosswagen-Position (jene mit Land)
+        var placeEid=null;
+        state.board.vertices[v].edges.forEach(function(eid){
+          if(placeEid!=null) return;
+          var e=state.board.edges[eid];
+          if(e.hexes.some(function(hi){return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource);})){
+            placeEid=eid;
+          }
+        });
+        state.trosswagen[pi]={edgeId:placeEid, atVertex:v};
       }
       // Fischfang: 2. Siedlung an Fischgrund/See → 1 Fischplättchen
       if(isSecondRound && state.hbScenario==="fischfang"){
@@ -3943,7 +4736,7 @@ function apply(a){
         state.players[pi].gold=(state.players[pi].gold||0)+1;
       }
       // Häfen von Catan: Hafenmeister-Marker beim initialen Siedlungsbau
-      if(state.harbors && state.harborMasters){
+      if(state.harborsVariant && state.harborMasters){
         for(var hh0=0; hh0<state.harbors.length; hh0++){
           var hb0=state.harbors[hh0];
           if(hb0.kind==="any") continue;
@@ -4168,6 +4961,174 @@ function apply(a){
       pushLog("log_ev_repair",{name:meR});
       recomputeAwards(); return;
     }
+    case "PLACE_BARB_KNIGHT":{
+      var mePK=activePlayer();
+      if(!isBarb()) return;
+      if((state.barbKnightsLeft[mePK]||0)<=0) return;
+      var eidPK=Number(a.edgeId), e=state.board.edges[eidPK];
+      if(!e) return;
+      // Legal: kein anderer Ritter auf Kante, kein Ship, Kante ist Land
+      if(state.barbKnights[eidPK]) return;
+      if(state.ships&&state.ships[eidPK]) return;
+      var which=(state.pending&&state.pending.which)||"stark";
+      if(which==="ritterweihe"){
+        // Nur Burgfeld-Wege
+        if(!isBurgEdge(eidPK)) return;
+      } else {
+        // Starker Ritter: beliebiger Weg, aber Land
+        var isLandE=e.hexes.some(function(hi){ return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource); });
+        if(!isLandE) return;
+      }
+      state.barbKnights[eidPK]={owner:mePK};
+      state.barbKnightsLeft[mePK]=(state.barbKnightsLeft[mePK]||0)-1;
+      state.uiMode=null; state.pending=null;
+      return;
+    }
+    case "START_BARB_MOVE":{
+      if(!isBarb()) return;
+      state.uiMode="barbMoveKnight"; state.barbMove={from:null, budget:null, wheatUsed:0};
+      return;
+    }
+    case "SELECT_BARB_KNIGHT":{
+      if(!isBarb() || state.uiMode!=="barbMoveKnight") return;
+      var eidSK=Number(a.edgeId), kk=state.barbKnights[eidSK];
+      if(!kk || kk.owner!==activePlayer()) return;
+      state.barbMove.from=eidSK;
+      state.barbMove.budget=3;
+      return;
+    }
+    case "MOVE_BARB_KNIGHT_TO":{
+      if(!isBarb() || state.uiMode!=="barbMoveKnight") return;
+      if(!state.barbMove || state.barbMove.from==null) return;
+      var eidMK=Number(a.edgeId);
+      if(state.barbKnights[eidMK]) return;
+      // Distanz per BFS in Weg-Knoten
+      var dist=barbKnightMoveDistance(state.barbMove.from, eidMK, activePlayer());
+      if(dist==null || dist>state.barbMove.budget) return;
+      // Ziel-Kante muss Land sein, darf nicht Burg sein
+      var eM=state.board.edges[eidMK];
+      if(isBurgEdge(eidMK)) return;
+      var isLandM=eM.hexes.some(function(hi){ return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource) && !isCapturedHex(hi); });
+      if(!isLandM) return;
+      // bewegen
+      state.barbKnights[eidMK]={owner:activePlayer()};
+      delete state.barbKnights[state.barbMove.from];
+      pushLog("log_barb_move_knight",{name:activePlayer()});
+      state.barbMove=null; state.uiMode=null;
+      return;
+    }
+    case "BARB_PAY_WHEAT":{
+      if(!isBarb() || state.uiMode!=="barbMoveKnight") return;
+      var meBW=activePlayer(), pBW=state.players[meBW];
+      if((pBW.res.wheat||0)<1) return;
+      pBW.res.wheat-=1;
+      if(state.barbMove) state.barbMove.budget=(state.barbMove.budget||0)+2;
+      return;
+    }
+    case "END_BARB_MOVE":{
+      state.uiMode=null; state.barbMove=null;
+      return;
+    }
+    case "START_TROSSWAGEN":{
+      if(!isFinale()) return;
+      var meT=activePlayer();
+      if(!state.trosswagen[meT]) return;
+      // BP zurücksetzen falls neuer Zug (wird bei advanceTurn erledigt)
+      state.uiMode="trosswagenMove";
+      return;
+    }
+    case "TROSSWAGEN_MOVE":{
+      if(!isFinale() || state.uiMode!=="trosswagenMove") return;
+      var meT2=activePlayer();
+      var tw=state.trosswagen[meT2];
+      if(!tw || tw.atVertex==null) return;
+      var toV=Number(a.vertexId);
+      // Prüfe: Kante zwischen atVertex und toV existiert
+      var eid=null;
+      state.board.vertices[tw.atVertex].edges.forEach(function(oe){
+        var e=state.board.edges[oe];
+        if((e.v1===tw.atVertex && e.v2===toV) || (e.v2===tw.atVertex && e.v1===toV)) eid=oe;
+      });
+      if(eid==null) return;
+      // BP-Kosten berechnen
+      var cost=trosswagenMoveCost(eid,meT2);
+      if(cost==null || cost>(state.wagenBP[meT2]||0)) return;
+      // Kosten abziehen
+      state.wagenBP[meT2]-=cost;
+      // Gold an Straßeneigner (bei fremder Straße)
+      var road=state.roads[eid];
+      if(road && road.owner!==meT2){
+        var payG=Math.min(1, state.players[meT2].gold||0);
+        state.players[meT2].gold-=payG;
+        state.players[road.owner].gold=(state.players[road.owner].gold||0)+payG;
+      }
+      tw.atVertex=toV; tw.edgeId=eid;
+      // Ankunft an Zielfeld? — Warenaufnahme/Ablieferung
+      finaleCheckArrival(meT2);
+      // Falls keine BP mehr → beenden
+      if((state.wagenBP[meT2]||0)<=0){
+        state.uiMode=null;
+      }
+      return;
+    }
+    case "TROSSWAGEN_WHEAT":{
+      if(!isFinale()) return;
+      var meTW=activePlayer(), pTW=state.players[meTW];
+      if(state.wagenWheatUsed[meTW]) return;
+      if((pTW.res.wheat||0)<1) return;
+      pTW.res.wheat-=1;
+      state.wagenBP[meTW]=(state.wagenBP[meTW]||0)+2;
+      state.wagenWheatUsed[meTW]=true;
+      return;
+    }
+    case "TROSSWAGEN_END":{
+      state.uiMode=null;
+      return;
+    }
+    case "WAGEN_UPGRADE":{
+      if(!isFinale()) return;
+      var meU=activePlayer(), pU=state.players[meU];
+      if(!finaleCanUpgrade(meU)) return;
+      var stage=state.wagenStage[meU]||0;
+      var cost=WAGEN_TABLEAU[stage+1].cost;
+      pU.res=pay(pU.res,cost);
+      state.wagenStage[meU]=stage+1;
+      pushLog("log_wagen_upgrade",{name:meU, n:stage+1});
+      checkWin(); return;
+    }
+    case "TROSSWAGEN_DEFEAT":{
+      if(!isFinale() || state.uiMode!=="trosswagenMove") return;
+      var meDf=activePlayer(), tw2=state.trosswagen[meDf];
+      if(!tw2) return;
+      var stage=state.wagenStage[meDf]||0;
+      var defeatNums=WAGEN_TABLEAU[Math.min(stage,4)].defeat;
+      if(!defeatNums.length) return; // Stufe 0 kann nicht vertreiben
+      // Muss neben einem Barbaren stehen
+      var barbEid=null;
+      state.board.vertices[tw2.atVertex].edges.forEach(function(oe){ if(isBarbEdge(oe)) barbEid=oe; });
+      if(barbEid==null) return;
+      var d=1+Math.floor(Math.random()*6);
+      if(defeatNums.indexOf(d)>=0){
+        // Erfolg: Barbar auf andere Kante versetzen
+        delete state.barbEdges[barbEid];
+        var candidates=[];
+        state.board.edges.forEach(function(ee){
+          if(state.barbEdges[ee.id]) return;
+          var isLand=ee.hexes.some(function(hi){ return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource); });
+          if(!isLand) return;
+          if(isTargetSeaEdge(ee.id)) return;
+          candidates.push(ee.id);
+        });
+        if(candidates.length){
+          var pick=candidates[Math.floor(Math.random()*candidates.length)];
+          state.barbEdges[pick]=true;
+        }
+        pushLog("log_barb_defeat",{name:meDf, d:d});
+      } else {
+        pushLog("log_barb_defeat_fail",{name:meDf, d:d});
+      }
+      return;
+    }
     case "CLOSE_EVENT": state.currentEvent=null; return;
 
     case "BUILD_ROAD":{
@@ -4247,7 +5208,7 @@ function apply(a){
       if(!canAfford(ps.res,COSTS.settlement))return; ps.res=pay(ps.res,COSTS.settlement);
       state.buildings[a.vertexId]={owner:me1,type:"settlement"}; state.uiMode=null;
       // Häfen von Catan: Hafenmeister-Marker wenn erste Siedlung an einem 2:1-Hafen
-      if(state.harbors && state.harborMasters){
+      if(state.harborsVariant && state.harborMasters){
         for(var hh=0; hh<state.harbors.length; hh++){
           var hb=state.harbors[hh];
           if(hb.kind==="any") continue;
@@ -4268,6 +5229,7 @@ function apply(a){
       }
       // Handelstross: 1 Trosswagen wird nach dem Bau eingesetzt
       if(state.hbScenario==="handelstross") startWagonPlacement(activePlayer());
+      if(state.hbScenario==="barbarenueberfall") triggerBarbInvasion();
       pushLog("log_built_settle",{name:me1}); recomputeAwards(); checkWin(); return;
     }
     case "BUILD_CITY":{
@@ -4285,6 +5247,7 @@ function apply(a){
       state.buildings[a.vertexId]={owner:me2,type:"city"}; state.uiMode=null;
       // Handelstross: 1 Trosswagen wird nach dem Stadtausbau eingesetzt
       if(state.hbScenario==="handelstross") startWagonPlacement(activePlayer());
+      if(state.hbScenario==="barbarenueberfall") triggerBarbInvasion();
       pushLog("log_built_city",{name:me2}); checkWin(); return;
     }
     case "PLAY_PROG":{
@@ -4629,6 +5592,29 @@ function apply(a){
       var me3=activePlayer(), pd=state.players[me3];
       if(!canAfford(pd.res,COSTS.dev)||state.devDeck.length===0)return; pd.res=pay(pd.res,COSTS.dev);
       var card=state.devDeck.shift();
+      if(isBarb()){
+        // Barbarenüberfall: sofort aufdecken und ausführen; keine Handkarte, keine playedDevThisTurn-Sperre
+        if(card==="vp") pd.vpCards+=1;
+        else if(card==="bknight_weihe"){
+          if((state.barbKnightsLeft[me3]||0)>0){
+            state.uiMode="placeBarbKnight"; state.pending={type:"placeBarbKnight",which:"ritterweihe"};
+            pushLog("log_barb_burg",{name:me3});
+          }
+        } else if(card==="bknight_stark"){
+          if((state.barbKnightsLeft[me3]||0)>0){
+            state.uiMode="placeBarbKnight"; state.pending={type:"placeBarbKnight",which:"stark"};
+            pushLog("log_barb_stark",{name:me3});
+          }
+        } else if(card==="bknight_verrat"){
+          pd.gold=(pd.gold||0)+2;
+          removeBarbariansForVerrat(2);
+          pushLog("log_barb_verrat",{name:me3});
+        } else if(card==="bknight_gefangen"){
+          takeBarbAsPrisoner(me3);
+          pushLog("log_barb_gefangen",{name:me3});
+        } else if(card==="road"){ state.pending={type:"roadbuilding",left:2};state.uiMode="road"; }
+        pushLog("log_bought_dev",{name:me3}); checkWin(); return;
+      }
       if(card==="vp"&&state.scenario!=="piraten")pd.vpCards+=1; else pd.newDev.push(card);
       pushLog("log_bought_dev",{name:me3}); checkWin(); return;
     }
@@ -4720,7 +5706,7 @@ function apply(a){
           // Schiff 1 done -> Schiff 2 (3 seats left) takes a restricted turn (no roll, bank trade only)
           state.part2=true; state.movedShip=false;
           state.turn={rolled:true,dice:state.turn?state.turn.dice:null};
-          pushLog(isSR()?"log_burg2":"log_ship2",{name:schiff2Seat()}); return;
+          pushLog(state.mode==="hb"?"log_wagen2":(isSR()?"log_burg2":"log_ship2"),{name:schiff2Seat()}); return;
         }
         // both done -> new Spielzug: Schiff 1 moves one seat left
         state.part2=false; advanceTurn(); return;
@@ -4883,6 +5869,17 @@ function advanceTurn(){
   // Ereignisse: Seuche wirkt nur diese Runde
   state.seucheThisTurn=false;
   state.currentEvent=null;
+  // Barbarenüberfall: prüfe Sieg über Barbaren nach jedem Zug
+  if(isBarb()) checkBarbarianVictory();
+  state.barbMoveTried=false;
+  state.finaleMoveTried=false;
+  // Finale: BP-Reset für nächsten Spieler, Wheat-Boost reset
+  if(isFinale()){
+    var nextPi=state.current;
+    var stage=state.wagenStage[nextPi]||0;
+    state.wagenBP[nextPi]=WAGEN_TABLEAU[Math.min(stage,4)].bp;
+    state.wagenWheatUsed[nextPi]=false;
+  }
   pushLog("log_next",{name:state.current});
 }
 
@@ -5240,6 +6237,99 @@ function botSRAction(pi){
 function botTurnAction(pi){
   var p=state.players[pi], sk=botSkill(pi);
   if(!state.turn||!state.turn.rolled){ apply({type:"ROLL"}); return; }
+  // Barbarenüberfall: wenn Ritter-Platzierung nötig
+  if(isBarb() && state.uiMode==="placeBarbKnight"){
+    var which=(state.pending&&state.pending.which)||"stark";
+    var legalE=legalEdgeSet();
+    var picks=Object.keys(legalE);
+    if(picks.length){
+      // Bevorzuge Kanten neben Küstenfeldern mit Barbaren
+      picks.sort(function(a,b){
+        var ea=state.board.edges[a], eb=state.board.edges[b];
+        var scA=ea.hexes.reduce(function(s,hi){return s+(barbariansAtHex(hi)||0);},0);
+        var scB=eb.hexes.reduce(function(s,hi){return s+(barbariansAtHex(hi)||0);},0);
+        return scB-scA;
+      });
+      apply({type:"PLACE_BARB_KNIGHT",edgeId:Number(picks[0])});
+      return;
+    }
+    // Falls kein legal → beenden
+    state.uiMode=null; state.pending=null;
+  }
+  if(isBarb() && state.uiMode==="barbMoveKnight"){
+    // Bot: max 1 Ritter bewegen; wähle den, der am besten zu einem Barbaren-Feld kommt
+    var mineK=Object.keys(state.barbKnights||{}).filter(function(eid){return state.barbKnights[eid].owner===pi;});
+    if(!mineK.length){ apply({type:"END_BARB_MOVE"}); return; }
+    var bestFrom=null, bestTo=null, bestScore=-1;
+    mineK.forEach(function(fromE){
+      state.board.edges.forEach(function(toE){
+        if(state.barbKnights[toE.id]) return;
+        if(isBurgEdge(toE.id)) return;
+        var isLand=toE.hexes.some(function(hi){ return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource) && !isCapturedHex(hi); });
+        if(!isLand) return;
+        var d=barbKnightMoveDistance(Number(fromE), toE.id, pi);
+        if(d==null || d===0 || d>3) return;
+        var sc=toE.hexes.reduce(function(s,hi){return s+(barbariansAtHex(hi)||0);},0);
+        if(sc>bestScore){ bestScore=sc; bestFrom=Number(fromE); bestTo=toE.id; }
+      });
+    });
+    if(bestFrom!=null && bestTo!=null && bestScore>0){
+      apply({type:"SELECT_BARB_KNIGHT",edgeId:bestFrom});
+      apply({type:"MOVE_BARB_KNIGHT_TO",edgeId:bestTo});
+    } else {
+      apply({type:"END_BARB_MOVE"});
+    }
+    return;
+  }
+  // Finale: Trosswagen bewegen, Tableau ausbauen
+  if(isFinale() && state.uiMode==="trosswagenMove"){
+    var meF=pi, twF=state.trosswagen[meF];
+    if(!twF || twF.atVertex==null || (state.wagenBP[meF]||0)<=0){
+      apply({type:"TROSSWAGEN_END"}); return;
+    }
+    // Ziel bestimmen: wenn Ware in Hand → dorthin; sonst nächstes Zielfeld
+    var ware=state.wareInHand[meF];
+    var targetHex=null;
+    if(ware) targetHex=targetHexForWare(ware);
+    else {
+      // Wähle Ziel mit meisten Karten
+      var best=null, bestC=-1;
+      ["fortress","quarry","glassworks"].forEach(function(k){
+        var thi=state.targetHexes[k];
+        if(thi==null) return;
+        var c=(state.wareDecks[k]||[]).length;
+        if(c>bestC){ bestC=c; best=thi; }
+      });
+      targetHex=best;
+    }
+    var targetV=targetCenterVertex(targetHex);
+    // Wähle Nachbar-Kreuzung, die dem Ziel näher ist
+    var candidates=[];
+    state.board.vertices[twF.atVertex].edges.forEach(function(oe){
+      var cost=trosswagenMoveCost(oe,meF);
+      if(cost==null || cost>(state.wagenBP[meF]||0)) return;
+      var e=state.board.edges[oe];
+      var otherV=e.v1===twF.atVertex?e.v2:e.v1;
+      var vA=state.board.vertices[otherV], vT=state.board.vertices[targetV];
+      var d=vA && vT ? Math.hypot(vA.x-vT.x, vA.y-vT.y) : Infinity;
+      candidates.push({toV:otherV, d:d, cost:cost});
+    });
+    if(candidates.length===0){ apply({type:"TROSSWAGEN_END"}); return; }
+    candidates.sort(function(a,b){return a.d-b.d;});
+    apply({type:"TROSSWAGEN_MOVE",vertexId:candidates[0].toV});
+    return;
+  }
+  if(isFinale() && !state.finaleMoveTried){
+    if(finaleCanUpgrade(pi)){
+      apply({type:"WAGEN_UPGRADE"});
+      return;
+    }
+    state.finaleMoveTried=true;
+    if(state.trosswagen[pi] && state.trosswagen[pi].atVertex!=null && (state.wagenBP[pi]||0)>0){
+      apply({type:"START_TROSSWAGEN"});
+      return;
+    }
+  }
   if(botSRAction(pi))return;
   // Fischfang: Bot prüft Fisch-Aktionen
   if(state.hbScenario==="fischfang" && botFishAction(pi))return;
@@ -5318,10 +6408,35 @@ function botTurnAction(pi){
       apply({type:"BUILD_SHIP",edgeId:Number(shipE)}); return;
     }
     if(roadE!=null&&canAfford(p.res,COSTS.road)&&countRoads(pi)<PIECE.road){ apply({type:"BUILD_ROAD",edgeId:Number(roadE)}); return; }
-  if(canAfford(p.res,COSTS.dev)&&state.devDeck.length>0&&Math.random()<sk.buyDevChance){ apply({type:"BUY_DEV"}); return; }
+  // Barbarenüberfall: Bots kaufen Dev-Karten häufiger, weil Ritter zentral sind
+  var devChance = sk.buyDevChance;
+  if(isBarb()){
+    var hasSlots=(state.barbKnightsLeft[pi]||0)>0;
+    // Wenn wenig Ritter im Vorrat: kaum kaufen
+    if(!hasSlots) devChance = 0.05;
+    else {
+      // Wenn viele Barbaren an eigenen Feldern: aggressiv
+      var threat=0;
+      Object.keys(state.buildings).forEach(function(vk){
+        var b=state.buildings[vk]; if(b.owner!==pi) return;
+        state.board.vertices[Number(vk)].hexes.forEach(function(hi){ threat+=barbariansAtHex(hi); });
+      });
+      devChance = Math.min(0.9, devChance + threat*0.05);
+    }
+  }
+  if(canAfford(p.res,COSTS.dev)&&state.devDeck.length>0&&Math.random()<devChance){ apply({type:"BUY_DEV"}); return; }
   if(sk.trade){
     var t=planBankTrade(pi);
     if(t){ state.ui.bankGive=t.give; state.ui.bankGet=t.get; apply({type:"BANK_TRADE"}); return; }
+  }
+  // Barbarenüberfall: einmal Ritter bewegen versuchen, wenn nicht bereits im Modus
+  if(isBarb() && state.uiMode!=="barbMoveKnight"){
+    var hasK=Object.keys(state.barbKnights||{}).some(function(eid){return state.barbKnights[eid].owner===pi;});
+    if(hasK && !state.barbMoveTried){
+      state.barbMoveTried=true;
+      apply({type:"START_BARB_MOVE"});
+      return;
+    }
   }
   apply({type:"END_TURN"});
 }
@@ -5514,7 +6629,7 @@ function renderMenu(){
   var blurb;
   if(mode==="hb"){
     var hbScn=state.ui.startHbScn||"fischfang";
-    blurb = hbScn==="fischfang" ? tr("menu_fischfang_blurb") : (hbScn==="fluesse" ? tr("menu_fluesse_blurb") : (hbScn==="handelstross" ? tr("menu_handelstross_blurb") : tr("blurb")));
+    blurb = hbScn==="fischfang" ? tr("menu_fischfang_blurb") : (hbScn==="fluesse" ? tr("menu_fluesse_blurb") : (hbScn==="handelstross" ? tr("menu_handelstross_blurb") : (hbScn==="barbarenueberfall" ? tr("menu_barbarenueberfall_blurb") : (hbScn==="finale" ? tr("menu_finale_blurb") : tr("blurb")))));
   }else if(mode!=="sea"){
     blurb = tr("blurb");
   }else{
@@ -5677,6 +6792,20 @@ function legalVertSet(){
     board.vertices.forEach(function(v){ var k=knightAt(v.id); if(k&&k.owner===me&&!k.active) out[v.id]=1; });
   }else if(mode==="kup"){
     board.vertices.forEach(function(v){ if(knightMayUpgrade(v.id,me)) out[v.id]=1; });
+  }else if(mode==="trosswagenMove"){
+    if(isFinale() && state.trosswagen[me]){
+      var tw=state.trosswagen[me];
+      if(tw && tw.atVertex!=null){
+        state.board.vertices[tw.atVertex].edges.forEach(function(oe){
+          var e=state.board.edges[oe];
+          var otherV=e.v1===tw.atVertex?e.v2:e.v1;
+          var cost=trosswagenMoveCost(oe,me);
+          if(cost==null) return;
+          if(cost>(state.wagenBP[me]||0)) return;
+          out[otherV]=1;
+        });
+      }
+    }
   }else if(mode==="settlement"&&countType(me,"settlement")<PIECE.settlement){
     board.vertices.forEach(function(v){
       if(!settlementLegal(v.id,me,state.buildings,state.roads,board,false))return;
@@ -5726,6 +6855,42 @@ function legalEdgeSet(){
     if(state.events && canAfford(state.players[me].res,{wood:1,brick:1})){
       Object.keys(state.brokenRoads||{}).forEach(function(eid){
         if(state.roads[eid]&&state.roads[eid].owner===me) out[eid]="repair";
+      });
+    }
+  }else if(mode==="placeBarbKnight"){
+    if(isBarb() && (state.barbKnightsLeft[me]||0)>0){
+      var which=(state.pending&&state.pending.which)||"stark";
+      board.edges.forEach(function(e){
+        if(state.barbKnights[e.id]) return;
+        if(state.ships&&state.ships[e.id]) return;
+        if(which==="ritterweihe"){
+          if(!isBurgEdge(e.id)) return;
+        } else {
+          var isLandE=e.hexes.some(function(hi){ return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource) && !isCapturedHex(hi); });
+          if(!isLandE) return;
+          if(isBurgEdge(e.id)) return; // Starker Ritter darf nicht direkt aufs Burgfeld
+        }
+        out[e.id]="barbknightplace";
+      });
+    }
+  }else if(mode==="barbMoveKnight"){
+    if(!state.barbMove || state.barbMove.from==null){
+      // Erste Phase: eigene Ritter zeigen
+      Object.keys(state.barbKnights||{}).forEach(function(eid){
+        if(state.barbKnights[eid].owner===me) out[eid]="barbknightpick";
+      });
+    } else {
+      // Zweite Phase: erreichbare Zielkanten
+      var fromE=state.barbMove.from, budget=state.barbMove.budget||3;
+      board.edges.forEach(function(e){
+        if(state.barbKnights[e.id]) return;
+        if(state.ships&&state.ships[e.id]) return;
+        if(isBurgEdge(e.id)) return;
+        var isLandM=e.hexes.some(function(hi){ return hi<state.tiles.length && state.tiles[hi] && !isWaterRes(state.tiles[hi].resource) && !isCapturedHex(hi); });
+        if(!isLandM) return;
+        var d=barbKnightMoveDistance(fromE, e.id, me);
+        if(d==null || d===0 || d>budget) return;
+        out[e.id]="barbknightto";
       });
     }
   }else if(mode==="moveShipFrom"){
@@ -5791,18 +6956,27 @@ function renderBoard(){
     if(!isWater){
       var hasRobber=(state.robberHex===h.id);
       var slotTaken=(state.tribe&&state.tribe[h.id])||(state.tribeHarbors&&state.tribeHarbors[h.id]);
+      // Barbarenüberfall: eroberte Küstenfelder dunkler
+      if(isBarb() && isCapturedHex(h.id))
+        s+='<polygon points="'+pts+'" fill="#3a1010" opacity="0.55" stroke="none" pointer-events="none"/>';
       if(hasRobber)
         s+='<polygon points="'+pts+'" fill="#1a1008" opacity="0.42" stroke="none" pointer-events="none"/>';
       if(!hasRobber && !slotTaken && RES_META[t.resource] && RES_META[t.resource].icon)
         s+='<text x="'+h.x+'" y="'+(h.y-SIZE*0.42+8)+'" text-anchor="middle" font-size="24" pointer-events="none" style="paint-order:stroke;stroke:rgba(255,255,255,.55);stroke-width:3px">'+RES_META[t.resource].icon+'</text>';
       if(t.number!==null){
       var red=(t.number===6||t.number===8), cy=h.y+SIZE*0.36;
-      // Schriftgröße richtet sich nach der Wurfwahrscheinlichkeit (Pips) — 6/8 am größten, 2/12 am kleinsten
-      var pipCount=6-Math.abs(7-t.number); // 6/8→5, 5/9→4, 4/10→3, 3/11→2, 2/12→1
-      var numFS=11+pipCount*2; // 13/15/17/19/21
-      s+='<circle cx="'+h.x+'" cy="'+cy+'" r="16" fill="'+RES_META[t.resource].token+'" stroke="#7a6a45" stroke-width="1.2"/>';
-      s+='<text x="'+h.x+'" y="'+(cy+numFS*0.36)+'" text-anchor="middle" font-size="'+numFS+'" font-weight="700" fill="'+(red?"#c0392b":"#3a3024")+'" font-family="Georgia,serif">'+t.number+'</text>';
-      s+='<text x="'+h.x+'" y="'+(cy+18)+'" text-anchor="middle" font-size="7" fill="'+(red?"#c0392b":"#7a6a45")+'" letter-spacing="1">'+pips(t.number)+'</text>';
+      var pipCount=6-Math.abs(7-t.number);
+      var numFS=11+pipCount*2;
+      var capturedChip = isBarb() && isCapturedHex(h.id);
+      if(capturedChip){
+        // Chip umgedreht: grauer Kreis mit ✗
+        s+='<circle cx="'+h.x+'" cy="'+cy+'" r="16" fill="#4a3a2a" stroke="#2a1a0a" stroke-width="1.5"/>';
+        s+='<text x="'+h.x+'" y="'+(cy+5)+'" text-anchor="middle" font-size="16" font-weight="700" fill="#c14a4a">✗</text>';
+      } else {
+        s+='<circle cx="'+h.x+'" cy="'+cy+'" r="16" fill="'+RES_META[t.resource].token+'" stroke="#7a6a45" stroke-width="1.2"/>';
+        s+='<text x="'+h.x+'" y="'+(cy+numFS*0.36)+'" text-anchor="middle" font-size="'+numFS+'" font-weight="700" fill="'+(red?"#c0392b":"#3a3024")+'" font-family="Georgia,serif">'+t.number+'</text>';
+        s+='<text x="'+h.x+'" y="'+(cy+18)+'" text-anchor="middle" font-size="7" fill="'+(red?"#c0392b":"#7a6a45")+'" letter-spacing="1">'+pips(t.number)+'</text>';
+      }
       }
       // Fischfang: See mit mehreren Zahlen anzeigen
       if(t.resource==="lake" && t.numbers && t.numbers.length){
@@ -5865,6 +7039,62 @@ function renderBoard(){
       s+='<text x="'+e.x+'" y="'+(e.y-9)+'" text-anchor="middle" font-size="10" font-weight="700" fill="#5a3a00">'+(i+1)+'</text>';
     });
   }
+  // Finale: Trosswagen auf Kreuzungen, Barbaren auf Wegen
+  if(isFinale()){
+    // Barbaren auf Wegen
+    Object.keys(state.barbEdges||{}).forEach(function(eid){
+      var e=board.edges[eid]; if(!e) return;
+      s+='<g pointer-events="none">';
+      s+='<circle cx="'+e.x+'" cy="'+e.y+'" r="8" fill="#4a2a1a" stroke="#000" stroke-width="1.5"/>';
+      s+='<text x="'+e.x+'" y="'+(e.y+3)+'" text-anchor="middle" font-size="9" fill="#fff">🗡</text>';
+      s+='</g>';
+    });
+    // Trosswagen auf Kreuzungen
+    Object.keys(state.trosswagen||{}).forEach(function(piStr){
+      var pi=Number(piStr), tw=state.trosswagen[pi];
+      if(!tw || tw.atVertex==null) return;
+      var v=board.vertices[tw.atVertex]; if(!v) return;
+      var col=PCOL[pi].main;
+      s+='<g pointer-events="none">';
+      s+='<rect x="'+(v.x-11)+'" y="'+(v.y-7)+'" width="22" height="12" rx="2" fill="'+col+'" stroke="#000" stroke-width="1.2"/>';
+      s+='<circle cx="'+(v.x-6)+'" cy="'+(v.y+7)+'" r="2.6" fill="#000"/>';
+      s+='<circle cx="'+(v.x+6)+'" cy="'+(v.y+7)+'" r="2.6" fill="#000"/>';
+      s+='<text x="'+v.x+'" y="'+(v.y+3)+'" text-anchor="middle" font-size="8" fill="#fff">🚛</text>';
+      s+='</g>';
+    });
+    // Warenaufnahme-Marker (Anzeige über Ziel-Feldern)
+    ["fortress","quarry","glassworks"].forEach(function(k){
+      var thi=state.targetHexes && state.targetHexes[k]; if(thi==null) return;
+      var h=board.hexes[thi]; if(!h) return;
+      var count=(state.wareDecks && state.wareDecks[k]) ? state.wareDecks[k].length : 0;
+      s+='<text x="'+h.x+'" y="'+(h.y+SIZE*0.6)+'" text-anchor="middle" font-size="9" fill="#3a3024" font-weight="700">📦'+count+'</text>';
+    });
+  }
+  // Barbarenüberfall: Barbaren auf Küstenfeldern
+  if(isBarb()){
+    (state.coastHexes||[]).forEach(function(hi){
+      var n=barbariansAtHex(hi); if(!n) return;
+      var h=board.hexes[hi]; if(!h) return;
+      // 1-3 kleine Marker
+      for(var b=0;b<n;b++){
+        var bx=h.x + (b-1)*10, by=h.y + SIZE*0.42;
+        s+='<g pointer-events="none">';
+        s+='<circle cx="'+bx+'" cy="'+by+'" r="6" fill="#4a2a1a" stroke="#1a0a05" stroke-width="1"/>';
+        s+='<text x="'+bx+'" y="'+(by+3)+'" text-anchor="middle" font-size="9" fill="#fff">🗡</text>';
+        s+='</g>';
+      }
+    });
+    // Ritter auf Wegen
+    Object.keys(state.barbKnights||{}).forEach(function(eid){
+      var e=board.edges[eid]; if(!e) return;
+      var kn=state.barbKnights[eid];
+      var col=PCOL[kn.owner].main;
+      s+='<g pointer-events="none">';
+      s+='<circle cx="'+e.x+'" cy="'+e.y+'" r="8" fill="'+col+'" stroke="#000" stroke-width="1.5"/>';
+      s+='<text x="'+e.x+'" y="'+(e.y+3)+'" text-anchor="middle" font-size="10" fill="#fff">🐎</text>';
+      s+='</g>';
+    });
+  }
   // Handelstross: Trosswagen auf Kanten
   if(state.wagons){
     Object.keys(state.wagons).forEach(function(eid){
@@ -5872,8 +7102,8 @@ function renderBoard(){
       if(!e)return;
       var va=board.vertices[e.v1], vb=board.vertices[e.v2];
       // Farbe je nach Handelstross-Nummer
-      var trossColors=["#8b6f47","#6b4a2c","#a67b52"];
-      var col=trossColors[w.trossen%3]||"#8b6f47";
+      var trossColors=["#8b6f47","#6b4a2c","#a67b52","#5a3d20","#c4956d","#7a5a3a"];
+      var col=trossColors[w.trossen%6]||"#8b6f47";
       s+='<g pointer-events="none">';
       // schräger Wagen-Marker (Rechteck + kleines Rad)
       var wx=e.x, wy=e.y;
@@ -5884,26 +7114,23 @@ function renderBoard(){
       s+='</g>';
     });
   }
-  // Handelstross: Wasserstelle mit Pfeilen
-  if(state.waterholeHex!=null && state.waterholeHex>=0){
-    var wh=board.hexes[state.waterholeHex];
-    if(wh){
-      // 6 Pfeile in Richtung der 6 Kanten
-      wh.edges.forEach(function(eid){
-        var e=board.edges[eid]; if(!e)return;
-        var dx=e.x-wh.x, dy=e.y-wh.y, len=Math.hypot(dx,dy)||1;
-        var nx=dx/len, ny=dy/len;
-        var ax=wh.x+nx*SIZE*0.55, ay=wh.y+ny*SIZE*0.55;
-        var bx=wh.x+nx*SIZE*0.75, by=wh.y+ny*SIZE*0.75;
-        s+='<g pointer-events="none">';
-        s+='<line x1="'+ax+'" y1="'+ay+'" x2="'+bx+'" y2="'+by+'" stroke="#5a4a2a" stroke-width="2.5" opacity="0.8"/>';
-        // Pfeilspitze
-        var px=-ny*4, py=nx*4;
-        s+='<polygon points="'+bx+','+by+' '+(bx-nx*5+px)+','+(by-ny*5+py)+' '+(bx-nx*5-px)+','+(by-ny*5-py)+'" fill="#5a4a2a" opacity="0.85"/>';
-        s+='</g>';
-      });
-    }
-  }
+  // Handelstross: Wasserstelle(n) mit Pfeilen
+  var whList = (state.waterholeHexes && state.waterholeHexes.length) ? state.waterholeHexes : (state.waterholeHex!=null && state.waterholeHex>=0 ? [state.waterholeHex] : []);
+  whList.forEach(function(whIdx){
+    var wh=board.hexes[whIdx]; if(!wh)return;
+    wh.edges.forEach(function(eid){
+      var e=board.edges[eid]; if(!e)return;
+      var dx=e.x-wh.x, dy=e.y-wh.y, len=Math.hypot(dx,dy)||1;
+      var nx=dx/len, ny=dy/len;
+      var ax=wh.x+nx*SIZE*0.55, ay=wh.y+ny*SIZE*0.55;
+      var bx=wh.x+nx*SIZE*0.75, by=wh.y+ny*SIZE*0.75;
+      s+='<g pointer-events="none">';
+      s+='<line x1="'+ax+'" y1="'+ay+'" x2="'+bx+'" y2="'+by+'" stroke="#5a4a2a" stroke-width="2.5" opacity="0.8"/>';
+      var px=-ny*4, py=nx*4;
+      s+='<polygon points="'+bx+','+by+' '+(bx-nx*5+px)+','+(by-ny*5+py)+' '+(bx-nx*5-px)+','+(by-ny*5-py)+'" fill="#5a4a2a" opacity="0.85"/>';
+      s+='</g>';
+    });
+  });
   if(state.fishingGrounds && state.fishingGrounds.length){
     state.fishingGrounds.forEach(function(fg){
       // Position des Fischgrund-Symbols: Rahmenspitze, minimal nach außen versetzt
@@ -6272,6 +7499,45 @@ function renderSidebar(){
         repairBtn='<button class="btn-trade" data-act="setmode" data-mode="repairRoad" style="background:'+(repairActive?"#a05050":"#803030")+';color:#fff">🛠 '+esc(tr("br_repair"))+' ('+rr.length+')</button>';
       }
     }
+    var barbBtn="";
+    if(isBarb() && canAct){
+      var hasKnights=Object.keys(state.barbKnights||{}).some(function(eid){return state.barbKnights[eid].owner===me;});
+      if(hasKnights){
+        var barbActive=(state.uiMode==="barbMoveKnight");
+        if(barbActive){
+          var canPay=(p.res.wheat||0)>0;
+          barbBtn='<button class="btn-trade" data-act="endbarbmove" style="background:#5a3d20;color:#fff">'+esc(tr("barb_end_move"))+'</button>'+
+            (canPay?'<button class="btn-trade" data-act="barbpaywheat" style="background:#7a5a3a;color:#fff">🌾 '+esc(tr("barb_pay_wheat"))+'</button>':'');
+        } else {
+          barbBtn='<button class="btn-trade" data-act="startbarbmove" style="background:#5a3d20;color:#fff">'+esc(tr("barb_move_btn"))+'</button>';
+        }
+      }
+    }
+    var finaleBtn="";
+    if(isFinale() && canAct && state.trosswagen[me]){
+      var stage=state.wagenStage[me]||0;
+      var bp=state.wagenBP[me]||0;
+      var trActive=(state.uiMode==="trosswagenMove");
+      if(trActive){
+        finaleBtn+='<button class="btn-trade" data-act="trosswagenend" style="background:#5a3d20;color:#fff">'+esc(tr("trosswagen_end"))+' (BP: '+bp+')</button>';
+        if(!state.wagenWheatUsed[me] && (p.res.wheat||0)>0){
+          finaleBtn+='<button class="btn-trade" data-act="trosswagenwheat" style="background:#7a5a3a;color:#fff">'+esc(tr("trosswagen_wheat"))+'</button>';
+        }
+        // Vertreiben-Button: nur wenn Stufe≥2 und daneben ein Barbar steht
+        if(stage>=2){
+          var tw=state.trosswagen[me], nextToBarb=false;
+          if(tw && tw.atVertex!=null){
+            state.board.vertices[tw.atVertex].edges.forEach(function(oe){ if(isBarbEdge(oe)) nextToBarb=true; });
+          }
+          if(nextToBarb) finaleBtn+='<button class="btn-trade" data-act="trosswagendefeat" style="background:#8a3020;color:#fff">'+esc(tr("trosswagen_defeat_barb"))+'</button>';
+        }
+      } else {
+        finaleBtn+='<button class="btn-trade" data-act="startrosswagen" style="background:#5a3d20;color:#fff">'+esc(tr("trosswagen_move_btn"))+' (BP: '+bp+')</button>';
+      }
+      if(finaleCanUpgrade(me)){
+        finaleBtn+='<button class="btn-trade" data-act="wagenupgrade" style="background:#4a6a50;color:#fff">'+esc(tr("wagen_upgrade_btn"))+' (Stufe '+(stage+1)+')</button>';
+      }
+    }
     var wonderBox="";
     if(state.scenario==="wunder"){
       var myWonder=state.wonderClaims[me];
@@ -6290,7 +7556,7 @@ function renderSidebar(){
     }
     var endBtn='<button class="btn-end" data-act="endturn" '+((rolled&&canAct)?"":"disabled")+'>'+esc(tr(state.part2?"end_turn":(bigTwo()?"end_ship1":"end_turn")))+'</button>';
     var ship12=bigTwo()?('<div class="hint'+(state.part2?" gold":"")+'">'+esc(state.part2?tr(isSR()?"burg2_hint":"ship2_hint"):tr(isSR()?"burg1_hint":"ship1_hint"))+'</div>'):'';
-    actions='<div class="actions">'+ship12+rb+rollRow+buildGrid+bank+tradeBtn+moveShipBtn+atkBtn+fishBtn+shoeBtn+bridgeBtn+goldTradeBtn+repairBtn+wonderBox+endBtn+'</div>';
+    actions='<div class="actions">'+ship12+rb+rollRow+buildGrid+bank+tradeBtn+moveShipBtn+atkBtn+fishBtn+shoeBtn+bridgeBtn+goldTradeBtn+repairBtn+barbBtn+finaleBtn+wonderBox+endBtn+'</div>';
   }
 
   var card='<div class="panel"><div class="phead" style="background:'+c.main+';color:'+c.text+'">'+
@@ -6366,11 +7632,18 @@ function renderScoreboard(){
           }
           return bonus>0?'<span title="'+esc(tr("tip_wagon"))+' Bonus">🚛+'+bonus+'</span>':'';
         })():'')+
-        (state.harbors?(function(){
+        (state.harborsVariant?(function(){
           var n=0; Object.keys(state.harborMasters||{}).forEach(function(k){ if(state.harborMasters[k]===pi) n++; });
           return n>0?'<span title="'+esc(tr("tip_harbormasters"))+'">⚓'+n+'</span>':'';
         })():'')+
-        (state.harbors&&state.strongestHarbors===pi?'<span title="'+esc(tr("tip_strongest_harbors"))+'">🏅</span>':'')+
+        (state.harborsVariant&&state.strongestHarbors===pi?'<span title="'+esc(tr("tip_strongest_harbors"))+'">🏅</span>':'')+
+        (isBarb()&&(state.barbKnightsLeft[pi]||0)>0?'<span title="'+esc(tr("tip_bknight"))+'">🐎'+state.barbKnightsLeft[pi]+'</span>':'')+
+        (isBarb()&&(state.prisoners[pi]||0)>0?'<span title="'+esc(tr("tip_prisoners"))+'">⛓'+state.prisoners[pi]+'</span>':'')+
+        (isBarb()&&(p.gold||0)>0?'<span title="'+esc(tr("tip_gold"))+'">💰'+p.gold+'</span>':'')+
+        (isFinale()&&(p.gold||0)>0?'<span title="'+esc(tr("tip_gold"))+'">💰'+p.gold+'</span>':'')+
+        (isFinale()?'<span title="'+esc(tr("tip_wagen_stage",{n:(state.wagenStage[pi]||0)+1}))+'">🚛'+((state.wagenStage[pi]||0)+1)+'</span>':'')+
+        (isFinale()&&state.wareInHand[pi]?'<span title="'+esc(tr("tip_ware"))+'">📦 '+esc(tr("ware_"+state.wareInHand[pi]))+'</span>':'')+
+        (isFinale()&&(p.wareVP||0)>0?'<span title="'+esc(tr("tip_ware"))+'">📦'+p.wareVP+' SP</span>':'')+
       '</span></div>';
   }).join("");
   return '<div class="panel pp scoreboard"><div class="seclbl">'+esc(tr("settlers"))+'</div>'+rows+'</div>';
@@ -6414,7 +7687,7 @@ function renderModals(){
     case "eventCard": return modalEventCard();
   }
   // Fallback: automatisch anzeigen wenn currentEvent gesetzt und Human am Zug
-  if(state.currentEvent && !state.players[state.current].bot){
+  if(state.currentEvent && state.players && state.players[state.current] && !state.players[state.current].bot){
     return modalEventCard();
   }
   return "";
@@ -6730,6 +8003,7 @@ function clickVertex(v){
   else if(mode==="kchase")dispatch({type:"KNIGHT_CHASE",vertexId:Number(v)});
   else if(mode==="intrigue")dispatch({type:"INTRIGUE_DISPLACE",vertexId:Number(v)});
   else if(mode==="betrayremove")dispatch({type:"BETRAY_REMOVE",vertexId:Number(v)});
+  else if(mode==="trosswagenMove")dispatch({type:"TROSSWAGEN_MOVE",vertexId:Number(v)});
 }
 function clickEdge(e){
   var setup=state.setup, le=legalEdgeSet(), kind=le[e];
@@ -6739,6 +8013,9 @@ function clickEdge(e){
   if(kind==="moveto"){dispatch({type:"MOVE_SHIP",edgeId:Number(e)});return;}
   if(kind==="bridge"){dispatch({type:"BUILD_BRIDGE",edgeId:Number(e)});return;}
   if(kind==="repair"){dispatch({type:"REPAIR_ROAD",edgeId:Number(e)});return;}
+  if(kind==="barbknightplace"){dispatch({type:"PLACE_BARB_KNIGHT",edgeId:Number(e)});return;}
+  if(kind==="barbknightpick"){dispatch({type:"SELECT_BARB_KNIGHT",edgeId:Number(e)});return;}
+  if(kind==="barbknightto"){dispatch({type:"MOVE_BARB_KNIGHT_TO",edgeId:Number(e)});return;}
   if(state.phase==="setup"&&setup.placing==="road")dispatch({type:(kind==="ship"?"SETUP_SHIP":"SETUP_ROAD"),edgeId:Number(e)});
   else dispatch({type:(kind==="ship"?"BUILD_SHIP":"BUILD_ROAD"),edgeId:Number(e)});
 }
@@ -6832,6 +8109,14 @@ document.addEventListener("click",function(ev){
     case "wvcast": dispatch({type:"WV_CAST",res:t.getAttribute("data-res")}); break;
     case "wvresolve": dispatch({type:"WV_RESOLVE"}); break;
     case "closeevent": dispatch({type:"CLOSE_EVENT"}); break;
+    case "startbarbmove": dispatch({type:"START_BARB_MOVE"}); break;
+    case "endbarbmove": dispatch({type:"END_BARB_MOVE"}); break;
+    case "barbpaywheat": dispatch({type:"BARB_PAY_WHEAT"}); break;
+    case "startrosswagen": dispatch({type:"START_TROSSWAGEN"}); break;
+    case "trosswagenend": dispatch({type:"TROSSWAGEN_END"}); break;
+    case "trosswagenwheat": dispatch({type:"TROSSWAGEN_WHEAT"}); break;
+    case "trosswagendefeat": dispatch({type:"TROSSWAGEN_DEFEAT"}); break;
+    case "wagenupgrade": dispatch({type:"WAGEN_UPGRADE"}); break;
   }
 });
 document.addEventListener("change",function(ev){
