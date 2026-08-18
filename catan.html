@@ -4642,6 +4642,7 @@ function dispatch(a){ apply(a); render(); }
 function apply(a){
   switch(a.type){
     case "TOGGLE_COSTS": state.ui.showCosts=!state.ui.showCosts; return;
+    case "SET_MODE": state.ui.ksel=null; state.uiMode=(state.uiMode===a.mode?null:a.mode); return;
     case "TOGGLE_SAVE": state.ui.showSave=!state.ui.showSave; state.ui.saveMsg=""; return;
     case "SET_SAVE_MSG": state.ui.saveMsg=a.msg; return;
     case "SET_N": state.ui.startN=a.n; clampSeatBots(); return;
@@ -8064,6 +8065,7 @@ document.addEventListener("click",function(ev){
     case "tomenu": dispatch({type:"TO_MENU"}); break;
     case "roll": dispatch({type:"ROLL"}); break;
     case "mode": dispatch({type:"SET_MODE",mode:t.getAttribute("data-mode")}); break;
+    case "setmode": dispatch({type:"SET_MODE",mode:t.getAttribute("data-mode")}); break;
     case "buydev": dispatch({type:"BUY_DEV"}); break;
     case "buildwall": dispatch({type:"BUILD_WALL"}); break;
     case "improve": dispatch({type:"BUILD_IMPROVEMENT",area:t.getAttribute("data-area")}); break;
